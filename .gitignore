@@ -1,0 +1,16 @@
+# Raw UFC transcript dataset — ~52MB of gzip'd JSON, not committed to the public repo
+ufc_cleaned_export/
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+
+# Environments
+.env
+.venv/
+venv/
