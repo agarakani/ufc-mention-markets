@@ -1,93 +1,32 @@
-# Market Price Integration
+# Market Integration
 
-The model does **not** create odds. It estimates probabilities:
+This project separates probability estimates from market prices.
 
-```text
-P(literal phrase appears in the transcript)
-```
+- The model estimates `P(phrase is said)`.
+- Oddpool/Polymarket/Kalshi provide the market price.
+- The edge table compares the two.
 
-Market APIs provide prices:
+No market price is inferred by the model.
 
-```text
-real YES bid / ask / mid
-```
+## Setup
 
-The bettor-facing layer compares the two:
-
-```text
-edge_to_yes_ask = model_probability - real_yes_ask
-```
-
-If a real `yes_ask` is missing, the edge stays blank. The project should never make
-up prices.
-
-## Where Each Piece Fits
-
-1. `train_baseline_models.py`
-   - Trains probability models from historical fights.
-   - Produces `model_outputs/baseline_predictions.csv`.
-
-2. `search_oddpool_markets.py`
-   - Searches Oddpool for real Polymarket/Kalshi markets.
-   - Produces `market_data/oddpool_markets.csv`.
-
-3. `classify_market_candidates.py`
-   - Separates likely mention markets from fight-outcome markets and unrelated
-     "say" markets.
-   - Produces `market_data/classified_markets.csv`.
-
-4. `market_phrases.txt`
-   - Human-reviewed list of exact literal phrases to model.
-   - Add phrases that real markets actually ask about, such as `guillotine`,
-     `choke`, or `eye poke`.
-
-5. `build_match_csv.py` and `train_baseline_models.py`
-   - Read `market_phrases.txt`.
-   - Rebuild strict mention labels and train one probability model per phrase.
-
-6. `predict_upcoming_mentions.py`
-   - Predicts fight-level probabilities for a Kaggle-style upcoming card.
-   - Aggregates them to event-level probabilities for simple binary "during the
-     event" markets.
-   - Produces `model_outputs/upcoming_fight_predictions.csv` and
-     `model_outputs/upcoming_event_predictions.csv`.
-
-7. `market_data/market_mappings.csv`
-   - Human-reviewed mapping from a market question to:
-     - fight/transcript id
-     - literal phrase target
-     - exchange / market id / token id
-   - Use `market_mappings.example.csv` as the template.
-
-8. `fetch_oddpool_top_of_book.py`
-   - Pulls real historical bid/ask/mid snapshots from Oddpool.
-   - Produces `market_data/oddpool_top_of_book.csv`.
-
-9. `build_edge_table.py`
-   - Joins model probabilities to real quotes.
-   - Produces `market_data/edge_table.csv`.
-
-## Oddpool Setup
-
-Create an Oddpool API key from the Oddpool dashboard, then run:
-
-```bash
-export ODDPOOL_API_KEY='oddpool_...'
-```
-
-Or keep it in a local ignored `.env` file:
+Create an Oddpool API key and store it locally:
 
 ```bash
 cp .env.example .env
-# edit .env and replace oddpool_your_api_key_here
 ```
 
-Oddpool uses the `X-API-Key` header. Search and historical data are listed as free
-in the public docs as of this project setup.
+Then edit `.env`:
 
-## Search Real Markets
+```text
+ODDPOOL_API_KEY=...
+```
 
-Examples:
+`.env` is gitignored.
+
+## Market Search
+
+Search for candidate markets:
 
 ```bash
 python3 search_oddpool_markets.py \
@@ -96,129 +35,85 @@ python3 search_oddpool_markets.py \
   --status active
 ```
 
-```bash
-python3 search_oddpool_markets.py \
-  --q "submission mentioned" \
-  --exchange kalshi \
-  --status closed \
-  --sort-by volume
-```
-
-Review `market_data/oddpool_markets.csv`, then copy real markets into
-`market_data/market_mappings.csv`.
-
-Classify a batch of search files:
+Classify the results:
 
 ```bash
 python3 classify_market_candidates.py market_data/oddpool_*.csv \
   --out market_data/classified_markets.csv
 ```
 
-The classifier is only triage. Human review is still required before mapping a
-market to a target.
+The classifier separates:
 
-It also flags non-simple markets:
+- `mention_announcers`
+- `mention_unrelated_speaker`
+- `fight_outcome_submission`
+- `other`
+
+It also flags market structure:
 
 - `simple_binary`: phrase appears at least once
 - `threshold`: phrase must appear N+ times
-- `or`: either of multiple phrases can satisfy the market
-- `or_threshold`: both complications at once
+- `or`: multiple phrases can satisfy the market
+- `or_threshold`: both complications
 
-The current model is built for `simple_binary` phrase markets. Threshold/OR markets
-need count-based or combined-label targets before edge can be computed honestly.
+The current model is for `simple_binary` markets.
 
-When a real market phrase is useful, add the exact literal phrase to
-`market_phrases.txt`, then rebuild:
+## Phrase List
+
+If a useful market phrase is found, add it to:
+
+```text
+market_phrases.txt
+```
+
+Then rebuild:
 
 ```bash
 python3 build_match_csv.py
 python3 join_kaggle_outcomes.py
-/Users/aryog/anaconda3/bin/python train_baseline_models.py
+python train_baseline_models.py
 ```
 
-This makes the model follow real market demand instead of a guessed phrase list.
+## Upcoming Cards
 
-For event-level markets, run:
+For event-level markets such as:
+
+```text
+Will the announcers say "Guillotine" during UFC 250?
+```
+
+run:
 
 ```bash
-/Users/aryog/anaconda3/bin/python predict_upcoming_mentions.py
+python predict_upcoming_mentions.py
 ```
 
-The event-level aggregation is:
+This writes:
 
 ```text
-P(any fight mentions phrase) = 1 - product(1 - per_fight_probability)
+model_outputs/upcoming_fight_predictions.csv
+model_outputs/upcoming_event_predictions.csv
 ```
 
-This is appropriate only for simple binary "said during event" markets. It is not
-appropriate for threshold markets like "5+ times" without count modeling.
+## Prices and Edge
 
-## Mapping Markets
-
-Mapping is intentionally manual/reviewed because a bad market-to-fight match creates
-fake edge.
-
-Required columns:
-
-```text
-transcript_id,event_date,fighter_1,fighter_2,phrase,exchange,market_id,asset_id,token_side,question,price_start_iso,price_end_iso,notes
-```
-
-Notes:
-
-- `phrase` must be one of the strict targets: `submission`, `knockout`, `TKO`,
-  `knocked out`, `split decision`, `unanimous decision`, or `doctor`.
-- For Kalshi, `market_id` is the market ticker. `asset_id` can be blank.
-- For Polymarket, `market_id` is the condition id. To compute a YES price, provide
-  the YES token `asset_id` and set `token_side=YES`.
-- `price_start_iso` and `price_end_iso` should cover the pre-event window you want
-  to evaluate, such as the hour before the fight/card starts.
-
-## Fetch Real Top-Of-Book Prices
-
-Using the mapping file:
+After mapping a real market in `market_data/market_mappings.csv`, fetch quotes:
 
 ```bash
 python3 fetch_oddpool_top_of_book.py \
-  --markets market_data/market_mappings.csv \
-  --granularity 5m
+  --markets market_data/market_mappings.csv
 ```
 
-Direct one-off fetch:
-
-```bash
-python3 fetch_oddpool_top_of_book.py \
-  --exchange kalshi \
-  --market-id KXEXAMPLE-26JAN01-Y \
-  --start 2026-01-01T00:00:00Z \
-  --end 2026-01-01T01:00:00Z
-```
-
-## Build The Edge Table
+Then build the edge table:
 
 ```bash
 python3 build_edge_table.py --profile prefight_odds
 ```
 
-The output uses real `yes_ask` only:
+For a YES position:
 
 ```text
 edge_to_yes_ask = model_probability - yes_ask
 ```
 
-For example, if the model says 0.64 and the real YES ask is 0.52, the edge is
-0.12. If there is no real ask, the edge is blank.
-
-## Where Justin's Repo Helps
-
-Justin's NFL project is useful for the market-data side, not because it changes the
-UFC model. We want to learn:
-
-- how he discovers mention markets
-- how he maps market questions to games
-- whether he uses pre-event ask, bid, mid, or trade history
-- how he chooses the timestamp before event start
-- how he backtests edge
-
-Do not copy private code into this repo. Use it as a reference for design choices,
-then keep this implementation independent.
+Rows without a real `yes_ask` are left blank.

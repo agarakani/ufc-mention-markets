@@ -12,8 +12,8 @@ For a simple binary market like:
 the event-level probability is aggregated as:
   P(any fight says phrase) = 1 - product(1 - P(fight_i says phrase))
 
-That assumes fight-level mention events are conditionally independent. It is a
-baseline aggregation rule, not a law of nature; later backtests should validate it.
+This uses an independence assumption across fights. It is a baseline aggregation
+rule and should be tested against historical event-level markets.
 
 Inputs:
   joined_fights.csv                         historical training data
@@ -24,7 +24,7 @@ Outputs:
   model_outputs/upcoming_event_predictions.csv
 
 Run:
-  /Users/aryog/anaconda3/bin/python predict_upcoming_mentions.py
+  python predict_upcoming_mentions.py
 """
 
 from __future__ import annotations

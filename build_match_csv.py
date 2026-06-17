@@ -16,7 +16,7 @@ import csv
 import os
 import sys
 
-# Reuse the verified strict matcher + helpers (single source of truth).
+# Reuse the same strict matcher and helpers used by the summary script.
 from mention_counts import strict_pattern, last_name, norm, iter_records
 from phrase_targets import PHRASES_FILE_DEFAULT, phrase_columns
 
