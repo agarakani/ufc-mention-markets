@@ -69,6 +69,13 @@ Train leakage-safe baseline models:
 /Users/aryog/anaconda3/bin/python train_baseline_models.py
 ```
 
+Predict phrase probabilities for an upcoming card and aggregate to event-level
+markets:
+
+```bash
+/Users/aryog/anaconda3/bin/python predict_upcoming_mentions.py
+```
+
 Pull real market prices and build edge tables:
 
 ```bash
@@ -181,3 +188,13 @@ edge_to_yes_ask = model_probability - real_yes_ask
 ```
 
 Rows without a real `yes_ask` remain blank. No synthetic prices are used.
+
+Most announcer markets are event/card-level, such as "Will the announcers say
+`Guillotine` during UFC 250?" The fight-level probabilities are therefore
+aggregated as:
+
+```text
+P(phrase appears anywhere on card) = 1 - product(1 - P(phrase appears in fight_i))
+```
+
+This is a baseline independence assumption and should be validated in backtests.
