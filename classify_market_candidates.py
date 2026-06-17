@@ -17,18 +17,11 @@ import csv
 import re
 from pathlib import Path
 
+from phrase_targets import phrase_to_column_map
 
 OUT_DEFAULT = Path("market_data/classified_markets.csv")
 
-STRICT_TARGETS = {
-    "knockout": "mention_knockout",
-    "tko": "mention_tko",
-    "knocked out": "mention_knocked_out",
-    "submission": "mention_submission",
-    "split decision": "mention_split_decision",
-    "unanimous decision": "mention_unanimous_decision",
-    "doctor": "mention_doctor",
-}
+STRICT_TARGETS = phrase_to_column_map()
 
 # Related commentary phrases we do not yet model directly but should consider adding.
 RELATED_COMMENTARY_TERMS = {
@@ -95,8 +88,21 @@ def classify(row):
     if market_type.startswith("fight_outcome"):
         mapped_target = ""
 
+    has_threshold = bool(re.search(r"\b\d+\s*\+", q))
+    has_or = len(quoted) > 1 and re.search(r"\bor\b", q, re.IGNORECASE) is not None
+    if has_threshold and has_or:
+        complexity = "or_threshold"
+    elif has_threshold:
+        complexity = "threshold"
+    elif has_or:
+        complexity = "or"
+    else:
+        complexity = "simple_binary"
+
     return {
         "market_type": market_type,
+        "market_complexity": complexity,
+        "usable_as_binary_phrase": "yes" if complexity == "simple_binary" else "no",
         "quoted_terms": "; ".join(quoted),
         "mapped_phrase": mapped_phrase,
         "mapped_target": mapped_target,
@@ -110,6 +116,8 @@ def write_csv(path, rows):
     base_fields = [
         "_source_file",
         "market_type",
+        "market_complexity",
+        "usable_as_binary_phrase",
         "needs_manual_review",
         "mapped_phrase",
         "mapped_target",

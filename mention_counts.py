@@ -21,6 +21,7 @@ whitespace-tolerant; curly apostrophes are normalized to straight ones.
 
 Usage:
   python3 mention_counts.py [DATA_DIR]
+  python3 mention_counts.py --phrases market_phrases.txt
   python3 mention_counts.py --selftest     # verify the STRICT matcher's behavior
 """
 
@@ -31,19 +32,13 @@ import re
 import sys
 from collections import Counter
 
+from phrase_targets import PHRASES_FILE_DEFAULT, load_phrase_targets
+
 DATA_DIR_DEFAULT = "~/ufc-mention-markets/ufc_cleaned_export"
 
 # ---- TRACK 2: STRICT literal market phrases (exact term + plural/possessive ONLY) ----
-STRICT_PHRASES = [
-    "TKO",
-    "submission",
-    "doctor",
-    "split decision",
-    "unanimous decision",
-    "knockout",
-    "knocked out",
-    "KO",
-]
+# Loaded from market_phrases.txt by default so the target set follows real markets.
+STRICT_PHRASES = load_phrase_targets()
 
 # ---- TRACK 1: BROAD synonym / word-form groups (commentary concepts; editable) ----
 # A fight counts for a group if ANY listed form appears. These are intentionally loose.
@@ -152,13 +147,14 @@ def selftest():
     return ok
 
 
-def main(data_dir):
-    strict_pats = {p: strict_pattern(p) for p in STRICT_PHRASES}
+def main(data_dir, phrase_path=PHRASES_FILE_DEFAULT):
+    strict_phrases = load_phrase_targets(phrase_path)
+    strict_pats = {p: strict_pattern(p) for p in strict_phrases}
     broad_pats = {g: [strict_pattern(m) for m in members]
                   for g, members in BROAD_GROUPS.items()}
 
     total = valid = skipped = errors = 0
-    strict_hits = Counter({p: 0 for p in STRICT_PHRASES})
+    strict_hits = Counter({p: 0 for p in strict_phrases})
     broad_hits = Counter({g: 0 for g in BROAD_GROUPS})
     f1_hits = f2_hits = either_hits = both_hits = 0
     name_hits = Counter()
@@ -229,16 +225,23 @@ def main(data_dir):
           ", ".join(f"{nm} ({c})" for nm, c in name_hits.most_common(10)))
 
     # The user's worked example, quantified.
-    ks, kb = strict_hits["knockout"], broad_hits["knockout (concept)"]
-    print(f"\nStrict-vs-broad gap (knockout): strict 'knockout' = {ks} fights "
-          f"({pct(ks, valid):.1f}%); broad knockout concept = {kb} fights "
-          f"({pct(kb, valid):.1f}%).")
-    print(f"  -> ~{kb - ks} fights use KO/TKO/'knocked out' etc. and would NOT "
-          f"resolve a literal 'knockout' market Yes.")
+    if "knockout" in strict_hits:
+        ks, kb = strict_hits["knockout"], broad_hits["knockout (concept)"]
+        print(f"\nStrict-vs-broad gap (knockout): strict 'knockout' = {ks} fights "
+              f"({pct(ks, valid):.1f}%); broad knockout concept = {kb} fights "
+              f"({pct(kb, valid):.1f}%).")
+        print(f"  -> ~{kb - ks} fights use KO/TKO/'knocked out' etc. and would NOT "
+              f"resolve a literal 'knockout' market Yes.")
 
 
 if __name__ == "__main__":
     if "--selftest" in sys.argv[1:]:
         sys.exit(0 if selftest() else 1)
-    args = [a for a in sys.argv[1:] if not a.startswith("-")]
-    main(os.path.expanduser(args[0] if args else DATA_DIR_DEFAULT))
+    args = sys.argv[1:]
+    phrase_path = PHRASES_FILE_DEFAULT
+    if "--phrases" in args:
+        i = args.index("--phrases")
+        phrase_path = os.path.expanduser(args[i + 1])
+        del args[i:i + 2]
+    positional = [a for a in args if not a.startswith("-")]
+    main(os.path.expanduser(positional[0] if positional else DATA_DIR_DEFAULT), phrase_path)

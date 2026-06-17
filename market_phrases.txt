@@ -1,0 +1,28 @@
+# Core literal phrase markets we started with.
+submission
+knockout
+TKO
+KO
+knocked out
+split decision
+unanimous decision
+doctor
+
+# Real announcer-mention phrase candidates found through Oddpool searches.
+# These are exact phrase targets; threshold/OR markets need extra handling before
+# they can map cleanly to a live market.
+guillotine
+choke
+triangle
+eye poke
+butterfly
+championship
+nasty
+what a fight
+ufc history
+dana white
+trump
+president
+combination
+sequence
+pounce

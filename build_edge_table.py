@@ -21,22 +21,15 @@ import argparse
 import csv
 from pathlib import Path
 
+from phrase_targets import phrase_to_column_map
+
 
 PRED_DEFAULT = Path("model_outputs/baseline_predictions.csv")
 MAPPING_DEFAULT = Path("market_data/market_mappings.csv")
 BOOK_DEFAULT = Path("market_data/oddpool_top_of_book.csv")
 OUT_DEFAULT = Path("market_data/edge_table.csv")
 
-PHRASE_TO_TARGET = {
-    "knockout": "mention_knockout",
-    "tko": "mention_tko",
-    "TKO": "mention_tko",
-    "knocked out": "mention_knocked_out",
-    "submission": "mention_submission",
-    "split decision": "mention_split_decision",
-    "unanimous decision": "mention_unanimous_decision",
-    "doctor": "mention_doctor",
-}
+PHRASE_TO_TARGET = phrase_to_column_map()
 
 OUT_FIELDS = [
     "profile",
