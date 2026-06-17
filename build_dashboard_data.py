@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import csv
 import json
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from phrase_targets import phrase_columns
@@ -184,9 +184,14 @@ def summarize(fight_predictions: list[dict], event_rows: list[dict], market_rows
     event_dates = {row.get("event_date") for row in fight_predictions if row.get("event_date")}
     active_markets = [row for row in market_rows if row.get("status") == "active"]
     priced_edges = [row for row in edge_rows if row.get("edge_to_yes_ask") is not None]
+    sorted_event_dates = sorted(event_dates)
+    max_event_date = sorted_event_dates[-1] if sorted_event_dates else ""
     return {
         "fight_count": len(fight_ids),
         "event_count": len(event_dates),
+        "min_event_date": sorted_event_dates[0] if sorted_event_dates else "",
+        "max_event_date": max_event_date,
+        "upcoming_input_is_stale": bool(max_event_date and max_event_date < date.today().isoformat()),
         "phrase_count": len(phrase_columns()),
         "event_prediction_count": len(event_rows),
         "market_candidate_count": len(market_rows),
