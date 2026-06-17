@@ -31,18 +31,23 @@ up prices.
    - Searches Oddpool for real Polymarket/Kalshi markets.
    - Produces `market_data/oddpool_markets.csv`.
 
-3. `market_data/market_mappings.csv`
+3. `classify_market_candidates.py`
+   - Separates likely mention markets from fight-outcome markets and unrelated
+     "say" markets.
+   - Produces `market_data/classified_markets.csv`.
+
+4. `market_data/market_mappings.csv`
    - Human-reviewed mapping from a market question to:
      - fight/transcript id
      - literal phrase target
      - exchange / market id / token id
    - Use `market_mappings.example.csv` as the template.
 
-4. `fetch_oddpool_top_of_book.py`
+5. `fetch_oddpool_top_of_book.py`
    - Pulls real historical bid/ask/mid snapshots from Oddpool.
    - Produces `market_data/oddpool_top_of_book.csv`.
 
-5. `build_edge_table.py`
+6. `build_edge_table.py`
    - Joins model probabilities to real quotes.
    - Produces `market_data/edge_table.csv`.
 
@@ -85,6 +90,16 @@ python3 search_oddpool_markets.py \
 
 Review `market_data/oddpool_markets.csv`, then copy real markets into
 `market_data/market_mappings.csv`.
+
+Classify a batch of search files:
+
+```bash
+python3 classify_market_candidates.py market_data/oddpool_*.csv \
+  --out market_data/classified_markets.csv
+```
+
+The classifier is only triage. Human review is still required before mapping a
+market to a target.
 
 ## Mapping Markets
 

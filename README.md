@@ -70,6 +70,7 @@ Pull real market prices and build edge tables:
 
 ```bash
 python3 search_oddpool_markets.py --q "UFC mention" --exchange polymarket
+python3 classify_market_candidates.py market_data/oddpool_*.csv
 python3 fetch_oddpool_top_of_book.py --markets market_data/market_mappings.csv
 python3 build_edge_table.py --profile prefight_odds
 ```
@@ -159,6 +160,7 @@ edge table requires real market prices from a venue or data provider. This repo 
 an Oddpool integration for:
 
 - searching real Polymarket/Kalshi markets
+- classifying search results into likely mention markets vs fight-outcome markets
 - fetching historical top-of-book bid/ask/mid snapshots
 - joining real YES ask prices to model probabilities
 
