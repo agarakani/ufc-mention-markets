@@ -8,6 +8,9 @@ fight_mentions.csv
 kaggle_data/
 joined_fights.csv
 
+# Local model artifacts and generated reports
+model_outputs/
+
 # macOS
 .DS_Store
 
