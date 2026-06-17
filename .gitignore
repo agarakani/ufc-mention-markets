@@ -11,6 +11,10 @@ joined_fights.csv
 # Local model artifacts and generated reports
 model_outputs/
 
+# Market data pulled from external APIs; keep raw quotes and mappings private/local
+market_data/
+.env
+
 # macOS
 .DS_Store
 

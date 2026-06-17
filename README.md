@@ -29,6 +29,8 @@ Ignored local outputs:
 - `kaggle_data/`
 - `fight_mentions.csv`
 - `joined_fights.csv`
+- `model_outputs/`
+- `market_data/`
 
 ## Pipeline
 
@@ -63,6 +65,16 @@ Train leakage-safe baseline models:
 ```bash
 /Users/aryog/anaconda3/bin/python train_baseline_models.py
 ```
+
+Pull real market prices and build edge tables:
+
+```bash
+python3 search_oddpool_markets.py --q "UFC mention" --exchange polymarket
+python3 fetch_oddpool_top_of_book.py --markets market_data/market_mappings.csv
+python3 build_edge_table.py --profile prefight_odds
+```
+
+See `MARKET_INTEGRATION.md` for the model-vs-market-price workflow.
 
 Verify the strict market matcher:
 
@@ -139,3 +151,21 @@ Interpretation: `submission` is the first clearly modelable market; `knockout` a
 `knocked out` show weaker but real signal; sparse markets like `doctor`, `TKO`, and
 `unanimous decision` need better features or a different modeling approach before
 they are usable for betting.
+
+## Market Price Layer
+
+The model estimates probabilities; it does **not** invent odds. A bettor-facing
+edge table requires real market prices from a venue or data provider. This repo has
+an Oddpool integration for:
+
+- searching real Polymarket/Kalshi markets
+- fetching historical top-of-book bid/ask/mid snapshots
+- joining real YES ask prices to model probabilities
+
+The key betting comparison is:
+
+```text
+edge_to_yes_ask = model_probability - real_yes_ask
+```
+
+Rows without a real `yes_ask` remain blank. No synthetic prices are used.
