@@ -10,8 +10,7 @@ Inputs:
     python3 join_kaggle_outcomes.py
 
 Targets:
-  mention_knockout, mention_tko, mention_knocked_out, mention_submission,
-  mention_split_decision, mention_unanimous_decision, mention_doctor
+  Loaded from market_phrases.txt. Each phrase becomes mention_<slug>.
 
 Leakage policy:
   Features must be knowable before the fight. We explicitly exclude:
@@ -44,7 +43,6 @@ from __future__ import annotations
 import argparse
 import csv
 import math
-import sys
 from pathlib import Path
 
 
@@ -69,30 +67,16 @@ except ImportError as exc:  # pragma: no cover - user-facing environment check
         f"Original import error: {exc}"
     )
 
+from phrase_targets import phrase_columns
+
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 JOINED_DEFAULT = PROJECT_ROOT / "joined_fights.csv"
 OUT_DIR_DEFAULT = PROJECT_ROOT / "model_outputs"
 
-TARGETS = [
-    "mention_knockout",
-    "mention_tko",
-    "mention_knocked_out",
-    "mention_submission",
-    "mention_split_decision",
-    "mention_unanimous_decision",
-    "mention_doctor",
-]
-
-TARGET_LABELS = {
-    "mention_knockout": "knockout",
-    "mention_tko": "TKO",
-    "mention_knocked_out": "knocked out",
-    "mention_submission": "submission",
-    "mention_split_decision": "split decision",
-    "mention_unanimous_decision": "unanimous decision",
-    "mention_doctor": "doctor",
-}
+PHRASE_COLUMNS = phrase_columns()
+TARGETS = [column for column, _phrase in PHRASE_COLUMNS]
+TARGET_LABELS = {column: phrase for column, phrase in PHRASE_COLUMNS}
 
 # Columns that are definitely not allowed into any predictive feature set.
 ALWAYS_EXCLUDE = {
@@ -388,12 +372,21 @@ def train_profile(df, train, test, profile, include_identity):
         test_rate = y_test.mean()
         base_prob = np.repeat(train_rate, len(y_test))
 
-        best_c, val_loss = tune_c(x_fit, y_fit, x_val, y_val, numeric_cols, categorical_cols)
-        pipe = make_pipeline(numeric_cols, categorical_cols, best_c)
-        pipe.fit(x_fit, y_fit)
-        val_prob = pipe.predict_proba(x_val)[:, 1]
-        raw_prob = pipe.predict_proba(x_test)[:, 1]
-        prob, calibrated = calibrate_from_validation(y_val, val_prob, raw_prob)
+        pipe = None
+        if len(set(y_fit)) < 2:
+            # Very rare phrases can be all-zero in the fit window. Keep the target
+            # in outputs with a base-rate fallback instead of crashing the run.
+            best_c = ""
+            val_loss = float("nan")
+            prob = base_prob
+            calibrated = False
+        else:
+            best_c, val_loss = tune_c(x_fit, y_fit, x_val, y_val, numeric_cols, categorical_cols)
+            pipe = make_pipeline(numeric_cols, categorical_cols, best_c)
+            pipe.fit(x_fit, y_fit)
+            val_prob = pipe.predict_proba(x_val)[:, 1]
+            raw_prob = pipe.predict_proba(x_test)[:, 1]
+            prob, calibrated = calibrate_from_validation(y_val, val_prob, raw_prob)
 
         model_log_loss = log_loss(y_test, prob, labels=[0, 1])
         base_log_loss = log_loss(y_test, base_prob, labels=[0, 1])
@@ -432,7 +425,8 @@ def train_profile(df, train, test, profile, include_identity):
             "categorical_features": len(categorical_cols),
         })
         all_calibration.extend(calibration_rows(profile, target, y_test, prob))
-        all_coefficients.extend(coefficient_rows(profile, target, pipe))
+        if pipe is not None:
+            all_coefficients.extend(coefficient_rows(profile, target, pipe))
         all_predictions[f"{target}_actual"] = y_test.values
         all_predictions[f"{target}_prob"] = prob
 

@@ -36,18 +36,27 @@ up prices.
      "say" markets.
    - Produces `market_data/classified_markets.csv`.
 
-4. `market_data/market_mappings.csv`
+4. `market_phrases.txt`
+   - Human-reviewed list of exact literal phrases to model.
+   - Add phrases that real markets actually ask about, such as `guillotine`,
+     `choke`, or `eye poke`.
+
+5. `build_match_csv.py` and `train_baseline_models.py`
+   - Read `market_phrases.txt`.
+   - Rebuild strict mention labels and train one probability model per phrase.
+
+6. `market_data/market_mappings.csv`
    - Human-reviewed mapping from a market question to:
      - fight/transcript id
      - literal phrase target
      - exchange / market id / token id
    - Use `market_mappings.example.csv` as the template.
 
-5. `fetch_oddpool_top_of_book.py`
+7. `fetch_oddpool_top_of_book.py`
    - Pulls real historical bid/ask/mid snapshots from Oddpool.
    - Produces `market_data/oddpool_top_of_book.csv`.
 
-6. `build_edge_table.py`
+8. `build_edge_table.py`
    - Joins model probabilities to real quotes.
    - Produces `market_data/edge_table.csv`.
 
@@ -100,6 +109,27 @@ python3 classify_market_candidates.py market_data/oddpool_*.csv \
 
 The classifier is only triage. Human review is still required before mapping a
 market to a target.
+
+It also flags non-simple markets:
+
+- `simple_binary`: phrase appears at least once
+- `threshold`: phrase must appear N+ times
+- `or`: either of multiple phrases can satisfy the market
+- `or_threshold`: both complications at once
+
+The current model is built for `simple_binary` phrase markets. Threshold/OR markets
+need count-based or combined-label targets before edge can be computed honestly.
+
+When a real market phrase is useful, add the exact literal phrase to
+`market_phrases.txt`, then rebuild:
+
+```bash
+python3 build_match_csv.py
+python3 join_kaggle_outcomes.py
+/Users/aryog/anaconda3/bin/python train_baseline_models.py
+```
+
+This makes the model follow real market demand instead of a guessed phrase list.
 
 ## Mapping Markets
 

@@ -12,6 +12,9 @@ market. For example, a real market on the literal word `knockout` should not cou
 - **Broad commentary patterns:** synonym groups, useful for understanding language
   but not for settling a real market.
 
+Literal phrase targets live in `market_phrases.txt`, so the model can follow the
+phrases real markets actually list.
+
 ## Data
 
 Raw transcript data lives locally in `ufc_cleaned_export/`: 5,581 gzip-compressed
@@ -140,18 +143,24 @@ Current holdout results are promising but uneven:
 
 | target phrase | best profile | AUC | test Yes rate | top-decile actual Yes rate | log-loss improvement vs base rate |
 |---|---|---:|---:|---:|---:|
+| `championship` | `stats_only` | 0.783 | 12.2% | 50.0% | +0.0725 |
+| `choke` | `stats_only` | 0.684 | 30.5% | 54.5% | +0.0435 |
 | `submission` | `prefight_odds` | 0.663 | 46.2% | 70.9% | +0.0425 |
+| `triangle` | `prefight_odds` | 0.655 | 30.3% | 48.2% | +0.0289 |
+| `guillotine` | `prefight_odds` | 0.629 | 22.6% | 36.4% | +0.0201 |
 | `knockout` | `prefight_odds` | 0.575 | 29.4% | 35.5% | +0.0125 |
+| `what a fight` | `stats_only` | 0.583 | 10.4% | 18.2% | +0.0107 |
 | `knocked out` | `stats_only` | 0.596 | 9.2% | 13.6% | +0.0031 |
 | `split decision` | `stats_only` | 0.579 | 3.0% | 6.4% | +0.0009 |
 | `TKO` | `prefight_odds` | 0.496 | 7.1% | 5.5% | +0.0004 |
 | `unanimous decision` | `prefight_odds` | 0.531 | 8.0% | 10.9% | -0.0010 |
 | `doctor` | `prefight_odds` | 0.529 | 4.7% | 5.5% | -0.0029 |
 
-Interpretation: `submission` is the first clearly modelable market; `knockout` and
-`knocked out` show weaker but real signal; sparse markets like `doctor`, `TKO`, and
-`unanimous decision` need better features or a different modeling approach before
-they are usable for betting.
+Interpretation: market-discovered announcer phrases are often more modelable than
+the original guessed targets. `championship`, `choke`, `submission`, `triangle`,
+and `guillotine` have the clearest first-pass signal. Sparse or event-specific
+phrases like `doctor`, `TKO`, `president`, `pounce`, and `trump` need better
+features or a different modeling approach before they are usable for betting.
 
 ## Market Price Layer
 
@@ -161,6 +170,7 @@ an Oddpool integration for:
 
 - searching real Polymarket/Kalshi markets
 - classifying search results into likely mention markets vs fight-outcome markets
+- adding real market phrases to `market_phrases.txt`
 - fetching historical top-of-book bid/ask/mid snapshots
 - joining real YES ask prices to model probabilities
 
