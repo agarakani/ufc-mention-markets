@@ -183,7 +183,11 @@
     )).join("");
 
     const generated = data.generated_at ? new Date(data.generated_at).toLocaleString() : "unknown";
-    els.status.textContent = `Local data built ${generated}`;
+    const dateRange = summary.min_event_date && summary.max_event_date
+      ? ` card date ${summary.min_event_date === summary.max_event_date ? summary.max_event_date : `${summary.min_event_date} to ${summary.max_event_date}`}`
+      : "";
+    const stale = summary.upcoming_input_is_stale ? " stale upcoming input" : " current upcoming input";
+    els.status.textContent = `Local data built ${generated};${dateRange};${stale}`;
   }
 
   function render() {

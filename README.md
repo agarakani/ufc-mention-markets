@@ -76,6 +76,12 @@ python3 build_dashboard_data.py
 
 Open `dashboard/index.html` in a browser.
 
+Refresh predictions and dashboard output after `upcoming.csv` changes:
+
+```bash
+python3 refresh_dashboard.py
+```
+
 ## Phrase Targets
 
 The phrase list lives in `market_phrases.txt`. Each phrase becomes a strict
