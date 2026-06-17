@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>UFC Mention Markets</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">UFC mention markets</p>
+          <h1>Model board</h1>
+        </div>
+        <div class="status" id="dataStatus">Loading local data</div>
+      </header>
+
+      <section class="stats" id="stats"></section>
+
+      <section class="controls" aria-label="Dashboard controls">
+        <div class="segments" id="viewButtons">
+          <button class="segment is-active" data-view="edges" type="button">Edges</button>
+          <button class="segment" data-view="events" type="button">Events</button>
+          <button class="segment" data-view="fights" type="button">Fights</button>
+          <button class="segment" data-view="markets" type="button">Markets</button>
+          <button class="segment" data-view="metrics" type="button">Model</button>
+        </div>
+        <label class="field">
+          <span>Phrase</span>
+          <select id="phraseFilter">
+            <option value="">All phrases</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Scope</span>
+          <select id="scopeFilter">
+            <option value="">All scopes</option>
+            <option value="event">Event</option>
+            <option value="fight">Fight</option>
+          </select>
+        </label>
+        <label class="field search">
+          <span>Search</span>
+          <input id="searchInput" type="search" placeholder="fighter, phrase, market">
+        </label>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2 id="tableTitle">Edges</h2>
+            <p id="tableMeta"></p>
+          </div>
+          <button class="ghost" id="resetButton" type="button">Reset</button>
+        </div>
+        <div class="table-wrap">
+          <table id="dataTable">
+            <thead id="tableHead"></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -68,6 +68,14 @@ python3 fetch_oddpool_top_of_book.py --markets market_data/market_mappings.csv
 python3 build_edge_table.py --profile prefight_odds
 ```
 
+Build the local dashboard data:
+
+```bash
+python3 build_dashboard_data.py
+```
+
+Open `dashboard/index.html` in a browser.
+
 ## Phrase Targets
 
 The phrase list lives in `market_phrases.txt`. Each phrase becomes a strict

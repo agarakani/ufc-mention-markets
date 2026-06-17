@@ -15,6 +15,9 @@ model_outputs/
 market_data/
 .env
 
+# Local dashboard export
+dashboard/data.js
+
 # macOS
 .DS_Store
 
