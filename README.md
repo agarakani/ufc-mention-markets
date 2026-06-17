@@ -136,3 +136,6 @@ P(any fight mentions phrase) = 1 - product(1 - per_fight_probability)
 ```
 
 See `MARKET_INTEGRATION.md` for the market-data workflow.
+
+Fight-specific markets use the fight-level prediction directly. Event-wide markets
+use the aggregated event probability.

@@ -1,1 +1,3 @@
-transcript_id,event_date,fighter_1,fighter_2,phrase,exchange,market_id,asset_id,token_side,question,price_start_iso,price_end_iso,notes
+scope,transcript_id,event_date,location,fighter_1,fighter_2,phrase,exchange,market_id,asset_id,token_side,question,price_start_iso,price_end_iso,notes
+fight,upcoming_2026_04_04_renato_moicano_vs_chris_duncan,2026-04-04,"Las Vegas, Nevada, USA",Renato Moicano,Chris Duncan,guillotine,polymarket,0x...,YES_TOKEN_ID,YES,"Will announcers say Guillotine during Moicano vs Duncan?",,,
+event,,2026-04-04,"Las Vegas, Nevada, USA",,,guillotine,polymarket,0x...,YES_TOKEN_ID,YES,"Will announcers say Guillotine during the UFC event?",,,

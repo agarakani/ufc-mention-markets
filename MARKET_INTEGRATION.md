@@ -99,6 +99,19 @@ model_outputs/upcoming_event_predictions.csv
 
 After mapping a real market in `market_data/market_mappings.csv`, fetch quotes:
 
+```csv
+scope,transcript_id,event_date,location,fighter_1,fighter_2,phrase,exchange,market_id,asset_id,token_side,question,price_start_iso,price_end_iso,notes
+fight,upcoming_2026_04_04_renato_moicano_vs_chris_duncan,2026-04-04,"Las Vegas, Nevada, USA",Renato Moicano,Chris Duncan,guillotine,polymarket,0x...,YES_TOKEN_ID,YES,"Will announcers say Guillotine during Moicano vs Duncan?",,,
+event,,2026-04-04,"Las Vegas, Nevada, USA",,,guillotine,polymarket,0x...,YES_TOKEN_ID,YES,"Will announcers say Guillotine during the UFC event?",,,
+```
+
+Use:
+
+- `scope=fight` for fight-specific markets
+- `scope=event` for card/event-wide markets
+
+Then fetch quotes:
+
 ```bash
 python3 fetch_oddpool_top_of_book.py \
   --markets market_data/market_mappings.csv
