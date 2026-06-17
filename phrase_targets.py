@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Shared literal phrase target definitions.
-
-Market phrases live in market_phrases.txt so the project can follow the actual
-phrases listed by Polymarket/Kalshi rather than a hard-coded guess.
-"""
+"""Shared literal phrase target definitions."""
 
 from __future__ import annotations
 

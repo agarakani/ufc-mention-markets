@@ -1,18 +1,13 @@
 #!/usr/bin/env python3
-"""Join model probabilities to real market prices and compute YES edge.
+"""Join model probabilities to market prices and compute YES edge.
 
-This script does not fetch prices and does not invent prices. It consumes:
+Inputs:
   - model_outputs/baseline_predictions.csv
   - market_data/market_mappings.csv
   - market_data/oddpool_top_of_book.csv
 
-The market mapping file is intentionally manual/reviewed because matching a
-prediction-market question to a fight and literal phrase is a high-risk step.
-
 Edge definition for buying YES:
   edge_to_yes_ask = model_probability - real_yes_ask
-
-Rows without a real YES ask remain blank; that is safer than pretending a price.
 """
 
 from __future__ import annotations

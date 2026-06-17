@@ -35,7 +35,7 @@ Outputs:
   model_outputs/baseline_predictions.csv
 
 Run:
-  /Users/aryog/anaconda3/bin/python train_baseline_models.py
+  python train_baseline_models.py
 """
 
 from __future__ import annotations
@@ -60,10 +60,10 @@ try:
     )
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import OneHotEncoder, StandardScaler
-except ImportError as exc:  # pragma: no cover - user-facing environment check
+except ImportError as exc:  # pragma: no cover
     raise SystemExit(
-        "Missing ML dependencies. This machine has them in Anaconda, so run:\n"
-        "  /Users/aryog/anaconda3/bin/python train_baseline_models.py\n\n"
+        "Missing ML dependencies. Install them with:\n"
+        "  pip install -r requirements.txt\n\n"
         f"Original import error: {exc}"
     )
 

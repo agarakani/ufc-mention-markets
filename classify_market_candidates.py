@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
-"""Classify Oddpool search results into likely market types.
-
-This is a triage helper, not a source of truth. It helps separate:
-  - actual mention markets: "Will the announcers say 'Guillotine'..."
-  - fight outcome markets: "Will the fight be won by submission?"
-  - unrelated UFC chatter markets: "Will Trump say 'UFC'..."
-
-The output is still meant for human review before anything is mapped to model
-targets or used for an edge table.
-"""
+"""Classify Oddpool search results into likely market types."""
 
 from __future__ import annotations
 
