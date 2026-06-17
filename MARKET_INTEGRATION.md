@@ -45,18 +45,25 @@ up prices.
    - Read `market_phrases.txt`.
    - Rebuild strict mention labels and train one probability model per phrase.
 
-6. `market_data/market_mappings.csv`
+6. `predict_upcoming_mentions.py`
+   - Predicts fight-level probabilities for a Kaggle-style upcoming card.
+   - Aggregates them to event-level probabilities for simple binary "during the
+     event" markets.
+   - Produces `model_outputs/upcoming_fight_predictions.csv` and
+     `model_outputs/upcoming_event_predictions.csv`.
+
+7. `market_data/market_mappings.csv`
    - Human-reviewed mapping from a market question to:
      - fight/transcript id
      - literal phrase target
      - exchange / market id / token id
    - Use `market_mappings.example.csv` as the template.
 
-7. `fetch_oddpool_top_of_book.py`
+8. `fetch_oddpool_top_of_book.py`
    - Pulls real historical bid/ask/mid snapshots from Oddpool.
    - Produces `market_data/oddpool_top_of_book.csv`.
 
-8. `build_edge_table.py`
+9. `build_edge_table.py`
    - Joins model probabilities to real quotes.
    - Produces `market_data/edge_table.csv`.
 
@@ -130,6 +137,21 @@ python3 join_kaggle_outcomes.py
 ```
 
 This makes the model follow real market demand instead of a guessed phrase list.
+
+For event-level markets, run:
+
+```bash
+/Users/aryog/anaconda3/bin/python predict_upcoming_mentions.py
+```
+
+The event-level aggregation is:
+
+```text
+P(any fight mentions phrase) = 1 - product(1 - per_fight_probability)
+```
+
+This is appropriate only for simple binary "said during event" markets. It is not
+appropriate for threshold markets like "5+ times" without count modeling.
 
 ## Mapping Markets
 
