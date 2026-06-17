@@ -58,6 +58,12 @@ Run the first outcome-vs-mention sanity report:
 python3 analyze_outcome_mentions.py
 ```
 
+Train leakage-safe baseline models:
+
+```bash
+/Users/aryog/anaconda3/bin/python train_baseline_models.py
+```
+
 Verify the strict market matcher:
 
 ```bash
@@ -100,3 +106,36 @@ Early interpretation:
   different base rates.
 - `doctor` is useful as a standalone mention market, but this Kaggle file does not
   expose a clean current-fight doctor-stoppage outcome field.
+
+## Baseline Modeling Status
+
+`train_baseline_models.py` trains one calibrated logistic-regression baseline per
+strict phrase target. It uses a chronological split:
+
+- Train: 3,377 older matched fights
+- Test: 1,092 later matched fights
+- First test date: 2023-02-18
+
+To avoid leakage, the model excludes transcript text, transcript duration, actual
+winner, actual finish, finish round/time, and fight duration. It compares two
+feature profiles:
+
+- `stats_only`: pre-fight fighter/event stats, no betting odds
+- `prefight_odds`: `stats_only` plus pre-fight moneyline/method odds from Kaggle
+
+Current holdout results are promising but uneven:
+
+| target phrase | best profile | AUC | test Yes rate | top-decile actual Yes rate | log-loss improvement vs base rate |
+|---|---|---:|---:|---:|---:|
+| `submission` | `prefight_odds` | 0.663 | 46.2% | 70.9% | +0.0425 |
+| `knockout` | `prefight_odds` | 0.575 | 29.4% | 35.5% | +0.0125 |
+| `knocked out` | `stats_only` | 0.596 | 9.2% | 13.6% | +0.0031 |
+| `split decision` | `stats_only` | 0.579 | 3.0% | 6.4% | +0.0009 |
+| `TKO` | `prefight_odds` | 0.496 | 7.1% | 5.5% | +0.0004 |
+| `unanimous decision` | `prefight_odds` | 0.531 | 8.0% | 10.9% | -0.0010 |
+| `doctor` | `prefight_odds` | 0.529 | 4.7% | 5.5% | -0.0029 |
+
+Interpretation: `submission` is the first clearly modelable market; `knockout` and
+`knocked out` show weaker but real signal; sparse markets like `doctor`, `TKO`, and
+`unanimous decision` need better features or a different modeling approach before
+they are usable for betting.
