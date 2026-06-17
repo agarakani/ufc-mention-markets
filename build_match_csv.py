@@ -26,6 +26,7 @@ PHRASE_COLUMNS = [
     ("mention_split_decision", "split decision"),
     ("mention_unanimous_decision", "unanimous decision"),
     ("mention_doctor", "doctor"),
+    ("mention_submission", "submission"),
 ]
 
 # Identifier / context columns (help the later outcome join; trim if you don't need them).
