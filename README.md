@@ -82,6 +82,17 @@ Refresh predictions and dashboard output after `upcoming.csv` changes:
 python3 refresh_dashboard.py
 ```
 
+Run the leakage-safe historical market backtest pipeline:
+
+```bash
+python3 refresh_historical_backtest.py
+```
+
+This pulls official Polymarket token/resolution metadata, fetches historical
+Oddpool asks, refits each prediction using only earlier fights, and evaluates a
+fixed-stake strategy at a pre-event cutoff. See `MARKET_INTEGRATION.md` for the
+data-quality rules and assumptions.
+
 ## Phrase Targets
 
 The phrase list lives in `market_phrases.txt`. Each phrase becomes a strict

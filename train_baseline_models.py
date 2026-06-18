@@ -68,6 +68,7 @@ except ImportError as exc:  # pragma: no cover
     )
 
 from phrase_targets import phrase_columns
+from fighter_history_features import FEATURE_PREFIX, add_prior_fighter_features, feature_names
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -165,13 +166,20 @@ def chronological_split(df: pd.DataFrame, test_frac: float) -> tuple[pd.DataFram
     return train, test, first_test_date.isoformat()
 
 
-def feature_columns(df: pd.DataFrame, profile: str, include_identity: bool) -> list[str]:
+def feature_columns(
+    df: pd.DataFrame,
+    profile: str,
+    include_identity: bool,
+    target: str | None = None,
+) -> list[str]:
+    use_history = profile.endswith("_history")
+    base_profile = profile.removesuffix("_history")
     excluded = set(ALWAYS_EXCLUDE) | set(TARGETS)
     if not include_identity:
         excluded |= IDENTITY_COLUMNS
-    if profile == "stats_only":
+    if base_profile == "stats_only":
         excluded |= ODDS_COLUMNS
-    elif profile == "prefight_odds":
+    elif base_profile == "prefight_odds":
         pass
     else:
         raise ValueError(f"unknown profile: {profile}")
@@ -183,7 +191,16 @@ def feature_columns(df: pd.DataFrame, profile: str, include_identity: bool) -> l
         if col.startswith("mention_"):
             continue
         # The joined file prefixes all Kaggle fields with kaggle_, plus we add date features.
-        if col.startswith("kaggle_") or col in {"weight_class", "event_year", "event_month", "event_quarter"}:
+        if (
+            col.startswith("kaggle_")
+            or col in {"weight_class", "event_year", "event_month", "event_quarter"}
+            or (
+                use_history
+                and target is not None
+                and col.startswith(FEATURE_PREFIX)
+                and col in feature_names(target)
+            )
+        ):
             cols.append(col)
     return cols
 
@@ -301,6 +318,67 @@ def calibration_rows(profile, target, y_true, y_prob, bins=5):
     return rows
 
 
+def event_evaluation(predictions: pd.DataFrame, train: pd.DataFrame):
+    """Evaluate the fight-to-event independence aggregation on held-out cards."""
+    metric_rows = []
+    calibration = []
+    for profile, part in predictions.groupby("profile"):
+        for target in TARGETS:
+            actual_col = f"{target}_actual"
+            prob_col = f"{target}_prob"
+            if actual_col not in part or prob_col not in part:
+                continue
+            event_rows = []
+            for event_date, event in part.groupby("event_date"):
+                probs = np.clip(pd.to_numeric(event[prob_col], errors="coerce").dropna(), 0, 1)
+                actual = pd.to_numeric(event[actual_col], errors="coerce").dropna()
+                if probs.empty or actual.empty:
+                    continue
+                event_rows.append({
+                    "event_date": event_date,
+                    "actual": int(actual.max()),
+                    "probability": float(1.0 - np.prod(1.0 - probs)),
+                    "fight_count": len(event),
+                })
+            if not event_rows:
+                continue
+            event_df = pd.DataFrame(event_rows)
+            y_true = event_df["actual"].astype(int)
+            y_prob = event_df["probability"].to_numpy()
+
+            train_events = pd.DataFrame({
+                "event_date": train["event_date"],
+                "actual": bool_series(train[target]).astype(int),
+            }).groupby("event_date")["actual"].max()
+            base_rate = float(train_events.mean())
+            base_prob = np.repeat(base_rate, len(event_df))
+            model_loss = log_loss(y_true, y_prob, labels=[0, 1])
+            base_loss = log_loss(y_true, base_prob, labels=[0, 1])
+            model_brier = brier_score_loss(y_true, y_prob)
+            base_brier = brier_score_loss(y_true, base_prob)
+            metric_rows.append({
+                "profile": profile,
+                "target": target,
+                "label": TARGET_LABELS[target],
+                "test_events": len(event_df),
+                "test_positive_rate": float(y_true.mean()),
+                "test_positives": int(y_true.sum()),
+                "train_event_positive_rate": base_rate,
+                "auc": safe_auc(y_true, y_prob),
+                "average_precision": safe_ap(y_true, y_prob),
+                "model_log_loss": model_loss,
+                "base_log_loss": base_loss,
+                "log_loss_improvement": base_loss - model_loss,
+                "model_brier": model_brier,
+                "base_brier": base_brier,
+                "brier_improvement": base_brier - model_brier,
+                "mean_fights_per_event": float(event_df["fight_count"].mean()),
+                "aggregation_method": "independence_baseline",
+            })
+            calibration.extend(calibration_rows(profile, target, y_true, y_prob))
+    return pd.DataFrame(metric_rows), pd.DataFrame(calibration)
+
+
 def get_feature_names(pipe: Pipeline) -> np.ndarray:
     try:
         return pipe.named_steps["prep"].get_feature_names_out()
@@ -332,18 +410,7 @@ def fmt_pct(value):
 
 
 def train_profile(df, train, test, profile, include_identity):
-    cols = feature_columns(df, profile=profile, include_identity=include_identity)
-    numeric_cols, categorical_cols, prepared = split_feature_types(df, cols)
-    x_train = prepared.loc[train.index]
-    x_test = prepared.loc[test.index]
     fit_train, val, first_val_date = chronological_split(train, test_frac=0.20)
-    x_fit = prepared.loc[fit_train.index]
-    x_val = prepared.loc[val.index]
-
-    # Hard assertion against accidental leakage. If this trips, the script should fail loudly.
-    forbidden = set(cols) & (ALWAYS_EXCLUDE | set(TARGETS))
-    if forbidden:
-        raise RuntimeError(f"Leakage columns entered feature set: {sorted(forbidden)}")
 
     metrics = []
     all_calibration = []
@@ -357,6 +424,21 @@ def train_profile(df, train, test, profile, include_identity):
     })
 
     for target in TARGETS:
+        cols = feature_columns(
+            df,
+            profile=profile,
+            include_identity=include_identity,
+            target=target,
+        )
+        numeric_cols, categorical_cols, prepared = split_feature_types(df, cols)
+        # Hard assertion against accidental leakage. If this trips, fail loudly.
+        forbidden = set(cols) & (ALWAYS_EXCLUDE | set(TARGETS))
+        if forbidden:
+            raise RuntimeError(f"Leakage columns entered feature set: {sorted(forbidden)}")
+        x_test = prepared.loc[test.index]
+        x_fit = prepared.loc[fit_train.index]
+        x_val = prepared.loc[val.index]
+
         y_train = bool_series(train[target])
         y_fit = bool_series(fit_train[target])
         y_val = bool_series(val[target])
@@ -515,7 +597,11 @@ def main():
     parser.add_argument("--input", default=str(JOINED_DEFAULT), help="joined_fights.csv path")
     parser.add_argument("--out-dir", default=str(OUT_DIR_DEFAULT), help="where generated model outputs go")
     parser.add_argument("--test-frac", type=float, default=0.20, help="fraction of event dates reserved for test")
-    parser.add_argument("--profile", choices=["all", "stats_only", "prefight_odds"], default="all")
+    parser.add_argument(
+        "--profile",
+        choices=["all", "stats_only", "prefight_odds", "stats_only_history", "prefight_odds_history"],
+        default="all",
+    )
     parser.add_argument(
         "--include-identity",
         action="store_true",
@@ -535,8 +621,13 @@ def main():
     if missing_targets:
         raise SystemExit(f"Missing target columns in {input_path}: {missing_targets}")
 
+    df, _ = add_prior_fighter_features(df, TARGETS)
     train, test, first_test_date = chronological_split(df, args.test_frac)
-    profiles = ["stats_only", "prefight_odds"] if args.profile == "all" else [args.profile]
+    profiles = (
+        ["stats_only", "prefight_odds", "stats_only_history", "prefight_odds_history"]
+        if args.profile == "all"
+        else [args.profile]
+    )
 
     metric_frames = []
     calibration_frames = []
@@ -566,11 +657,14 @@ def main():
     calibration = pd.concat(calibration_frames, ignore_index=True)
     coefficients = pd.concat(coefficient_frames, ignore_index=True)
     predictions = pd.concat(prediction_frames, ignore_index=True)
+    event_metrics, event_calibration = event_evaluation(predictions, train)
 
     metrics.to_csv(out_dir / "baseline_metrics.csv", index=False, quoting=csv.QUOTE_MINIMAL)
     calibration.to_csv(out_dir / "baseline_calibration.csv", index=False, quoting=csv.QUOTE_MINIMAL)
     coefficients.to_csv(out_dir / "baseline_top_features.csv", index=False, quoting=csv.QUOTE_MINIMAL)
     predictions.to_csv(out_dir / "baseline_predictions.csv", index=False, quoting=csv.QUOTE_MINIMAL)
+    event_metrics.to_csv(out_dir / "baseline_event_metrics.csv", index=False, quoting=csv.QUOTE_MINIMAL)
+    event_calibration.to_csv(out_dir / "baseline_event_calibration.csv", index=False, quoting=csv.QUOTE_MINIMAL)
     write_manifest(out_dir, args, first_test_date, feature_info)
 
     print(f"Rows: train={len(train)}, test={len(test)}, total={len(df)}")

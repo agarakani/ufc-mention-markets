@@ -130,3 +130,37 @@ edge_to_yes_ask = model_probability - yes_ask
 ```
 
 Rows without a real `yes_ask` are left blank.
+
+## Historical Backtest
+
+The historical workflow uses separate authoritative sources:
+
+- Polymarket supplies YES/NO token IDs, event time, and official resolution.
+- Oddpool supplies timestamped historical asks for each token.
+- The UFC model is refit using only fights before each market's event date.
+
+Run the complete workflow with the Python environment that has the project
+requirements installed:
+
+```bash
+python3 refresh_historical_backtest.py
+```
+
+Or run each audit stage separately:
+
+```bash
+python3 fetch_polymarket_metadata.py
+python3 build_historical_market_ledger.py
+python3 predict_historical_markets.py
+python3 fetch_oddpool_top_of_book.py \
+  --markets market_data/historical_market_ledger.csv \
+  --out market_data/historical_top_of_book.csv \
+  --pages 100
+python3 backtest_historical_markets.py
+```
+
+The backtest uses the latest real ask no more than 30 minutes old at a cutoff
+60 minutes before the event. It does not substitute midpoint, last trade, or a
+derived complementary price. Fee and slippage assumptions are explicit CLI
+arguments. Results remain labeled `insufficient_sample` until at least 30 trades
+qualify.

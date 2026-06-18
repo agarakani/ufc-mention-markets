@@ -59,7 +59,13 @@ def _clean_params(params: dict) -> dict:
     return {k: v for k, v in params.items() if v not in (None, "", [])}
 
 
-def request_json(path: str, params: dict | None = None, *, sleep_s: float = 0.0):
+def request_json(
+    path: str,
+    params: dict | None = None,
+    *,
+    sleep_s: float = 0.0,
+    retries: int = 5,
+):
     query = urllib.parse.urlencode(_clean_params(params or {}))
     url = f"{BASE_URL}{path}"
     if query:
@@ -74,14 +80,32 @@ def request_json(path: str, params: dict | None = None, *, sleep_s: float = 0.0)
         },
         method="GET",
     )
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            payload = resp.read().decode("utf-8")
-    except urllib.error.HTTPError as exc:
-        body = exc.read().decode("utf-8", errors="replace")
-        raise OddpoolError(f"Oddpool HTTP {exc.code} for {url}: {body}") from exc
-    except urllib.error.URLError as exc:
-        raise OddpoolError(f"Oddpool request failed for {url}: {exc}") from exc
+    payload = None
+    last_error = None
+    for attempt in range(retries):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                payload = resp.read().decode("utf-8")
+            break
+        except urllib.error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace")
+            last_error = OddpoolError(f"Oddpool HTTP {exc.code} for {url}: {body}")
+            if exc.code != 429 or attempt + 1 >= retries:
+                raise last_error from exc
+            retry_after = exc.headers.get("Retry-After", "")
+            try:
+                delay = float(retry_after)
+            except (TypeError, ValueError):
+                delay = 1.0 * (2**attempt)
+            time.sleep(max(delay, 0.5))
+        except urllib.error.URLError as exc:
+            last_error = OddpoolError(f"Oddpool request failed for {url}: {exc}")
+            if attempt + 1 >= retries:
+                raise last_error from exc
+            time.sleep(0.5 * (2**attempt))
+
+    if payload is None:
+        raise last_error or OddpoolError(f"Oddpool request failed for {url}")
 
     if sleep_s:
         time.sleep(sleep_s)
