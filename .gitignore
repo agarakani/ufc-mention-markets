@@ -3,6 +3,7 @@ ufc_cleaned_export/
 
 # Derived feature tables — regenerable via build_match_csv.py; keep data out of the public repo
 fight_mentions.csv
+vocabulary.csv
 
 # External outcome datasets — downloaded locally, not committed
 kaggle_data/

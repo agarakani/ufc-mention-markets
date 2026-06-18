@@ -76,6 +76,7 @@
       columns: [
         { key: "log_loss_improvement", label: "Lift", type: "signed", className: "num" },
         { key: "phrase", label: "Phrase", type: "pill" },
+        { key: "scope", label: "Level", type: "scope" },
         { key: "profile", label: "Profile" },
         { key: "auc", label: "AUC", type: "decimal", className: "num" },
         { key: "average_precision", label: "Avg precision", type: "decimal", className: "num" },
@@ -98,6 +99,12 @@
     tableMeta: document.getElementById("tableMeta"),
     tableHead: document.getElementById("tableHead"),
     tableBody: document.getElementById("tableBody"),
+    diagnostics: document.getElementById("modelDiagnostics"),
+    calibrationMeta: document.getElementById("calibrationMeta"),
+    calibrationChart: document.getElementById("calibrationChart"),
+    liftChart: document.getElementById("liftChart"),
+    featureChart: document.getElementById("featureChart"),
+    backtestChart: document.getElementById("backtestChart"),
   };
 
   function init() {
@@ -199,8 +206,119 @@
     els.scopeFilter.disabled = state.view !== "edges";
     els.tableTitle.textContent = view.title;
     els.tableMeta.textContent = `${formatInteger(rows.length)} rows`;
+    els.diagnostics.hidden = state.view !== "metrics";
+    if (state.view === "metrics") renderDiagnostics(rows);
     renderHeader(view.columns);
     renderBody(view.columns, rows, view.empty);
+  }
+
+  function selectedModelPhrase(metricRows) {
+    if (state.phrase) return state.phrase;
+    const eventWinner = metricRows.find((row) => row.scope === "event" && parseNumber(row.log_loss_improvement) > 0);
+    return String((eventWinner || metricRows[0] || {}).phrase || "").toLowerCase();
+  }
+
+  function renderDiagnostics(metricRows) {
+    const phrase = selectedModelPhrase(metricRows);
+    renderCalibration(phrase);
+    renderLift();
+    renderFeatures(phrase);
+    renderBacktest();
+  }
+
+  function renderCalibration(phrase) {
+    const rows = (data.calibration || []).filter((row) => String(row.phrase || "").toLowerCase() === phrase);
+    els.calibrationMeta.textContent = phrase || "Select a phrase";
+    if (!rows.length) {
+      els.calibrationChart.innerHTML = '<p class="chart-empty">No calibration rows for this phrase.</p>';
+      return;
+    }
+    const left = 42;
+    const top = 14;
+    const size = 210;
+    const point = (row) => {
+      const x = left + Math.max(0, Math.min(1, Number(row.mean_predicted))) * size;
+      const y = top + (1 - Math.max(0, Math.min(1, Number(row.actual_rate)))) * size;
+      return [x, y];
+    };
+    const series = ["fight", "event"].map((scope) => {
+      const scoped = rows.filter((row) => row.scope === scope).sort((a, b) => Number(a.mean_predicted) - Number(b.mean_predicted));
+      if (!scoped.length) return "";
+      const points = scoped.map(point);
+      const circles = points.map(([x, y], index) => (
+        `<circle class="cal-point ${scope}" cx="${x}" cy="${y}" r="5"><title>${scope}: predicted ${formatPercent(scoped[index].mean_predicted)}, actual ${formatPercent(scoped[index].actual_rate)}</title></circle>`
+      )).join("");
+      return `<polyline class="cal-line ${scope}" points="${points.map((p) => p.join(",")).join(" ")}"/>${circles}`;
+    }).join("");
+    els.calibrationChart.innerHTML = `
+      <svg class="calibration-svg" viewBox="0 0 300 260" role="img" aria-label="Predicted versus actual mention rate">
+        <line class="cal-axis" x1="${left}" y1="${top + size}" x2="${left + size}" y2="${top + size}"/>
+        <line class="cal-axis" x1="${left}" y1="${top}" x2="${left}" y2="${top + size}"/>
+        <line class="cal-perfect" x1="${left}" y1="${top + size}" x2="${left + size}" y2="${top}"/>
+        ${series}
+        <text x="${left + size / 2}" y="254" text-anchor="middle">Predicted probability</text>
+        <text x="12" y="${top + size / 2}" text-anchor="middle" transform="rotate(-90 12 ${top + size / 2})">Actual rate</text>
+        <text x="${left}" y="240" text-anchor="middle">0</text><text x="${left + size}" y="240" text-anchor="middle">1</text>
+        <text x="32" y="${top + size + 4}" text-anchor="end">0</text><text x="32" y="${top + 4}" text-anchor="end">1</text>
+      </svg>
+      <div class="legend"><span><i class="fight"></i>Fight</span><span><i class="event"></i>Event</span><span><i class="perfect"></i>Perfect</span></div>`;
+  }
+
+  function renderLift() {
+    const rows = (data.metrics || [])
+      .filter((row) => row.scope === "event" && parseNumber(row.log_loss_improvement) !== null)
+      .sort((a, b) => Number(b.log_loss_improvement) - Number(a.log_loss_improvement))
+      .slice(0, 8);
+    renderBars(els.liftChart, rows.map((row) => ({
+      label: row.phrase,
+      value: Number(row.log_loss_improvement),
+      display: formatSigned(row.log_loss_improvement),
+    })));
+  }
+
+  function renderFeatures(phrase) {
+    const rows = (data.features || [])
+      .filter((row) => String(row.phrase || "").toLowerCase() === phrase && parseNumber(row.coefficient) !== null)
+      .sort((a, b) => Math.abs(Number(b.coefficient)) - Math.abs(Number(a.coefficient)))
+      .slice(0, 8)
+      .map((row) => ({
+        label: cleanFeature(row.feature),
+        value: Number(row.coefficient),
+        display: `${Number(row.coefficient) > 0 ? "+" : ""}${Number(row.coefficient).toFixed(2)}`,
+      }));
+    renderBars(els.featureChart, rows);
+  }
+
+  function renderBars(element, rows) {
+    if (!rows.length) {
+      element.innerHTML = '<p class="chart-empty">No diagnostic rows available.</p>';
+      return;
+    }
+    const max = Math.max(...rows.map((row) => Math.abs(row.value)), 0.0001);
+    element.innerHTML = rows.map((row) => `
+      <div class="bar-row">
+        <div class="bar-label"><span title="${escapeHtml(row.label)}">${escapeHtml(row.label)}</span><strong>${escapeHtml(row.display)}</strong></div>
+        <div class="bar-track"><span class="bar-fill ${row.value >= 0 ? "good" : "bad"}" style="width:${Math.max(2, Math.abs(row.value) / max * 100)}%"></span></div>
+      </div>`).join("");
+  }
+
+  function renderBacktest() {
+    const summary = data.backtest || {};
+    const trades = Number(summary.trades || 0);
+    const minimum = Number(summary.minimum_trades_for_claim || 30);
+    const progress = Math.min(100, trades / Math.max(minimum, 1) * 100);
+    els.backtestChart.innerHTML = `
+      <div class="readiness-number"><strong>${formatInteger(trades)}</strong><span>of ${formatInteger(minimum)} minimum trades</span></div>
+      <div class="readiness-track"><span style="width:${progress}%"></span></div>
+      <p class="readiness-note">${escapeHtml(summary.claim_status === "sufficient_sample" ? "Evidence threshold reached" : "No performance claim yet")}</p>`;
+  }
+
+  function cleanFeature(value) {
+    return String(value || "")
+      .replace(/^(num|cat)__/, "")
+      .replace(/^kaggle_/, "")
+      .replace(/^fighter_history_/, "history: ")
+      .replace(/_/g, " ");
   }
 
   function deriveRow(row) {

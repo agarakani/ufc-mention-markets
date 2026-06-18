@@ -46,6 +46,46 @@
         </label>
       </section>
 
+      <section class="diagnostics" id="modelDiagnostics" hidden>
+        <article class="chart-card chart-wide">
+          <div class="chart-head">
+            <div>
+              <p class="eyebrow">Reliability</p>
+              <h2>Calibration</h2>
+            </div>
+            <p id="calibrationMeta"></p>
+          </div>
+          <div id="calibrationChart"></div>
+        </article>
+        <article class="chart-card">
+          <div class="chart-head">
+            <div>
+              <p class="eyebrow">Card-level validation</p>
+              <h2>Probability lift</h2>
+            </div>
+          </div>
+          <div id="liftChart" class="bar-chart"></div>
+        </article>
+        <article class="chart-card">
+          <div class="chart-head">
+            <div>
+              <p class="eyebrow">Selected phrase</p>
+              <h2>Model drivers</h2>
+            </div>
+          </div>
+          <div id="featureChart" class="bar-chart"></div>
+        </article>
+        <article class="chart-card">
+          <div class="chart-head">
+            <div>
+              <p class="eyebrow">Evidence gate</p>
+              <h2>Backtest readiness</h2>
+            </div>
+          </div>
+          <div id="backtestChart"></div>
+        </article>
+      </section>
+
       <section class="panel">
         <div class="panel-head">
           <div>

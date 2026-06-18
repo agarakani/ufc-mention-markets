@@ -38,6 +38,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from fighter_history_features import add_prior_fighter_features
 from mention_counts import last_name
 from train_baseline_models import (
     TARGETS,
@@ -89,18 +90,18 @@ def normalize_upcoming(raw: pd.DataFrame) -> pd.DataFrame:
 
 def best_profiles(metrics_path: Path) -> dict[str, str]:
     if not metrics_path.exists():
-        return {target: "prefight_odds" for target in TARGETS}
+        return {target: "prefight_odds_history" for target in TARGETS}
     metrics = pd.read_csv(metrics_path)
     profiles = {}
     for target, part in metrics.groupby("target"):
         part = part.sort_values(["log_loss_improvement", "auc"], ascending=[False, False])
         profiles[target] = part.iloc[0]["profile"]
-    return {target: profiles.get(target, "prefight_odds") for target in TARGETS}
+    return {target: profiles.get(target, "prefight_odds_history") for target in TARGETS}
 
 
 def train_predict_target(history, upcoming, target, profile):
     combined = pd.concat([history, upcoming], ignore_index=False, sort=False)
-    cols = feature_columns(combined, profile=profile, include_identity=False)
+    cols = feature_columns(combined, profile=profile, include_identity=False, target=target)
     numeric_cols, categorical_cols, prepared = split_feature_types(combined, cols)
     x_hist = prepared.loc[history.index]
     x_upcoming = prepared.loc[upcoming.index]
@@ -136,7 +137,11 @@ def main():
     parser.add_argument("--upcoming", default=str(UPCOMING_DEFAULT))
     parser.add_argument("--metrics", default=str(METRICS_DEFAULT))
     parser.add_argument("--out-dir", default=str(OUT_DIR_DEFAULT))
-    parser.add_argument("--profile", choices=["best", "stats_only", "prefight_odds"], default="best")
+    parser.add_argument(
+        "--profile",
+        choices=["best", "stats_only", "prefight_odds", "stats_only_history", "prefight_odds_history"],
+        default="best",
+    )
     args = parser.parse_args()
 
     history_path = Path(args.history)
@@ -153,6 +158,7 @@ def main():
     upcoming_raw = pd.read_csv(upcoming_path)
     upcoming = add_date_features(normalize_upcoming(upcoming_raw)).reset_index(drop=True)
     upcoming.index = [f"u_{i}" for i in range(len(upcoming))]
+    history, upcoming = add_prior_fighter_features(history, TARGETS, upcoming)
 
     profile_map = best_profiles(Path(args.metrics))
     if args.profile != "best":
