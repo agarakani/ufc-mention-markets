@@ -5,9 +5,9 @@ Goal:
   Predict P(strict phrase is mentioned) before a fight starts.
 
 Inputs:
-  joined_fights.csv, produced by:
-    python3 build_match_csv.py
-    python3 join_kaggle_outcomes.py
+  data/processed/joined_fights.csv, produced by:
+    python3 scripts/data/build_match_csv.py
+    python3 scripts/data/join_kaggle_outcomes.py
 
 Targets:
   Loaded from market_phrases.txt. Each phrase becomes mention_<slug>.
@@ -67,12 +67,12 @@ except ImportError as exc:  # pragma: no cover
         f"Original import error: {exc}"
     )
 
-from phrase_targets import phrase_columns
-from fighter_history_features import FEATURE_PREFIX, add_prior_fighter_features, feature_names
+from .phrase_targets import phrase_columns
+from .fighter_history_features import FEATURE_PREFIX, add_prior_fighter_features, feature_names
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent
-JOINED_DEFAULT = PROJECT_ROOT / "joined_fights.csv"
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+JOINED_DEFAULT = PROJECT_ROOT / "data" / "processed" / "joined_fights.csv"
 OUT_DIR_DEFAULT = PROJECT_ROOT / "model_outputs"
 
 PHRASE_COLUMNS = phrase_columns()
@@ -612,7 +612,7 @@ def main():
     input_path = Path(args.input)
     out_dir = Path(args.out_dir)
     if not input_path.exists():
-        raise SystemExit(f"Missing {input_path}. Run python3 join_kaggle_outcomes.py first.")
+        raise SystemExit(f"Missing {input_path}. Run python3 scripts/data/join_kaggle_outcomes.py first.")
     out_dir.mkdir(parents=True, exist_ok=True)
 
     df = pd.read_csv(input_path)

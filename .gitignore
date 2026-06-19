@@ -1,13 +1,11 @@
 # Raw UFC transcript dataset — ~52MB of gzip'd JSON, not committed to the public repo
 ufc_cleaned_export/
 
-# Derived feature tables — regenerable via build_match_csv.py; keep data out of the public repo
-fight_mentions.csv
-vocabulary.csv
+# Derived feature tables
+data/processed/
 
 # External outcome datasets — downloaded locally, not committed
 kaggle_data/
-joined_fights.csv
 
 # Local model artifacts and generated reports
 model_outputs/
@@ -15,6 +13,8 @@ model_outputs/
 # Market data pulled from external APIs; keep raw quotes and mappings private/local
 market_data/
 .env
+*.key
+*.pem
 
 # Local dashboard export
 dashboard/data.js

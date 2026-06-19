@@ -7,13 +7,14 @@ Join rule, intentionally simple for the first pass:
 The script auto-detects a fight-level CSV inside the Kaggle download by looking
 for common UFC schema variants (R_fighter/B_fighter or RedFighter/BlueFighter
 plus a date column), chooses the file with the most join hits, writes exact
-matches to joined_fights.csv, and prints examples of matches and failures.
+matches to data/processed/joined_fights.csv, and prints examples of matches and failures.
 
 Usage:
-  python3 join_kaggle_outcomes.py
-  python3 join_kaggle_outcomes.py KAGGLE_DATA_DIR
+  python3 scripts/data/join_kaggle_outcomes.py
+  python3 scripts/data/join_kaggle_outcomes.py KAGGLE_DATA_DIR
 """
 
+import argparse
 import csv
 import os
 import re
@@ -25,13 +26,16 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from mention_counts import last_name
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from ufc_mentions.mention_counts import last_name
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent
-MENTIONS_DEFAULT = PROJECT_ROOT / "fight_mentions.csv"
+MENTIONS_DEFAULT = PROJECT_ROOT / "data" / "processed" / "fight_mentions.csv"
 KAGGLE_DEFAULT = PROJECT_ROOT / "kaggle_data" / "ultimate_ufc_dataset"
-OUT_DEFAULT = PROJECT_ROOT / "joined_fights.csv"
+OUT_DEFAULT = PROJECT_ROOT / "data" / "processed" / "joined_fights.csv"
 
 DATE_FORMATS = [
     "%Y-%m-%d",
@@ -255,6 +259,7 @@ def write_joined(out_path, exact_matches):
         return
     mention_cols = [c for c in exact_matches[0][0].keys() if not c.startswith("_")]
     kaggle_cols = [c for c in exact_matches[0][1].keys() if not c.startswith("_")]
+    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w", newline="", encoding="utf-8") as fh:
         writer = csv.DictWriter(
             fh,
@@ -267,15 +272,25 @@ def write_joined(out_path, exact_matches):
             writer.writerow(row)
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Join transcript phrase rows with the local UFC stats CSV."
+    )
+    parser.add_argument("kaggle_dir", nargs="?", default=KAGGLE_DEFAULT)
+    parser.add_argument("--mentions", default=MENTIONS_DEFAULT)
+    parser.add_argument("-o", "--output", default=OUT_DEFAULT)
+    return parser.parse_args()
+
+
 def main():
-    args = [a for a in sys.argv[1:] if not a.startswith("-")]
-    kaggle_dir = Path(args[0]).expanduser() if args else KAGGLE_DEFAULT
-    mentions_path = MENTIONS_DEFAULT
-    out_path = OUT_DEFAULT
+    args = parse_args()
+    kaggle_dir = Path(args.kaggle_dir).expanduser()
+    mentions_path = Path(args.mentions).expanduser()
+    out_path = Path(args.output).expanduser()
 
     if not mentions_path.exists():
         raise SystemExit(
-            f"Missing {mentions_path}. Run: python3 build_match_csv.py"
+            f"Missing {mentions_path}. Run: python3 scripts/data/build_match_csv.py"
         )
     if not kaggle_dir.exists():
         raise SystemExit(

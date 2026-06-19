@@ -9,35 +9,32 @@
   <body>
     <main class="shell">
       <header class="topbar">
-        <div>
-          <p class="eyebrow">UFC mention markets</p>
-          <h1>Model board</h1>
+        <div class="brand">
+          <span class="mark" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M2 12.5 L6.5 7.5 L9.5 10 L16 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="16" cy="3" r="1.7" fill="currentColor"/>
+            </svg>
+          </span>
+          <div>
+            <p class="eyebrow">UFC mention markets</p>
+            <h1>Fight phrase board</h1>
+            <p class="lede">Fight-by-fight prices for the exact phrases Kalshi lists.</p>
+          </div>
         </div>
-        <div class="status" id="dataStatus">Loading local data</div>
+        <div class="status-wrap">
+          <span class="live-dot" aria-hidden="true"></span>
+          <div class="status" id="dataStatus">Loading local data</div>
+        </div>
       </header>
 
       <section class="stats" id="stats"></section>
 
       <section class="controls" aria-label="Dashboard controls">
-        <div class="segments" id="viewButtons">
-          <button class="segment is-active" data-view="edges" type="button">Edges</button>
-          <button class="segment" data-view="events" type="button">Events</button>
-          <button class="segment" data-view="fights" type="button">Fights</button>
-          <button class="segment" data-view="markets" type="button">Markets</button>
-          <button class="segment" data-view="metrics" type="button">Model</button>
-        </div>
         <label class="field">
           <span>Phrase</span>
           <select id="phraseFilter">
             <option value="">All phrases</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>Scope</span>
-          <select id="scopeFilter">
-            <option value="">All scopes</option>
-            <option value="event">Event</option>
-            <option value="fight">Fight</option>
           </select>
         </label>
         <label class="field search">
@@ -46,53 +43,14 @@
         </label>
       </section>
 
-      <section class="diagnostics" id="modelDiagnostics" hidden>
-        <article class="chart-card chart-wide">
-          <div class="chart-head">
-            <div>
-              <p class="eyebrow">Reliability</p>
-              <h2>Calibration</h2>
-            </div>
-            <p id="calibrationMeta"></p>
-          </div>
-          <div id="calibrationChart"></div>
-        </article>
-        <article class="chart-card">
-          <div class="chart-head">
-            <div>
-              <p class="eyebrow">Card-level validation</p>
-              <h2>Probability lift</h2>
-            </div>
-          </div>
-          <div id="liftChart" class="bar-chart"></div>
-        </article>
-        <article class="chart-card">
-          <div class="chart-head">
-            <div>
-              <p class="eyebrow">Selected phrase</p>
-              <h2>Model drivers</h2>
-            </div>
-          </div>
-          <div id="featureChart" class="bar-chart"></div>
-        </article>
-        <article class="chart-card">
-          <div class="chart-head">
-            <div>
-              <p class="eyebrow">Evidence gate</p>
-              <h2>Backtest readiness</h2>
-            </div>
-          </div>
-          <div id="backtestChart"></div>
-        </article>
-      </section>
+      <section class="kalshi-cards" id="kalshiCards" aria-label="Upcoming Kalshi fights"></section>
 
       <section class="panel">
         <div class="panel-head">
           <div>
-            <h2 id="tableTitle">Edges</h2>
+            <h2 id="tableTitle">Live fight prices</h2>
             <p id="tableMeta"></p>
           </div>
-          <button class="ghost" id="resetButton" type="button">Reset</button>
         </div>
         <div class="table-wrap">
           <table id="dataTable">

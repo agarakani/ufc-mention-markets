@@ -16,7 +16,7 @@ This uses an independence assumption across fights. It is a baseline aggregation
 rule and should be tested against historical event-level markets.
 
 Inputs:
-  joined_fights.csv                         historical training data
+  data/processed/joined_fights.csv          historical training data
   kaggle_data/ultimate_ufc_dataset/upcoming.csv  Kaggle-style upcoming card rows
 
 Outputs:
@@ -38,9 +38,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from fighter_history_features import add_prior_fighter_features
-from mention_counts import last_name
-from train_baseline_models import (
+from .fighter_history_features import add_prior_fighter_features
+from .mention_counts import last_name
+from .train_baseline_models import (
     TARGETS,
     TARGET_LABELS,
     add_date_features,
@@ -54,8 +54,8 @@ from train_baseline_models import (
 )
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent
-JOINED_DEFAULT = PROJECT_ROOT / "joined_fights.csv"
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+JOINED_DEFAULT = PROJECT_ROOT / "data" / "processed" / "joined_fights.csv"
 UPCOMING_DEFAULT = PROJECT_ROOT / "kaggle_data" / "ultimate_ufc_dataset" / "upcoming.csv"
 METRICS_DEFAULT = PROJECT_ROOT / "model_outputs" / "baseline_metrics.csv"
 OUT_DIR_DEFAULT = PROJECT_ROOT / "model_outputs"
@@ -148,7 +148,7 @@ def main():
     upcoming_path = Path(args.upcoming)
     out_dir = Path(args.out_dir)
     if not history_path.exists():
-        raise SystemExit(f"Missing {history_path}. Run python3 join_kaggle_outcomes.py first.")
+        raise SystemExit(f"Missing {history_path}. Run python3 scripts/data/join_kaggle_outcomes.py first.")
     if not upcoming_path.exists():
         raise SystemExit(f"Missing {upcoming_path}. Download/update Kaggle upcoming.csv first.")
 
