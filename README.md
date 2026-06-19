@@ -1,166 +1,151 @@
 # ufc-mention-markets
 
-Research tools for UFC prediction markets that resolve on whether a phrase is
-said during the broadcast.
+Read-only tools for UFC Kalshi mention markets.
 
-The main distinction is that a mention market is literal. A market on
-`knockout` is different from a market on `KO`, `TKO`, or `knocked out`. The code
-keeps those terms separate.
+The goal is simple: for each listed fight, look at the exact phrase Kalshi is
+offering, estimate how likely that phrase is to be said during that fight, then
+compare that number with the live YES ask.
 
-## Data
+This repo does not place trades.
 
-This repo expects two local datasets:
+## What The App Does
 
-- `ufc_cleaned_export/`: gzip-compressed transcript JSON files, one per fight
-- `kaggle_data/ultimate_ufc_dataset/`: Kaggle's `mdabbert/ultimate-ufc-dataset`
+1. Finds open Kalshi UFC mention markets.
+2. Reads the exact phrase rules, including grouped phrases like `Choke / Choked / Chokehold`.
+3. Builds a fight-level probability for that exact phrase and that exact fight.
+4. Compares the model number with the live Kalshi YES ask.
+5. Marks a row `WATCH` only when the safer number still clears the price after the spread/fee check.
 
-Both folders are gitignored. Generated CSVs and model outputs are also ignored.
+Kalshi prices are not fed into the model. They are only used after the model has
+made its number.
 
-## Workflow
+## How To Use It
 
-Install Python dependencies:
+Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Build strict phrase labels from the transcripts:
+Easiest live mode on this Mac:
 
 ```bash
-python3 build_match_csv.py
+./start_live_dashboard.command
 ```
 
-Join transcript labels to Kaggle fight data:
+That refreshes once, opens `dashboard/index.html`, then keeps checking Kalshi
+every 30 seconds. Leave that terminal window open while using the dashboard.
+
+Refresh the live dashboard once:
 
 ```bash
-python3 join_kaggle_outcomes.py
+python3 scripts/live/refresh_dashboard.py
 ```
 
-Run the first outcome/mention checks:
-
-```bash
-python3 analyze_outcome_mentions.py
-```
-
-Train baseline models:
-
-```bash
-python train_baseline_models.py
-```
-
-Predict phrase probabilities for an upcoming card:
-
-```bash
-python predict_upcoming_mentions.py
-```
-
-Search and classify real market candidates:
-
-```bash
-python3 search_oddpool_markets.py --q "UFC mention" --exchange polymarket
-python3 classify_market_candidates.py market_data/oddpool_*.csv
-```
-
-Build an edge table once a market has been mapped and prices have been pulled:
-
-```bash
-python3 fetch_oddpool_top_of_book.py --markets market_data/market_mappings.csv
-python3 build_edge_table.py --profile prefight_odds
-```
-
-Build the local dashboard data:
-
-```bash
-python3 build_dashboard_data.py
-```
-
-Open `dashboard/index.html` in a browser.
-
-Refresh predictions and dashboard output after `upcoming.csv` changes:
-
-```bash
-python3 refresh_dashboard.py
-```
-
-Run the leakage-safe historical market backtest pipeline:
-
-```bash
-python3 refresh_historical_backtest.py
-```
-
-This pulls official Polymarket token/resolution metadata, fetches historical
-Oddpool asks, refits each prediction using only earlier fights, and evaluates a
-fixed-stake strategy at a pre-event cutoff. See `MARKET_INTEGRATION.md` for the
-data-quality rules and assumptions.
-
-## Phrase Targets
-
-The phrase list lives in `market_phrases.txt`. Each phrase becomes a strict
-True/False label, using exact-term matching plus plural/possessive forms.
-
-Examples:
+Open:
 
 ```text
-submission
-guillotine
-choke
-triangle
-eye poke
-championship
+dashboard/index.html
 ```
 
-When real markets list a new phrase, add it to `market_phrases.txt` and rebuild
-the labels/models.
+Keep it updating:
 
-## Current Dataset
+```bash
+python3 scripts/live/refresh_dashboard.py --poll-seconds 30
+```
 
-The current joined dataset has:
+Price one listed fight by event ticker:
 
-- 5,578 valid transcript fights
-- 4,469 fights matched to Kaggle rows
-- 0 ambiguous matches
+```bash
+python3 scripts/live/price_fight.py \
+  --event-ticker KXFIGHTMENTION-26JUN20KAPHOR \
+  --show-all
+```
 
-The join key is unordered fighter last-name pair plus event date.
+Or find the fight by names/date:
 
-## Current Model Notes
+```bash
+python3 scripts/live/price_fight.py \
+  --fighter-1 "Manel Kape" \
+  --fighter-2 "Kyoji Horiguchi" \
+  --date 2026-06-20 \
+  --show-all
+```
 
-The baseline model uses pre-fight features only: fighter stats, event context,
-odds, and historical performance fields. It excludes transcript text, fight
-duration, winner, finish type, finish round/time, and any post-fight fields.
+## How To Read The Dashboard
 
-The strongest first-pass targets are:
+- `Our %`: the fight-level model's probability for that phrase.
+- `Safe %`: a more cautious version of the model number.
+- `Kalshi`: the live YES ask.
+- `Edge`: `Our % - Kalshi`.
+- `Safe edge`: `Safe % - Kalshi`.
+- `WATCH`: research flag only. It means the safe edge cleared the current checks.
+- `LOW DATA`: the model ran, but there is not enough matching fighter history to trust it as a watch row.
+- `PASS`: no edge worth flagging right now.
 
-| phrase | AUC | test Yes rate | top-decile Yes rate |
-|---|---:|---:|---:|
-| `championship` | 0.783 | 12.2% | 50.0% |
-| `choke` | 0.684 | 30.5% | 54.5% |
-| `submission` | 0.663 | 46.2% | 70.9% |
-| `triangle` | 0.655 | 30.3% | 48.2% |
-| `guillotine` | 0.629 | 22.6% | 36.4% |
+## Backtesting
 
-These are baselines, not trade recommendations.
+Run the exact fight-level model backtest:
 
-## Market Prices
+```bash
+python3 scripts/model/backtest_context_model.py --initial-train-frac 0.30
+```
 
-The model estimates probabilities. Market prices come from Oddpool/Polymarket/
-Kalshi data.
+Latest checked result:
 
-The edge calculation is:
+- 15 current Kalshi phrase groups tested
+- 50,520 old fight predictions
+- 14 of 15 phrase groups scored better than the simple old average
+
+That checks whether the model makes better guesses than a simple baseline. It
+is not a profit backtest yet; we still need more resolved Kalshi markets before
+claiming a trade-ready edge.
+
+## Project Layout
 
 ```text
-edge_to_yes_ask = model_probability - real_yes_ask
+.
+├── dashboard/          local browser dashboard
+├── data/processed/     generated CSVs, kept out of git
+├── scripts/
+│   ├── live/           refresh Kalshi prices and price one fight
+│   ├── model/          backtests and phrase-rule checks
+│   └── data/           rebuild the training tables
+├── ufc_mentions/       reusable model, Kalshi, phrase, and transcript code
+├── tests/              focused checks for the current Kalshi flow
+├── market_phrases.txt  phrase list used when rebuilding training data
+└── start_live_dashboard.command
 ```
 
-If a real ask price is missing, no edge is calculated.
+The main commands live in `scripts/`:
 
-Most announcer markets are event-level, so fight-level probabilities are
-aggregated with:
+- `scripts/live/refresh_dashboard.py`: refreshes all open Kalshi UFC fight markets.
+- `scripts/live/price_fight.py`: prices one fight.
+- `scripts/model/backtest_context_model.py`: checks the fight-level model on old fights.
+- `scripts/model/audit_grouped_rules.py`: checks grouped Kalshi phrases against transcripts.
+- `scripts/data/build_match_csv.py`: rebuilds `fight_mentions.csv` from transcripts.
+- `scripts/data/join_kaggle_outcomes.py`: joins transcript rows with UFC stats.
+
+## Data
+
+Local data folders are gitignored:
+
+- `ufc_cleaned_export/`: fight transcript JSON files
+- `kaggle_data/ultimate_ufc_dataset/`: Kaggle UFC stats
+- `data/processed/`: generated CSVs used by the model
+- `market_data/`: live Kalshi snapshots and price history
+- `model_outputs/`: model and backtest outputs
+
+## Safety Notes
+
+The Kalshi client supports GET requests only. There is no order-placement method.
+
+Public Kalshi reads currently work without credentials. If authenticated reads
+are needed, put a read-only key in a gitignored `.env`:
 
 ```text
-P(any fight mentions phrase) = 1 - product(1 - per_fight_probability)
+KALSHI_KEY_ID=...
+KALSHI_PRIVATE_KEY_PATH=/absolute/path/to/private-key.pem
 ```
 
-See `MARKET_INTEGRATION.md` for the market-data workflow.
-
-Fight-specific markets use the fight-level prediction directly. Event-wide markets
-use the aggregated event probability.
+Keep all claims conservative until there is enough exact market backtest data.

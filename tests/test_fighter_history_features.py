@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from fighter_history_features import add_prior_fighter_features, feature_names
+from ufc_mentions.fighter_history_features import add_prior_fighter_features, feature_names
 
 
 class FighterHistoryFeatureTests(unittest.TestCase):

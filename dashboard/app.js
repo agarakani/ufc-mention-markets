@@ -1,143 +1,53 @@
 (function () {
   const data = window.UFC_MENTION_DASHBOARD_DATA;
   const state = {
-    view: "edges",
     phrase: "",
-    scope: "",
     search: "",
     sortKey: "",
     sortDir: "desc",
   };
 
-  const views = {
-    edges: {
-      title: "Edges",
-      empty: "No mapped price rows yet. The board will fill after market mappings and top-of-book prices are generated.",
-      rows: () => data.edges || [],
-      columns: [
-        { key: "edge_to_yes_ask", label: "Edge", type: "pct", className: "num", badge: true, signed: true },
-        { key: "model_probability", label: "Model", type: "pct", className: "num" },
-        { key: "yes_ask", label: "Ask", type: "pct", className: "num" },
-        { key: "phrase", label: "Phrase", type: "pill" },
-        { key: "scope", label: "Scope", type: "scope" },
-        { key: "event_date", label: "Date" },
-        { key: "matchup", label: "Fight / event" },
-        { key: "question", label: "Market", type: "question" },
-      ],
-    },
-    events: {
-      title: "Event probabilities",
-      empty: "No event prediction rows found.",
-      rows: () => data.events || [],
-      columns: [
-        { key: "event_probability", label: "Any fight", type: "pct", className: "num" },
-        { key: "phrase", label: "Phrase", type: "pill" },
-        { key: "event_date", label: "Date" },
-        { key: "location", label: "Location" },
-        { key: "mean_fight_probability", label: "Avg fight", type: "pct", className: "num" },
-        { key: "max_fight_probability", label: "Top fight", type: "pct", className: "num" },
-        { key: "fight_count", label: "Fights", className: "num" },
-        { key: "profile", label: "Profile" },
-      ],
-    },
-    fights: {
-      title: "Fight probabilities",
-      empty: "No fight prediction rows found.",
-      rows: () => data.fights || [],
-      columns: [
-        { key: "probability", label: "Model", type: "pct", className: "num" },
-        { key: "phrase", label: "Phrase", type: "pill" },
-        { key: "matchup", label: "Fight" },
-        { key: "event_date", label: "Date" },
-        { key: "weight_class", label: "Weight" },
-        { key: "rounds", label: "Rounds", className: "num" },
-        { key: "location", label: "Location" },
-      ],
-    },
-    markets: {
-      title: "Market candidates",
-      empty: "No classified mention market rows found.",
-      rows: () => data.markets || [],
-      columns: [
-        { key: "status", label: "Status", type: "status" },
-        { key: "mapped_phrase", label: "Phrase", type: "pill" },
-        { key: "last_yes_price", label: "Last YES", type: "pct", className: "num" },
-        { key: "volume", label: "Volume", type: "money", className: "num" },
-        { key: "liquidity", label: "Liquidity", type: "money", className: "num" },
-        { key: "market_complexity", label: "Type" },
-        { key: "needs_manual_review", label: "Review", type: "review" },
-        { key: "question", label: "Question", type: "question" },
-      ],
-    },
-    metrics: {
-      title: "Model checks",
-      empty: "No model metric rows found.",
-      rows: () => data.metrics || [],
-      columns: [
-        { key: "log_loss_improvement", label: "Lift", type: "signed", className: "num" },
-        { key: "phrase", label: "Phrase", type: "pill" },
-        { key: "scope", label: "Level", type: "scope" },
-        { key: "profile", label: "Profile" },
-        { key: "auc", label: "AUC", type: "decimal", className: "num" },
-        { key: "average_precision", label: "Avg precision", type: "decimal", className: "num" },
-        { key: "test_positive_rate", label: "Test Yes", type: "pct", className: "num" },
-        { key: "top_decile_actual_rate", label: "Top decile Yes", type: "pct", className: "num" },
-        { key: "test_rows", label: "Test rows", className: "num" },
-      ],
-    },
-  };
+  const columns = [
+    { key: "call", label: "Call", type: "signal" },
+    { key: "phrase", label: "Phrase", type: "phrase" },
+    { key: "matchup", label: "Fight", type: "fight" },
+    { key: "model_probability", label: "Our %", type: "pct", className: "num" },
+    { key: "conservative_probability", label: "Safe %", type: "pct", className: "num" },
+    { key: "yes_ask", label: "Kalshi", type: "pct", className: "num" },
+    { key: "edge", label: "Edge", type: "pct", className: "num", badge: true, signed: true },
+    { key: "conservative_edge", label: "Safe edge", type: "pct", className: "num", badge: true, signed: true },
+    { key: "reason", label: "Why", type: "reason" },
+  ];
 
   const els = {
     status: document.getElementById("dataStatus"),
     stats: document.getElementById("stats"),
-    viewButtons: document.getElementById("viewButtons"),
     phraseFilter: document.getElementById("phraseFilter"),
-    scopeFilter: document.getElementById("scopeFilter"),
     searchInput: document.getElementById("searchInput"),
-    resetButton: document.getElementById("resetButton"),
     tableTitle: document.getElementById("tableTitle"),
     tableMeta: document.getElementById("tableMeta"),
     tableHead: document.getElementById("tableHead"),
     tableBody: document.getElementById("tableBody"),
-    diagnostics: document.getElementById("modelDiagnostics"),
-    calibrationMeta: document.getElementById("calibrationMeta"),
-    calibrationChart: document.getElementById("calibrationChart"),
-    liftChart: document.getElementById("liftChart"),
-    featureChart: document.getElementById("featureChart"),
-    backtestChart: document.getElementById("backtestChart"),
+    kalshiCards: document.getElementById("kalshiCards"),
   };
 
   function init() {
     if (!data) {
-      els.status.textContent = "Run python3 build_dashboard_data.py";
-      els.tableBody.innerHTML = '<tr><td class="empty">No local dashboard data found.</td></tr>';
+      els.status.textContent = "Run build_dashboard_data.py to create local data.";
+      els.tableBody.innerHTML = `<tr><td class="empty" colspan="${columns.length}">No local dashboard data found.</td></tr>`;
       return;
     }
 
     populatePhraseFilter();
-    renderStats();
     bindEvents();
+    renderStats();
     render();
+    scheduleReload();
   }
 
   function bindEvents() {
-    els.viewButtons.addEventListener("click", (event) => {
-      const button = event.target.closest("button[data-view]");
-      if (!button) return;
-      state.view = button.dataset.view;
-      state.sortKey = "";
-      state.sortDir = "desc";
-      document.querySelectorAll(".segment").forEach((item) => item.classList.toggle("is-active", item === button));
-      render();
-    });
-
     els.phraseFilter.addEventListener("change", () => {
       state.phrase = els.phraseFilter.value;
-      render();
-    });
-
-    els.scopeFilter.addEventListener("change", () => {
-      state.scope = els.scopeFilter.value;
       render();
     });
 
@@ -145,205 +55,193 @@
       state.search = els.searchInput.value.trim().toLowerCase();
       render();
     });
-
-    els.resetButton.addEventListener("click", () => {
-      state.phrase = "";
-      state.scope = "";
-      state.search = "";
-      state.sortKey = "";
-      state.sortDir = "desc";
-      els.phraseFilter.value = "";
-      els.scopeFilter.value = "";
-      els.searchInput.value = "";
-      render();
-    });
   }
 
   function populatePhraseFilter() {
-    const phrases = new Set();
-    ["edges", "events", "fights", "markets", "metrics"].forEach((view) => {
-      views[view].rows().forEach((row) => {
-        const phrase = row.phrase || row.mapped_phrase;
-        if (phrase) phrases.add(phrase);
-      });
+    const phrases = new Map();
+    getRows().forEach((row) => {
+      if (!row.phrase) return;
+      phrases.set(String(row.phrase).toLowerCase(), row.phrase);
     });
 
-    [...phrases].sort((a, b) => a.localeCompare(b)).forEach((phrase) => {
-      const option = document.createElement("option");
-      option.value = phrase.toLowerCase();
-      option.textContent = phrase;
-      els.phraseFilter.appendChild(option);
-    });
+    [...phrases.entries()]
+      .sort((a, b) => a[1].localeCompare(b[1]))
+      .forEach(([value, label]) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = label;
+        els.phraseFilter.appendChild(option);
+      });
   }
 
   function renderStats() {
     const summary = data.summary || {};
     const stats = [
-      [summary.fight_count || 0, "upcoming fights"],
-      [summary.phrase_count || 0, "tracked phrases"],
-      [summary.active_market_candidate_count || 0, "active market candidates"],
-      [summary.priced_edge_count || 0, "priced edge rows"],
+      [summary.kalshi_event_count || 0, "listed fights"],
+      [summary.kalshi_priced_count || 0, "Kalshi phrases"],
+      [summary.kalshi_fight_model_count || 0, "fight-level rows"],
+      [summary.kalshi_watch_count || 0, "watch rows"],
     ];
 
     els.stats.innerHTML = stats.map(([value, label]) => (
-      `<div class="stat"><strong>${formatInteger(value)}</strong><span>${escapeHtml(label)}</span></div>`
+      `<div class="stat"><strong>${escapeHtml(formatInteger(value))}</strong><span>${escapeHtml(label)}</span></div>`
     )).join("");
 
-    const generated = data.generated_at ? new Date(data.generated_at).toLocaleString() : "unknown";
-    const dateRange = summary.min_event_date && summary.max_event_date
-      ? ` card date ${summary.min_event_date === summary.max_event_date ? summary.max_event_date : `${summary.min_event_date} to ${summary.max_event_date}`}`
+    const snapshot = summary.kalshi_snapshot_timestamp
+      ? formatTimestamp(summary.kalshi_snapshot_timestamp)
+      : "not refreshed yet";
+    const access = summary.kalshi_authenticated ? "authenticated read" : "public read";
+    const polling = summary.kalshi_poll_seconds > 0
+      ? `; refreshes every ${formatInteger(summary.kalshi_poll_seconds)}s`
       : "";
-    const stale = summary.upcoming_input_is_stale ? " stale upcoming input" : " current upcoming input";
-    els.status.textContent = `Local data built ${generated};${dateRange};${stale}`;
+    els.status.textContent = `Updated ${snapshot}; ${access}; read-only${polling}`;
   }
 
   function render() {
-    const view = views[state.view];
-    let rows = view.rows().map(deriveRow);
+    let rows = getRows().map(deriveRow);
     rows = applyFilters(rows);
-    rows = applySort(rows, view.columns);
+    rows = applySort(rows);
 
-    els.scopeFilter.disabled = state.view !== "edges";
-    els.tableTitle.textContent = view.title;
-    els.tableMeta.textContent = `${formatInteger(rows.length)} rows`;
-    els.diagnostics.hidden = state.view !== "metrics";
-    if (state.view === "metrics") renderDiagnostics(rows);
-    renderHeader(view.columns);
-    renderBody(view.columns, rows, view.empty);
+    els.tableTitle.textContent = "Live fight prices";
+    els.tableMeta.textContent = tableMeta(rows);
+    renderFightCards();
+    renderHeader();
+    renderBody(rows);
   }
 
-  function selectedModelPhrase(metricRows) {
-    if (state.phrase) return state.phrase;
-    const eventWinner = metricRows.find((row) => row.scope === "event" && parseNumber(row.log_loss_improvement) > 0);
-    return String((eventWinner || metricRows[0] || {}).phrase || "").toLowerCase();
+  function tableMeta(rows) {
+    const summary = data.summary || {};
+    const backtestGroups = Number(summary.kalshi_backtest_measured_groups || 0);
+    const backtestWins = Number(summary.kalshi_backtest_groups_beating_base || 0);
+    const base = `${formatInteger(rows.length)} rows shown. Fight-level model first; Kalshi price only checks the edge.`;
+    if (!backtestGroups) return base;
+    return `${base} Old-fight test: ${formatInteger(backtestWins)}/${formatInteger(backtestGroups)} phrase groups beat the simple average.`;
   }
 
-  function renderDiagnostics(metricRows) {
-    const phrase = selectedModelPhrase(metricRows);
-    renderCalibration(phrase);
-    renderLift();
-    renderFeatures(phrase);
-    renderBacktest();
-  }
-
-  function renderCalibration(phrase) {
-    const rows = (data.calibration || []).filter((row) => String(row.phrase || "").toLowerCase() === phrase);
-    els.calibrationMeta.textContent = phrase || "Select a phrase";
-    if (!rows.length) {
-      els.calibrationChart.innerHTML = '<p class="chart-empty">No calibration rows for this phrase.</p>';
+  function renderFightCards() {
+    const events = data.kalshi_events || [];
+    if (!events.length) {
+      els.kalshiCards.innerHTML = '<article class="fight-card empty-card"><strong>No listed fight markets yet</strong><span>Run the Kalshi refresher and open fight markets will appear here.</span></article>';
       return;
     }
-    const left = 42;
-    const top = 14;
-    const size = 210;
-    const point = (row) => {
-      const x = left + Math.max(0, Math.min(1, Number(row.mean_predicted))) * size;
-      const y = top + (1 - Math.max(0, Math.min(1, Number(row.actual_rate)))) * size;
-      return [x, y];
-    };
-    const series = ["fight", "event"].map((scope) => {
-      const scoped = rows.filter((row) => row.scope === scope).sort((a, b) => Number(a.mean_predicted) - Number(b.mean_predicted));
-      if (!scoped.length) return "";
-      const points = scoped.map(point);
-      const circles = points.map(([x, y], index) => (
-        `<circle class="cal-point ${scope}" cx="${x}" cy="${y}" r="5"><title>${scope}: predicted ${formatPercent(scoped[index].mean_predicted)}, actual ${formatPercent(scoped[index].actual_rate)}</title></circle>`
-      )).join("");
-      return `<polyline class="cal-line ${scope}" points="${points.map((p) => p.join(",")).join(" ")}"/>${circles}`;
+
+    els.kalshiCards.innerHTML = events.map((event) => {
+      const matchup = event.fighter_1 && event.fighter_2
+        ? `${event.fighter_1} vs ${event.fighter_2}`
+        : event.event_title || event.event_ticker || "Upcoming fight";
+      const watchCount = Number(event.watch_count || 0);
+      const bestSafeEdge = parseNumber(event.best_conservative_edge);
+      const edgeText = bestSafeEdge === null ? "no safe edge yet" : `best safe edge ${formatPlainPercent(bestSafeEdge, true)}`;
+      const call = watchCount > 0 ? `${formatInteger(watchCount)} watch` : edgeText;
+      return `<article class="fight-card ${watchCount > 0 ? "is-live" : ""}">
+        <div>
+          <p class="eyebrow">${escapeHtml(formatDate(event.event_date) || "Upcoming")}</p>
+          <h2>${escapeHtml(matchup)}</h2>
+        </div>
+        <div class="fight-card-meta">
+          <span>${formatInteger(event.priced_count)} phrases</span>
+          <span>${formatInteger(event.model_ready_count)} modeled</span>
+          <strong>${escapeHtml(call)}</strong>
+        </div>
+      </article>`;
     }).join("");
-    els.calibrationChart.innerHTML = `
-      <svg class="calibration-svg" viewBox="0 0 300 260" role="img" aria-label="Predicted versus actual mention rate">
-        <line class="cal-axis" x1="${left}" y1="${top + size}" x2="${left + size}" y2="${top + size}"/>
-        <line class="cal-axis" x1="${left}" y1="${top}" x2="${left}" y2="${top + size}"/>
-        <line class="cal-perfect" x1="${left}" y1="${top + size}" x2="${left + size}" y2="${top}"/>
-        ${series}
-        <text x="${left + size / 2}" y="254" text-anchor="middle">Predicted probability</text>
-        <text x="12" y="${top + size / 2}" text-anchor="middle" transform="rotate(-90 12 ${top + size / 2})">Actual rate</text>
-        <text x="${left}" y="240" text-anchor="middle">0</text><text x="${left + size}" y="240" text-anchor="middle">1</text>
-        <text x="32" y="${top + size + 4}" text-anchor="end">0</text><text x="32" y="${top + 4}" text-anchor="end">1</text>
-      </svg>
-      <div class="legend"><span><i class="fight"></i>Fight</span><span><i class="event"></i>Event</span><span><i class="perfect"></i>Perfect</span></div>`;
   }
 
-  function renderLift() {
-    const rows = (data.metrics || [])
-      .filter((row) => row.scope === "event" && parseNumber(row.log_loss_improvement) !== null)
-      .sort((a, b) => Number(b.log_loss_improvement) - Number(a.log_loss_improvement))
-      .slice(0, 8);
-    renderBars(els.liftChart, rows.map((row) => ({
-      label: row.phrase,
-      value: Number(row.log_loss_improvement),
-      display: formatSigned(row.log_loss_improvement),
-    })));
-  }
-
-  function renderFeatures(phrase) {
-    const rows = (data.features || [])
-      .filter((row) => String(row.phrase || "").toLowerCase() === phrase && parseNumber(row.coefficient) !== null)
-      .sort((a, b) => Math.abs(Number(b.coefficient)) - Math.abs(Number(a.coefficient)))
-      .slice(0, 8)
-      .map((row) => ({
-        label: cleanFeature(row.feature),
-        value: Number(row.coefficient),
-        display: `${Number(row.coefficient) > 0 ? "+" : ""}${Number(row.coefficient).toFixed(2)}`,
-      }));
-    renderBars(els.featureChart, rows);
-  }
-
-  function renderBars(element, rows) {
-    if (!rows.length) {
-      element.innerHTML = '<p class="chart-empty">No diagnostic rows available.</p>';
-      return;
-    }
-    const max = Math.max(...rows.map((row) => Math.abs(row.value)), 0.0001);
-    element.innerHTML = rows.map((row) => `
-      <div class="bar-row">
-        <div class="bar-label"><span title="${escapeHtml(row.label)}">${escapeHtml(row.label)}</span><strong>${escapeHtml(row.display)}</strong></div>
-        <div class="bar-track"><span class="bar-fill ${row.value >= 0 ? "good" : "bad"}" style="width:${Math.max(2, Math.abs(row.value) / max * 100)}%"></span></div>
-      </div>`).join("");
-  }
-
-  function renderBacktest() {
-    const summary = data.backtest || {};
-    const trades = Number(summary.trades || 0);
-    const minimum = Number(summary.minimum_trades_for_claim || 30);
-    const progress = Math.min(100, trades / Math.max(minimum, 1) * 100);
-    els.backtestChart.innerHTML = `
-      <div class="readiness-number"><strong>${formatInteger(trades)}</strong><span>of ${formatInteger(minimum)} minimum trades</span></div>
-      <div class="readiness-track"><span style="width:${progress}%"></span></div>
-      <p class="readiness-note">${escapeHtml(summary.claim_status === "sufficient_sample" ? "Evidence threshold reached" : "No performance claim yet")}</p>`;
-  }
-
-  function cleanFeature(value) {
-    return String(value || "")
-      .replace(/^(num|cat)__/, "")
-      .replace(/^kaggle_/, "")
-      .replace(/^fighter_history_/, "history: ")
-      .replace(/_/g, " ");
+  function getRows() {
+    return data.kalshi || [];
   }
 
   function deriveRow(row) {
     const out = { ...row };
     const fighter1 = row.fighter_1 || "";
     const fighter2 = row.fighter_2 || "";
-    out.matchup = fighter1 && fighter2 ? `${fighter1} vs ${fighter2}` : row.location || row.event_title || "";
-    out.search_blob = Object.values(out).join(" ").toLowerCase();
+    out.matchup = fighter1 && fighter2 ? `${fighter1} vs ${fighter2}` : row.event_title || row.event_ticker || "";
+    out.call = callLabel(row);
+    out.reason = reasonForRow(row);
+    out.search_blob = [
+      out.call,
+      out.phrase,
+      out.matchup,
+      out.event_date,
+      out.ticker,
+      out.reason,
+    ].join(" ").toLowerCase();
     return out;
+  }
+
+  function callLabel(row) {
+    if (row.watch) return "WATCH";
+    if (row.status === "error") return "ERROR";
+    if (row.probability_source !== "fight_context_model") return "HISTORY ONLY";
+    if (row.confidence_ok === false) return "LOW DATA";
+    return "PASS";
+  }
+
+  function reasonForRow(row) {
+    if (row.status === "error") return row.error || "This market could not be priced.";
+    if (row.yes_ask === null || row.yes_ask === undefined || row.yes_ask === "") {
+      return "No live YES ask is available in the book yet.";
+    }
+    if (row.probability_source !== "fight_context_model") {
+      return "No fight-level number was available, so this is history only and cannot be a watch row.";
+    }
+
+    const model = formatPlainPercent(row.model_probability);
+    const safe = formatPlainPercent(row.conservative_probability);
+    const ask = formatPlainPercent(row.yes_ask);
+    const edge = formatPlainPercent(row.edge, true);
+    const safeEdge = formatPlainPercent(row.conservative_edge, true);
+    const priorFights = Number(row.fighter_fights || 0);
+
+    if (row.watch) {
+      return `Our number is ${model}, the safer number is ${safe}, and Kalshi asks ${ask}. Safe edge is ${safeEdge} after the spread/fee check.`;
+    }
+    if (row.confidence_ok === false) {
+      return `Low data: only ${formatInteger(priorFights)} prior fighter fights matched this phrase setup, so it stays off watch.`;
+    }
+    if (parseNumber(row.edge) <= 0) {
+      return `Kalshi asks ${ask}; our number is ${model}. Edge is ${edge}, so no play.`;
+    }
+    if (parseNumber(row.conservative_edge) <= parseNumber(row.hurdle)) {
+      return `Main edge is ${edge}, but the safer edge is only ${safeEdge}, so it does not clear the spread/fee check.`;
+    }
+    return `Close, but it does not clear the spread/fee check.`;
   }
 
   function applyFilters(rows) {
     return rows.filter((row) => {
-      const rowPhrase = (row.phrase || row.mapped_phrase || "").toLowerCase();
+      const rowPhrase = String(row.phrase || "").toLowerCase();
       if (state.phrase && rowPhrase !== state.phrase) return false;
-      if (state.scope && (row.scope || "").toLowerCase() !== state.scope) return false;
       if (state.search && !row.search_blob.includes(state.search)) return false;
       return true;
     });
   }
 
-  function applySort(rows, columns) {
-    const defaultKey = state.sortKey || columns[0].key;
+  function applySort(rows) {
+    if (!state.sortKey) {
+      return rows.slice().sort(defaultCompare);
+    }
     const dir = state.sortDir === "asc" ? 1 : -1;
-    return rows.slice().sort((a, b) => compareValues(a[defaultKey], b[defaultKey]) * dir);
+    return rows.slice().sort((a, b) => compareValues(a[state.sortKey], b[state.sortKey]) * dir);
+  }
+
+  function defaultCompare(a, b) {
+    const watchDiff = Number(b.watch) - Number(a.watch);
+    if (watchDiff) return watchDiff;
+    const safeDiff = compareNumbers(b.conservative_edge, a.conservative_edge);
+    if (safeDiff) return safeDiff;
+    const edgeDiff = compareNumbers(b.edge, a.edge);
+    if (edgeDiff) return edgeDiff;
+    return String(a.matchup || "").localeCompare(String(b.matchup || ""));
+  }
+
+  function compareNumbers(a, b) {
+    const na = parseNumber(a);
+    const nb = parseNumber(b);
+    if (na !== null && nb !== null) return na - nb;
+    if (na !== null) return 1;
+    if (nb !== null) return -1;
+    return 0;
   }
 
   function compareValues(a, b) {
@@ -353,11 +251,10 @@
     return String(a || "").localeCompare(String(b || ""));
   }
 
-  function renderHeader(columns) {
-    const cells = columns.map((column) => (
+  function renderHeader() {
+    els.tableHead.innerHTML = `<tr>${columns.map((column) => (
       `<th data-key="${escapeHtml(column.key)}" class="${column.className || ""}">${escapeHtml(column.label)}</th>`
-    ));
-    els.tableHead.innerHTML = `<tr>${cells.join("")}</tr>`;
+    )).join("")}</tr>`;
     els.tableHead.querySelectorAll("th").forEach((th) => {
       th.addEventListener("click", () => {
         const key = th.dataset.key;
@@ -372,43 +269,58 @@
     });
   }
 
-  function renderBody(columns, rows, emptyMessage) {
+  function renderBody(rows) {
     if (!rows.length) {
-      els.tableBody.innerHTML = `<tr><td class="empty" colspan="${columns.length}">${escapeHtml(emptyMessage)}</td></tr>`;
+      els.tableBody.innerHTML = `<tr><td class="empty" colspan="${columns.length}">No rows match those filters.</td></tr>`;
       return;
     }
 
     els.tableBody.innerHTML = rows.map((row) => {
+      const rowClass = row.watch ? "is-watch" : row.call === "LOW DATA" ? "is-low-data" : "";
       const cells = columns.map((column) => (
         `<td class="${column.className || ""}">${formatCell(row[column.key], column, row)}</td>`
-      ));
-      return `<tr>${cells.join("")}</tr>`;
+      )).join("");
+      return `<tr class="${rowClass}">${cells}</tr>`;
     }).join("");
   }
 
   function formatCell(value, column, row) {
     if (column.badge) {
       const number = parseNumber(value);
+      if (number === null) return '<span class="muted">--</span>';
       const tone = number > 0 ? "good" : number < 0 ? "bad" : "";
       return pill(formatPercent(value, column), tone);
     }
-    if (column.type === "pct") return formatPercent(value);
-    if (column.type === "signed") return formatSigned(value);
-    if (column.type === "decimal") return formatDecimal(value);
-    if (column.type === "money") return formatMoney(value);
-    if (column.type === "pill") return pill(value);
-    if (column.type === "scope") return pill(value || "event", "warn");
-    if (column.type === "status") return pill(value, value === "active" ? "good" : "");
-    if (column.type === "review") return pill(value === "yes" ? "review" : "clean", value === "yes" ? "warn" : "good");
-    if (column.type === "question") return `<span class="question" title="${escapeHtml(value || "")}">${escapeHtml(value || "")}</span>`;
+    if (column.type === "pct") return formatPercent(value, column);
+    if (column.type === "phrase") return pill(value);
+    if (column.type === "signal") return signalPill(value);
+    if (column.type === "fight") return fightCell(row);
+    if (column.type === "reason") return `<span class="reason" title="${escapeHtml(value || "")}">${escapeHtml(value || "")}</span>`;
     if (value === null || value === undefined || value === "") return '<span class="muted">--</span>';
-    if (column.key === "rounds" || column.key === "fight_count" || column.key === "test_rows") return formatInteger(value);
     return escapeHtml(String(value));
+  }
+
+  function signalPill(value) {
+    const label = String(value || "");
+    const tone = label === "WATCH" ? "warn" : label === "ERROR" ? "bad" : label === "LOW DATA" ? "quiet-warn" : "";
+    return pill(label, tone);
+  }
+
+  function fightCell(row) {
+    const detail = [formatDate(row.event_date), row.event_ticker].filter(Boolean).join(" · ");
+    return `<div class="fight-cell"><strong>${escapeHtml(row.matchup || "--")}</strong>${detail ? `<span>${escapeHtml(detail)}</span>` : ""}</div>`;
   }
 
   function pill(value, tone) {
     if (value === null || value === undefined || value === "") return '<span class="muted">--</span>';
     return `<span class="pill ${tone || ""}">${escapeHtml(String(value))}</span>`;
+  }
+
+  function scheduleReload() {
+    const seconds = Number((data.summary || {}).kalshi_poll_seconds || 0);
+    if (seconds > 0) {
+      window.setTimeout(() => window.location.reload(), Math.max(5, seconds) * 1000);
+    }
   }
 
   function parseNumber(value) {
@@ -424,29 +336,35 @@
     return `${sign}${(number * 100).toFixed(Math.abs(number) < 0.01 ? 2 : 1)}%`;
   }
 
-  function formatSigned(value) {
+  function formatPlainPercent(value, signed = false) {
     const number = parseNumber(value);
-    if (number === null) return '<span class="muted">--</span>';
-    const sign = number > 0 ? "+" : "";
-    return `${sign}${number.toFixed(4)}`;
-  }
-
-  function formatDecimal(value) {
-    const number = parseNumber(value);
-    if (number === null) return '<span class="muted">--</span>';
-    return number.toFixed(3);
-  }
-
-  function formatMoney(value) {
-    const number = parseNumber(value);
-    if (number === null) return '<span class="muted">--</span>';
-    return number.toLocaleString(undefined, { maximumFractionDigits: 0 });
+    if (number === null) return "--";
+    const sign = signed && number > 0 ? "+" : "";
+    return `${sign}${(number * 100).toFixed(Math.abs(number) < 0.01 ? 2 : 1)}%`;
   }
 
   function formatInteger(value) {
     const number = parseNumber(value);
     if (number === null) return "0";
     return number.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  }
+
+  function formatDate(value) {
+    if (!value) return "";
+    const date = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  }
+
+  function formatTimestamp(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
   }
 
   function escapeHtml(value) {

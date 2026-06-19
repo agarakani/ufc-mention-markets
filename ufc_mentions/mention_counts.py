@@ -1,28 +1,9 @@
 #!/usr/bin/env python3
-"""Count candidate "mention" phrase frequencies across UFC transcripts — TWO tracks.
+"""Count how often market phrases show up in UFC transcripts.
 
-Real Polymarket "mention" markets resolve on the EXACT literal term plus only its
-plural/possessive forms (e.g. 'knockout' -> matches 'knockout', 'knockouts',
-"knockout's", "knockouts'"). They do NOT match synonyms or other word forms:
-'knocked out', 'KO', 'TKO' would each be separate terms/markets.
-
-So we report two SEPARATE, deliberately un-merged views:
-
-  TRACK 1 — BROAD (commentary patterns): synonym / word-form groups OR'd together.
-            Shows how often a *concept* appears in commentary. NOT how a market resolves.
-
-  TRACK 2 — STRICT (market resolution): each individual literal phrase, matched on the
-            exact term + plural/possessive ONLY. This is the Yes/No base rate a real
-            market would actually settle on.
-
-Both are document-frequency: a fight counts once if the term appears >= 1 time in
-plain_text. Valid fights = duration_s != 0.0. Matching is case-insensitive and
-whitespace-tolerant; curly apostrophes are normalized to straight ones.
-
-Usage:
-  python3 mention_counts.py [DATA_DIR]
-  python3 mention_counts.py --phrases market_phrases.txt
-  python3 mention_counts.py --selftest     # verify the STRICT matcher's behavior
+The strict matcher is the important one for Kalshi-style phrase markets: a fight
+counts only when the exact phrase, plural, or possessive form appears at least
+once in the transcript.
 """
 
 import gzip
@@ -31,10 +12,12 @@ import os
 import re
 import sys
 from collections import Counter
+from pathlib import Path
 
-from phrase_targets import PHRASES_FILE_DEFAULT, load_phrase_targets
+from .phrase_targets import PHRASES_FILE_DEFAULT, load_phrase_targets
 
-DATA_DIR_DEFAULT = "~/ufc-mention-markets/ufc_cleaned_export"
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DATA_DIR_DEFAULT = PROJECT_ROOT / "ufc_cleaned_export"
 
 # ---- TRACK 2: STRICT literal market phrases (exact term + plural/possessive ONLY) ----
 # Loaded from market_phrases.txt by default so the target set follows real markets.
@@ -206,7 +189,7 @@ def main(data_dir, phrase_path=PHRASES_FILE_DEFAULT):
 
     print("\n" + "=" * 60)
     print("TRACK 2 — STRICT (market resolution; exact term + plural/possessive ONLY)")
-    print("   This is the Yes/No base rate a literal Polymarket market settles on.")
+    print("   This is the base rate for an exact phrase market.")
     print("=" * 60)
     print(f"{'literal phrase':<22}{'fights':>8}{'% of fights':>14}")
     print("-" * 44)

@@ -8,17 +8,23 @@ strict matcher as mention_counts.py (exact term + plural/possessive only), impor
 directly so the CSV stays consistent with the market-resolution numbers.
 
 Usage:
-  python3 build_match_csv.py [DATA_DIR] [-o OUTPUT.csv]
-  python3 build_match_csv.py --phrases market_phrases.txt
+  python3 scripts/data/build_match_csv.py [DATA_DIR] [-o OUTPUT.csv]
+  python3 scripts/data/build_match_csv.py --phrases market_phrases.txt
 """
 
+import argparse
 import csv
 import os
 import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 # Reuse the same strict matcher and helpers used by the summary script.
-from mention_counts import strict_pattern, last_name, norm, iter_records
-from phrase_targets import PHRASES_FILE_DEFAULT, phrase_columns
+from ufc_mentions.mention_counts import strict_pattern, last_name, norm, iter_records
+from ufc_mentions.phrase_targets import PHRASES_FILE_DEFAULT, phrase_columns
 
 # (csv column name -> strict phrase). Order = market_phrases.txt order.
 PHRASE_COLUMNS = phrase_columns()
@@ -32,8 +38,8 @@ ID_COLUMNS = [
     "duration_s",
 ]
 
-DATA_DIR_DEFAULT = "~/ufc-mention-markets/ufc_cleaned_export"
-OUT_DEFAULT = "~/ufc-mention-markets/fight_mentions.csv"
+DATA_DIR_DEFAULT = ROOT / "ufc_cleaned_export"
+OUT_DEFAULT = ROOT / "data" / "processed" / "fight_mentions.csv"
 
 
 def build(data_dir, out_path, phrase_path=PHRASES_FILE_DEFAULT):
@@ -43,6 +49,7 @@ def build(data_dir, out_path, phrase_path=PHRASES_FILE_DEFAULT):
     tally = {name: 0 for name, _ in phrase_cols}
     rows = skipped = errors = 0
 
+    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w", newline="", encoding="utf-8") as fh:
         writer = csv.writer(fh)
         writer.writerow(header)
@@ -79,21 +86,21 @@ def build(data_dir, out_path, phrase_path=PHRASES_FILE_DEFAULT):
     return rows, skipped, errors, header, tally, phrase_cols
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Build fight_mentions.csv from UFC transcript files."
+    )
+    parser.add_argument("data_dir", nargs="?", default=DATA_DIR_DEFAULT)
+    parser.add_argument("-o", "--output", default=OUT_DEFAULT)
+    parser.add_argument("--phrases", default=PHRASES_FILE_DEFAULT)
+    return parser.parse_args()
+
+
 def main():
-    args = sys.argv[1:]
-    out_path = OUT_DEFAULT
-    phrase_path = PHRASES_FILE_DEFAULT
-    if "-o" in args:
-        i = args.index("-o")
-        out_path = args[i + 1]
-        del args[i:i + 2]
-    if "--phrases" in args:
-        i = args.index("--phrases")
-        phrase_path = os.path.expanduser(args[i + 1])
-        del args[i:i + 2]
-    positional = [a for a in args if not a.startswith("-")]
-    data_dir = os.path.expanduser(positional[0] if positional else DATA_DIR_DEFAULT)
-    out_path = os.path.expanduser(out_path)
+    args = parse_args()
+    data_dir = os.path.expanduser(str(args.data_dir))
+    out_path = os.path.expanduser(str(args.output))
+    phrase_path = os.path.expanduser(str(args.phrases))
 
     rows, skipped, errors, header, tally, phrase_cols = build(data_dir, out_path, phrase_path)
     print(f"Wrote {rows} fight rows to {out_path}")
