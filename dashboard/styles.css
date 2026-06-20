@@ -296,6 +296,84 @@ input:focus {
 
 .empty-card strong { color: var(--ink); }
 
+/* tracking */
+.tracking-panel {
+  margin-bottom: 12px;
+}
+
+.tracking-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 10px;
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tracking-card {
+  display: grid;
+  gap: 14px;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--panel-2);
+}
+
+.tracking-card h2 {
+  margin-top: 4px;
+  text-transform: none;
+}
+
+.tracking-card-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tracking-card-stats span {
+  display: grid;
+  gap: 2px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.tracking-card-stats strong {
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.tracking-card-stats .good-text,
+.good-text,
+.tracking-card-stats .good-text strong {
+  color: var(--pos);
+}
+
+.tracking-card-stats .bad-text,
+.bad-text,
+.tracking-card-stats .bad-text strong {
+  color: var(--neg);
+}
+
+.tracking-table-wrap table {
+  min-width: 980px;
+}
+
+.tracking-table-wrap th:nth-child(1),
+.tracking-table-wrap td:nth-child(1) { width: 86px; }
+.tracking-table-wrap th:nth-child(2),
+.tracking-table-wrap td:nth-child(2) { width: 220px; }
+.tracking-table-wrap th:nth-child(3),
+.tracking-table-wrap td:nth-child(3) { width: 260px; }
+.tracking-table-wrap th:nth-child(4),
+.tracking-table-wrap td:nth-child(4) { width: 150px; }
+.tracking-table-wrap th:nth-child(5),
+.tracking-table-wrap td:nth-child(5),
+.tracking-table-wrap th:nth-child(6),
+.tracking-table-wrap td:nth-child(6) { width: 100px; }
+.tracking-table-wrap th:nth-child(7),
+.tracking-table-wrap td:nth-child(7) { width: 90px; }
+
 /* table */
 .panel {
   margin-top: 12px;
@@ -500,10 +578,12 @@ td:nth-child(8) { width: 92px; }
 @media (max-width: 560px) {
   .shell { padding-top: 18px; }
   .stats,
-  .kalshi-cards { grid-template-columns: 1fr; }
+  .kalshi-cards,
+  .tracking-grid { grid-template-columns: 1fr; }
   .fight-card { grid-template-columns: 1fr; }
   .fight-card-meta {
     text-align: left;
     min-width: 0;
   }
+  .tracking-card-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

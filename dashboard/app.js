@@ -29,6 +29,9 @@
     tableHead: document.getElementById("tableHead"),
     tableBody: document.getElementById("tableBody"),
     kalshiCards: document.getElementById("kalshiCards"),
+    trackingMeta: document.getElementById("trackingMeta"),
+    trackingCards: document.getElementById("trackingCards"),
+    trackingBody: document.getElementById("trackingBody"),
   };
 
   function init() {
@@ -41,6 +44,7 @@
     populatePhraseFilter();
     bindEvents();
     renderStats();
+    renderTracking();
     render();
     scheduleReload();
   }
@@ -144,6 +148,65 @@
           <strong>${escapeHtml(call)}</strong>
         </div>
       </article>`;
+    }).join("");
+  }
+
+  function renderTracking() {
+    const cards = data.tracking_cards || [];
+    const positions = data.tracking_positions || [];
+    const summary = data.summary || {};
+
+    if (!cards.length) {
+      els.trackingMeta.textContent = "No paper-tracking cards saved yet.";
+      els.trackingCards.innerHTML = '<article class="tracking-card empty-card"><strong>No tracking cards yet</strong><span>Run snapshot_card.py before a card and it will show here.</span></article>';
+      els.trackingBody.innerHTML = '<tr><td class="empty" colspan="7">No tracked rows yet.</td></tr>';
+      return;
+    }
+
+    els.trackingMeta.textContent = [
+      `${formatInteger(summary.tracking_card_count)} card${Number(summary.tracking_card_count) === 1 ? "" : "s"}`,
+      `${formatInteger(summary.tracking_official_trade_count)} official paper trades`,
+      `${formatInteger(summary.tracking_lean_count)} leans`,
+      `${formatInteger(summary.tracking_outcomes_filled)} outcomes filled`,
+    ].join(" · ");
+
+    els.trackingCards.innerHTML = cards.map((card) => {
+      const officialPnl = parseNumber(card.official_pnl);
+      const leanPnl = parseNumber(card.lean_pnl);
+      return `<article class="tracking-card">
+        <div>
+          <p class="eyebrow">${escapeHtml(card.path || "local tracking")}</p>
+          <h2>${escapeHtml(card.label || card.card)}</h2>
+        </div>
+        <div class="tracking-card-stats">
+          <span><strong>${formatInteger(card.official_trades)}</strong> official</span>
+          <span><strong>${formatInteger(card.leans)}</strong> leans</span>
+          <span><strong>${formatInteger(card.outcomes_filled)}</strong> outcomes</span>
+          <span class="${pnlClass(officialPnl)}"><strong>${formatMoney(officialPnl)}</strong> official P/L</span>
+          <span class="${pnlClass(leanPnl)}"><strong>${formatMoney(leanPnl)}</strong> lean P/L</span>
+        </div>
+      </article>`;
+    }).join("");
+
+    const shown = positions.slice(0, 12);
+    if (!shown.length) {
+      els.trackingBody.innerHTML = '<tr><td class="empty" colspan="7">This card has no paper trades or leans.</td></tr>';
+      return;
+    }
+
+    els.trackingBody.innerHTML = shown.map((row) => {
+      const actionTone = row.paper_action === "trade" ? "warn" : "quiet-warn";
+      const outcome = row.outcome ? row.outcome.toUpperCase() : "OPEN";
+      const outcomeTone = row.outcome === "yes" ? "good" : row.outcome === "no" ? "bad" : "";
+      return `<tr>
+        <td>${pill((row.paper_action || "").toUpperCase(), actionTone)}</td>
+        <td><span class="muted">${escapeHtml(row.card || "")}</span></td>
+        <td>${escapeHtml(row.matchup || "")}</td>
+        <td>${pill(row.phrase || "")}</td>
+        <td class="num">${formatPlainPercent(row.paper_price)}</td>
+        <td class="num">${pill(formatPlainPercent(row.conservative_edge, true), parseNumber(row.conservative_edge) > 0 ? "good" : "bad")}</td>
+        <td>${pill(outcome, outcomeTone)}</td>
+      </tr>`;
     }).join("");
   }
 
@@ -347,6 +410,20 @@
     const number = parseNumber(value);
     if (number === null) return "0";
     return number.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  }
+
+  function formatMoney(value) {
+    const number = parseNumber(value);
+    if (number === null) return "$0.00";
+    const sign = number > 0 ? "+" : number < 0 ? "-" : "";
+    return `${sign}$${Math.abs(number).toFixed(2)}`;
+  }
+
+  function pnlClass(value) {
+    const number = parseNumber(value);
+    if (number > 0) return "good-text";
+    if (number < 0) return "bad-text";
+    return "";
   }
 
   function formatDate(value) {
