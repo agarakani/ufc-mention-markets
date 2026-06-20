@@ -10,6 +10,7 @@ from ufc_mentions.kalshi_mentions import (
     RuleParseError,
     TranscriptCorpus,
     TranscriptFight,
+    fighters_from_market_title,
     grouped_matcher,
     phrase_forms_from_rules,
     wilson_lower_bound,
@@ -81,6 +82,18 @@ class RuleTests(unittest.TestCase):
     def test_event_does_not_qualify_is_not_treated_as_language(self):
         with self.assertRaises(RuleParseError):
             phrase_forms_from_rules(self.market("Event does not qualify"))
+
+    def test_fighter_names_parse_from_current_kalshi_titles(self):
+        self.assertEqual(
+            fighters_from_market_title(
+                "What will the announcers say during Beatriz Mesquita vs Melissa Mullins Fight?"
+            ),
+            ("Beatriz Mesquita", "Melissa Mullins"),
+        )
+        self.assertEqual(
+            fighters_from_market_title("What will the announcers say during A vs B UFC Fight"),
+            ("A", "B"),
+        )
 
     def test_audit_forms_accept_pipe_and_slash_group_separators(self):
         self.assertEqual(
