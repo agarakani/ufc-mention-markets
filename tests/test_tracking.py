@@ -13,7 +13,12 @@ class TrackingTests(unittest.TestCase):
     def test_positive_safe_edge_below_watch_bar_is_a_lean(self):
         action, reason = classify_row({"watch": "no", "conservative_edge": "0.03"}, 0.0)
         self.assertEqual(action, "lean")
-        self.assertIn("safe edge", reason)
+        self.assertIn("safe number", reason)
+
+    def test_raw_model_edge_without_safe_edge_is_a_pass(self):
+        action, reason = classify_row({"watch": "no", "conservative_edge": "-0.01", "edge": "0.02"}, 0.0)
+        self.assertEqual(action, "pass")
+        self.assertIn("safe number does not", reason)
 
     def test_no_edge_is_a_pass(self):
         action, reason = classify_row({"watch": "no", "conservative_edge": "-0.01", "edge": "-0.01"}, 0.0)
