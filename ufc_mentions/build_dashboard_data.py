@@ -18,6 +18,8 @@ KALSHI_LIVE = ROOT / "market_data" / "kalshi_live_edges.csv"
 KALSHI_META = ROOT / "market_data" / "kalshi_live_meta.json"
 KALSHI_AUDIT_SUMMARY = ROOT / "model_outputs" / "kalshi_grouped_rule_audit_summary.json"
 KALSHI_CONTEXT_BACKTEST_SUMMARY = ROOT / "model_outputs" / "kalshi_context_model_backtest_summary.json"
+TRACKING_ROOT = ROOT / "data" / "tracking"
+TRACKING_WEEKLY_SUMMARY = TRACKING_ROOT / "weekly_summary.csv"
 
 
 def read_csv(path: Path) -> list[dict]:
@@ -220,6 +222,104 @@ def build_kalshi_event_rows(rows: list[dict]) -> list[dict]:
     return sorted(grouped.values(), key=lambda item: (item.get("event_date", ""), item["event_ticker"]))
 
 
+def build_tracking_cards() -> list[dict]:
+    cards = []
+    if not TRACKING_ROOT.exists():
+        return cards
+
+    summary_by_card = {row.get("card", ""): row for row in read_csv(TRACKING_WEEKLY_SUMMARY)}
+    for card_dir in sorted(path for path in TRACKING_ROOT.iterdir() if path.is_dir()):
+        card = card_dir.name
+        predictions = read_csv(card_dir / "predictions.csv")
+        positions = read_csv(card_dir / "paper_positions.csv")
+        outcomes = read_csv(card_dir / "outcomes.csv")
+        summary = read_json(card_dir / "summary.json")
+        weekly = summary_by_card.get(card, {})
+        official_rows = [row for row in positions if row.get("paper_action") == "trade"]
+        lean_rows = [row for row in positions if row.get("paper_action") == "lean"]
+        outcomes_filled = sum(str(row.get("outcome", "")).strip().lower() in {"yes", "no"} for row in outcomes)
+
+        cards.append({
+            "card": card,
+            "label": card.replace("_", " ").title(),
+            "prediction_rows": as_int(weekly.get("prediction_rows")) or len(predictions),
+            "outcomes_filled": as_int(weekly.get("outcomes_filled")) or outcomes_filled,
+            "official_trades": as_int(weekly.get("official_trades")) or len(official_rows),
+            "official_wins": as_int(weekly.get("official_wins")),
+            "official_pnl": number(weekly.get("official_pnl")),
+            "official_roi": number(weekly.get("official_roi")),
+            "leans": len(lean_rows),
+            "lean_wins": as_int(weekly.get("lean_wins")),
+            "lean_pnl": number(weekly.get("lean_pnl")),
+            "lean_roi": number(weekly.get("lean_roi")),
+            "settled_at": summary.get("settled_at", weekly.get("settled_at", "")),
+            "path": str(card_dir.relative_to(ROOT)),
+        })
+    cards.sort(key=lambda item: item.get("settled_at") or item.get("card", ""), reverse=True)
+    return cards
+
+
+def build_tracking_positions() -> list[dict]:
+    if not TRACKING_ROOT.exists():
+        return []
+    positions = []
+    for card_dir in sorted(path for path in TRACKING_ROOT.iterdir() if path.is_dir()):
+        outcomes_by_ticker = {
+            row.get("ticker", ""): row
+            for row in read_csv(card_dir / "outcomes.csv")
+        }
+        for row in read_csv(card_dir / "paper_positions.csv"):
+            item = trim(row, [
+                "card",
+                "paper_action",
+                "paper_reason",
+                "event_title",
+                "fighter_1",
+                "fighter_2",
+                "ticker",
+                "phrase",
+                "watch",
+                "confidence_note",
+            ])
+            for field in [
+                "paper_price",
+                "model_probability",
+                "conservative_probability",
+                "yes_ask",
+                "edge",
+                "conservative_edge",
+                "hurdle",
+            ]:
+                item[field] = number(row.get(field))
+            outcome_row = outcomes_by_ticker.get(row.get("ticker", ""), {})
+            item["outcome"] = str(outcome_row.get("outcome", "")).strip().lower()
+            item["notes"] = outcome_row.get("notes", "")
+            item["matchup"] = (
+                f"{row.get('fighter_1')} vs {row.get('fighter_2')}"
+                if row.get("fighter_1") and row.get("fighter_2")
+                else row.get("event_title", "")
+            )
+            positions.append(item)
+    positions.sort(key=lambda item: (
+        item.get("card", ""),
+        item.get("paper_action") != "trade",
+        -(item.get("conservative_edge") if item.get("conservative_edge") is not None else -999),
+    ), reverse=True)
+    return positions
+
+
+def summarize_tracking(cards: list[dict], positions: list[dict]) -> dict:
+    return {
+        "tracking_card_count": len(cards),
+        "tracking_position_count": len(positions),
+        "tracking_official_trade_count": sum(card.get("official_trades") or 0 for card in cards),
+        "tracking_lean_count": sum(card.get("leans") or 0 for card in cards),
+        "tracking_outcomes_filled": sum(card.get("outcomes_filled") or 0 for card in cards),
+        "tracking_official_pnl": sum(card.get("official_pnl") or 0 for card in cards),
+        "tracking_lean_pnl": sum(card.get("lean_pnl") or 0 for card in cards),
+    }
+
+
 def keep_best(item: dict, field: str, value) -> None:
     if value is None:
         return
@@ -233,8 +333,10 @@ def summarize(
     kalshi_meta: dict,
     kalshi_audit_summary: dict,
     kalshi_context_backtest_summary: dict,
+    tracking_cards: list[dict],
+    tracking_positions: list[dict],
 ) -> dict:
-    return {
+    summary = {
         "kalshi_event_count": len(kalshi_events),
         "kalshi_market_count": len(kalshi_rows),
         "kalshi_priced_count": sum(row.get("yes_ask") is not None for row in kalshi_rows),
@@ -264,6 +366,8 @@ def summarize(
             kalshi_context_backtest_summary.get("prediction_rows")
         ),
     }
+    summary.update(summarize_tracking(tracking_cards, tracking_positions))
+    return summary
 
 
 def build_payload() -> dict:
@@ -272,6 +376,8 @@ def build_payload() -> dict:
     kalshi_context_backtest_summary = read_json(KALSHI_CONTEXT_BACKTEST_SUMMARY)
     kalshi_rows = build_kalshi_rows(read_csv(KALSHI_LIVE))
     kalshi_events = build_kalshi_event_rows(kalshi_rows)
+    tracking_cards = build_tracking_cards()
+    tracking_positions = build_tracking_positions()
 
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -280,6 +386,7 @@ def build_payload() -> dict:
             "kalshi_meta": str(KALSHI_META.relative_to(ROOT)),
             "kalshi_audit_summary": str(KALSHI_AUDIT_SUMMARY.relative_to(ROOT)),
             "kalshi_context_backtest_summary": str(KALSHI_CONTEXT_BACKTEST_SUMMARY.relative_to(ROOT)),
+            "tracking_root": str(TRACKING_ROOT.relative_to(ROOT)),
         },
         "summary": summarize(
             kalshi_rows,
@@ -287,12 +394,16 @@ def build_payload() -> dict:
             kalshi_meta,
             kalshi_audit_summary,
             kalshi_context_backtest_summary,
+            tracking_cards,
+            tracking_positions,
         ),
         "kalshi": kalshi_rows,
         "kalshi_events": kalshi_events,
         "kalshi_meta": kalshi_meta,
         "kalshi_audit_summary": kalshi_audit_summary,
         "kalshi_context_backtest_summary": kalshi_context_backtest_summary,
+        "tracking_cards": tracking_cards,
+        "tracking_positions": tracking_positions,
     }
 
 
