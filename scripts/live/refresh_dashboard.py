@@ -240,6 +240,7 @@ def refresh_once(
     *,
     series_ticker: str,
     event_ticker: str | None,
+    exclude_event_tickers: set[str] | None = None,
     fee_buffer: float,
     min_fighter_fights: int,
     poll_seconds: float,
@@ -259,6 +260,12 @@ def refresh_once(
         }]
     else:
         events = client.get_events(series_ticker=series_ticker, status="open")
+        excluded = {ticker.upper() for ticker in (exclude_event_tickers or set())}
+        if excluded:
+            events = [
+                event for event in events
+                if str(event.get("event_ticker") or "").upper() not in excluded
+            ]
 
     if verbose:
         print(f"Found {len(events)} open Kalshi fight event(s). Pricing phrases now...", flush=True)
@@ -300,6 +307,7 @@ def refresh_once(
         "series_ticker": series_ticker,
         "poll_seconds": poll_seconds,
         "events_discovered": len(events),
+        "excluded_event_tickers": sorted(exclude_event_tickers or []),
         "markets_priced": len(rows),
         "watch_rows": sum(row.get("watch") == "yes" for row in rows),
         "fight_model_required": require_context_model,
@@ -318,6 +326,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Continuously refresh the read-only Kalshi dashboard feed.")
     parser.add_argument("--series", default="KXFIGHTMENTION")
     parser.add_argument("--event-ticker", help="restrict refresh to one event")
+    parser.add_argument(
+        "--exclude-event-ticker",
+        action="append",
+        default=[],
+        help="skip an event, useful after a fight has started; can be repeated",
+    )
     parser.add_argument("--data-dir", default=str(DATA_DEFAULT))
     parser.add_argument("--fee-buffer-cents", type=float, default=2.0)
     parser.add_argument("--min-fighter-fights", type=int, default=15)
@@ -348,6 +362,7 @@ def main() -> None:
                 require_context_model=not args.no_fight_model,
                 series_ticker=args.series,
                 event_ticker=args.event_ticker,
+                exclude_event_tickers={ticker.upper() for ticker in args.exclude_event_ticker},
                 fee_buffer=args.fee_buffer_cents / 100.0,
                 min_fighter_fights=args.min_fighter_fights,
                 poll_seconds=args.poll_seconds,

@@ -316,7 +316,7 @@ def event_date_from_ticker(ticker: str) -> str | None:
 
 
 def fighters_from_market_title(title: str) -> tuple[str, str]:
-    match = re.search(r"during\s+(.+?)\s+vs\.?\s+(.+?)\s+UFC\s+Fight", title or "", re.IGNORECASE)
+    match = re.search(r"during\s+(.+?)\s+vs\.?\s+(.+?)\s+(?:UFC\s+)?Fight\b", title or "", re.IGNORECASE)
     if not match:
         raise ValueError(f"Could not parse fighters from Kalshi title: {title!r}")
     return match.group(1).strip(), match.group(2).strip()
