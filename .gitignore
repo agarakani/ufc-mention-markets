@@ -3,6 +3,7 @@ ufc_cleaned_export/
 
 # Derived feature tables
 data/processed/
+data/tracking/
 
 # External outcome datasets — downloaded locally, not committed
 kaggle_data/

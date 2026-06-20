@@ -110,7 +110,9 @@ claiming a trade-ready edge.
 ├── scripts/
 │   ├── live/           refresh Kalshi prices and price one fight
 │   ├── model/          backtests and phrase-rule checks
-│   └── data/           rebuild the training tables
+│   ├── data/           rebuild the training tables
+│   └── tracking/       weekly paper P/L tracker
+├── tracking/           how to track weekly results
 ├── ufc_mentions/       reusable model, Kalshi, phrase, and transcript code
 ├── tests/              focused checks for the current Kalshi flow
 ├── market_phrases.txt  phrase list used when rebuilding training data
@@ -125,6 +127,29 @@ The main commands live in `scripts/`:
 - `scripts/model/audit_grouped_rules.py`: checks grouped Kalshi phrases against transcripts.
 - `scripts/data/build_match_csv.py`: rebuilds `fight_mentions.csv` from transcripts.
 - `scripts/data/join_kaggle_outcomes.py`: joins transcript rows with UFC stats.
+- `scripts/tracking/snapshot_card.py`: saves the current board before a card starts.
+- `scripts/tracking/settle_card.py`: calculates paper P/L after results are filled in.
+
+## Weekly Tracking
+
+Before a card starts:
+
+```bash
+python3 scripts/live/refresh_dashboard.py
+python3 scripts/tracking/snapshot_card.py --card "UFC Vegas 119 Kape vs Horiguchi main card"
+```
+
+After the card, fill `data/tracking/<card>/outcomes.csv` with `yes` or `no`,
+then run:
+
+```bash
+python3 scripts/tracking/settle_card.py --card "UFC Vegas 119 Kape vs Horiguchi main card"
+```
+
+This tracks two numbers:
+
+- `official`: only rows the model marked `WATCH`.
+- `leans`: rows the model liked but did not clear the safety bar.
 
 ## Data
 
@@ -133,6 +158,7 @@ Local data folders are gitignored:
 - `ufc_cleaned_export/`: fight transcript JSON files
 - `kaggle_data/ultimate_ufc_dataset/`: Kaggle UFC stats
 - `data/processed/`: generated CSVs used by the model
+- `data/tracking/`: generated weekly paper-trading files
 - `market_data/`: live Kalshi snapshots and price history
 - `model_outputs/`: model and backtest outputs
 
