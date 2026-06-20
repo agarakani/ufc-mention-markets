@@ -166,7 +166,7 @@
     els.trackingMeta.textContent = [
       `${formatInteger(summary.tracking_card_count)} card${Number(summary.tracking_card_count) === 1 ? "" : "s"}`,
       `${formatInteger(summary.tracking_official_trade_count)} official paper trades`,
-      `${formatInteger(summary.tracking_lean_count)} leans`,
+      `${formatInteger(summary.tracking_lean_count)} safe leans`,
       `${formatInteger(summary.tracking_outcomes_filled)} outcomes filled`,
     ].join(" · ");
 
@@ -180,7 +180,7 @@
         </div>
         <div class="tracking-card-stats">
           <span><strong>${formatInteger(card.official_trades)}</strong> official</span>
-          <span><strong>${formatInteger(card.leans)}</strong> leans</span>
+          <span><strong>${formatInteger(card.leans)}</strong> safe leans</span>
           <span><strong>${formatInteger(card.outcomes_filled)}</strong> outcomes</span>
           <span class="${pnlClass(officialPnl)}"><strong>${formatMoney(officialPnl)}</strong> official P/L</span>
           <span class="${pnlClass(leanPnl)}"><strong>${formatMoney(leanPnl)}</strong> lean P/L</span>
@@ -190,7 +190,7 @@
 
     const shown = positions.slice(0, 12);
     if (!shown.length) {
-      els.trackingBody.innerHTML = '<tr><td class="empty" colspan="7">This card has no paper trades or leans.</td></tr>';
+      els.trackingBody.innerHTML = '<tr><td class="empty" colspan="7">This card has no paper trades or safe leans.</td></tr>';
       return;
     }
 

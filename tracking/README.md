@@ -25,7 +25,7 @@ python3 scripts/tracking/settle_card.py --card "UFC Vegas 119 Kape vs Horiguchi 
 The tracker keeps two scores:
 
 - `official`: only rows the model marked `WATCH`.
-- `leans`: rows the model liked but did not clear the safety bar.
+- `leans`: rows where the safer model number beat the Kalshi price but did not clear the official `WATCH` bar.
 
 If official P/L stays flat because there are no WATCH rows, leans tell us
 whether the model is too cautious or whether the prices are simply not good.

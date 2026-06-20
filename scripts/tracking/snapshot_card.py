@@ -83,11 +83,11 @@ def classify_row(row: dict, min_lean_edge: float) -> tuple[str, str]:
 
     safe_edge = number(row.get("conservative_edge"))
     if safe_edge is not None and safe_edge > min_lean_edge:
-        return "lean", "positive safe edge, below watch bar"
+        return "lean", "safe number beats price, below watch bar"
 
     edge = number(row.get("edge"))
     if edge is not None and edge > min_lean_edge:
-        return "lean", "positive model edge, below watch bar"
+        return "pass", "raw model beats price, safe number does not"
 
     return "pass", "no edge"
 
