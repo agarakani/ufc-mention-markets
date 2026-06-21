@@ -8,9 +8,6 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .kalshi_mentions import wilson_lower_bound
-
-
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DEFAULT = ROOT / "dashboard" / "data.js"
 
@@ -77,7 +74,6 @@ def build_kalshi_rows(rows: list[dict]) -> list[dict]:
             "word_type",
             "confidence_note",
             "status",
-            "conservative_probability_source",
             "validation_status",
             "error",
             "probability_source",
@@ -90,7 +86,6 @@ def build_kalshi_rows(rows: list[dict]) -> list[dict]:
         ])
         for field in [
             "model_probability",
-            "conservative_probability",
             "history_probability",
             "context_probability",
             "context_positive_rate",
@@ -107,7 +102,6 @@ def build_kalshi_rows(rows: list[dict]) -> list[dict]:
             "fee_buffer",
             "hurdle",
             "edge",
-            "conservative_edge",
             "previous_yes_ask",
             "ask_change",
         ]:
@@ -123,7 +117,6 @@ def build_kalshi_rows(rows: list[dict]) -> list[dict]:
             item[field] = as_int(row.get(field))
 
         item["confidence_ok"] = as_bool(row.get("confidence_ok"))
-        fill_safe_probability(item)
         item["watch"] = as_bool(row.get("watch")) or legacy_watch(row, item)
         if item["watch"] and not item.get("validation_status"):
             item["validation_status"] = "unvalidated"
@@ -133,50 +126,18 @@ def build_kalshi_rows(rows: list[dict]) -> list[dict]:
     return out
 
 
-def fill_safe_probability(item: dict) -> None:
-    if item["conservative_probability"] is not None:
-        return
-    if item.get("word_type") == "generic" or not item.get("fighter_fights"):
-        item["conservative_probability"] = wilson_lower_bound(
-            item.get("league_hits") or 0,
-            item.get("league_fights") or 0,
-        )
-        if item["conservative_probability"] is not None:
-            item["conservative_probability_source"] = (
-                f"league Wilson 95% ({item.get('league_hits')}/{item.get('league_fights')})"
-            )
-    else:
-        item["conservative_probability"] = wilson_lower_bound(
-            item.get("fighter_hits") or 0,
-            item.get("fighter_fights") or 0,
-        )
-        if item["conservative_probability"] is not None:
-            item["conservative_probability_source"] = (
-                f"fighter Wilson 95% ({item.get('fighter_hits')}/{item.get('fighter_fights')})"
-            )
-
-    if (
-        item["conservative_edge"] is None
-        and item["conservative_probability"] is not None
-        and item["yes_ask"] is not None
-    ):
-        item["conservative_edge"] = item["conservative_probability"] - item["yes_ask"]
-
-
 def legacy_watch(row: dict, item: dict) -> bool:
     return bool(
         row.get("qualified") == "yes"
         and item.get("confidence_ok")
-        and item.get("conservative_edge") is not None
+        and item.get("edge") is not None
         and item.get("hurdle") is not None
-        and item["conservative_edge"] > item["hurdle"]
+        and item["edge"] > item["hurdle"]
     )
 
 
 def kalshi_sort_key(item: dict):
-    best_edge = item.get("conservative_edge")
-    if best_edge is None:
-        best_edge = item.get("edge")
+    best_edge = item.get("edge")
     if best_edge is None:
         best_edge = -999
     return (
@@ -206,7 +167,6 @@ def build_kalshi_event_rows(rows: list[dict]) -> list[dict]:
             "error_count": 0,
             "watch_count": 0,
             "best_edge": None,
-            "best_conservative_edge": None,
         })
         item["market_count"] += 1
         if row.get("yes_ask") is not None:
@@ -218,7 +178,6 @@ def build_kalshi_event_rows(rows: list[dict]) -> list[dict]:
         if row.get("watch"):
             item["watch_count"] += 1
         keep_best(item, "best_edge", row.get("edge"))
-        keep_best(item, "best_conservative_edge", row.get("conservative_edge"))
     return sorted(grouped.values(), key=lambda item: (item.get("event_date", ""), item["event_ticker"]))
 
 
@@ -284,10 +243,8 @@ def build_tracking_positions() -> list[dict]:
             for field in [
                 "paper_price",
                 "model_probability",
-                "conservative_probability",
                 "yes_ask",
                 "edge",
-                "conservative_edge",
                 "hurdle",
             ]:
                 item[field] = number(row.get(field))
@@ -303,7 +260,7 @@ def build_tracking_positions() -> list[dict]:
     positions.sort(key=lambda item: (
         item.get("card", ""),
         item.get("paper_action") != "trade",
-        -(item.get("conservative_edge") if item.get("conservative_edge") is not None else -999),
+        -(item.get("edge") if item.get("edge") is not None else -999),
     ), reverse=True)
     return positions
 

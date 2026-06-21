@@ -6,17 +6,17 @@ from scripts.tracking.snapshot_card import classify_row, slug
 
 class TrackingTests(unittest.TestCase):
     def test_watch_row_is_an_official_paper_trade(self):
-        action, reason = classify_row({"watch": "yes", "conservative_edge": "0.01"}, 0.0)
+        action, reason = classify_row({"watch": "yes", "edge": "0.01"}, 0.0)
         self.assertEqual(action, "trade")
         self.assertIn("watch", reason)
 
-    def test_positive_safe_edge_below_watch_bar_is_a_lean(self):
-        action, reason = classify_row({"watch": "no", "conservative_edge": "0.03"}, 0.0)
+    def test_positive_model_edge_below_watch_bar_is_a_lean(self):
+        action, reason = classify_row({"watch": "no", "edge": "0.03"}, 0.0)
         self.assertEqual(action, "lean")
-        self.assertIn("safe edge", reason)
+        self.assertIn("model edge", reason)
 
     def test_no_edge_is_a_pass(self):
-        action, reason = classify_row({"watch": "no", "conservative_edge": "-0.01", "edge": "-0.01"}, 0.0)
+        action, reason = classify_row({"watch": "no", "edge": "-0.01"}, 0.0)
         self.assertEqual(action, "pass")
         self.assertEqual(reason, "no edge")
 

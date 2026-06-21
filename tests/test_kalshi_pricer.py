@@ -190,13 +190,13 @@ class EstimateTests(unittest.TestCase):
         self.assertEqual(estimate.fighter_fights, 1)
         self.assertEqual(estimate.fighter_hits, 1)
 
-    def test_wilson_lower_bound_is_conservative(self):
+    def test_wilson_lower_bound_stays_below_one(self):
         self.assertLess(wilson_lower_bound(16, 16), 1.0)
         self.assertIsNone(wilson_lower_bound(0, 0))
 
 
 class GateTests(unittest.TestCase):
-    def test_watch_must_clear_spread_fee_confidence_and_conservative_bound(self):
+    def test_watch_must_clear_spread_fee_and_confidence(self):
         corpus = TranscriptCorpus([
             fight(str(i), "A", f"B{i}", "Suga lands", "Suga", "") for i in range(16)
         ] + [
@@ -219,10 +219,9 @@ class GateTests(unittest.TestCase):
         )
         self.assertTrue(row.estimate.confidence_ok)
         self.assertGreater(row.edge, row.hurdle)
-        self.assertGreater(row.conservative_edge, row.hurdle)
         self.assertTrue(row.watch)
 
-        point_only = price_market(
+        smaller_edge = price_market(
             market,
             TopOfBook(yes_bid=0.77, yes_ask=0.79, no_bid=0.21, no_ask=0.23),
             corpus,
@@ -232,9 +231,8 @@ class GateTests(unittest.TestCase):
             fee_buffer=0.02,
             min_fighter_fights=15,
         )
-        self.assertGreater(point_only.edge, point_only.hurdle)
-        self.assertLessEqual(point_only.conservative_edge, point_only.hurdle)
-        self.assertFalse(point_only.watch)
+        self.assertGreater(smaller_edge.edge, smaller_edge.hurdle)
+        self.assertTrue(smaller_edge.watch)
 
         low_confidence = price_market(
             market,
@@ -354,7 +352,7 @@ class DashboardFeedTests(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["watch"], "yes")
         self.assertEqual(rows[0]["probability_source"], "simple_history")
-        self.assertIn("conservative_probability", rows[0])
+        self.assertIn("model_probability", rows[0])
         self.assertEqual(rows[0]["event_date"], "2026-06-20")
         add_price_changes(rows, [{"ticker": rows[0]["ticker"], "yes_ask": "0.45"}])
         self.assertAlmostEqual(float(rows[0]["ask_change"]), -0.05)
