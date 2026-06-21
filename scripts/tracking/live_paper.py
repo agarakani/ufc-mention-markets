@@ -307,6 +307,7 @@ def record_live_entries(
     contracts: float = 1.0,
     entered_at: str | None = None,
     client=None,
+    allow_entries: bool = True,
 ) -> dict:
     card_slug = slug(card)
     card_dir = out_root / card_slug
@@ -321,17 +322,18 @@ def record_live_entries(
 
     stamp = entered_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
     new_entries: list[dict] = []
-    for row in rows:
-        ticker = row.get("ticker", "")
-        if not ticker or ticker in already_traded:
-            continue
-        if not is_yes(row.get("watch")):
-            continue
-        entry = build_entry(row, card=card_slug, entered_at=stamp, contracts=contracts)
-        if entry is None:
-            continue
-        new_entries.append(entry)
-        already_traded.add(ticker)
+    if allow_entries:
+        for row in rows:
+            ticker = row.get("ticker", "")
+            if not ticker or ticker in already_traded:
+                continue
+            if not is_yes(row.get("watch")):
+                continue
+            entry = build_entry(row, card=card_slug, entered_at=stamp, contracts=contracts)
+            if entry is None:
+                continue
+            new_entries.append(entry)
+            already_traded.add(ticker)
 
     card_dir.mkdir(parents=True, exist_ok=True)
     if new_entries:
@@ -384,6 +386,7 @@ def main() -> None:
     parser.add_argument("--out-root", default=str(OUT_ROOT_DEFAULT), help="where local tracking files are written")
     parser.add_argument("--contracts", type=float, default=1.0, help="paper contracts per entry")
     parser.add_argument("--no-auto-settle", action="store_true", help="skip checking Kalshi for resolved outcomes")
+    parser.add_argument("--settle-only", action="store_true", help="update pending/resolved outcomes without adding entries")
     args = parser.parse_args()
 
     source = Path(args.source)
@@ -397,6 +400,7 @@ def main() -> None:
         out_root=Path(args.out_root),
         contracts=args.contracts,
         client=None if args.no_auto_settle else KalshiClient(),
+        allow_entries=not args.settle_only,
     )
     print(f"Paper card: {result['card']}")
     print(f"New entries: {result['new_entries']}")
