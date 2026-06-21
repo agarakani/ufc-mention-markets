@@ -38,6 +38,10 @@ class PricedMarket:
     rules: str
     book: TopOfBook
     estimate: MentionEstimate
+    yes_edge: float | None
+    no_edge: float | None
+    side: str
+    side_price: float | None
     edge: float | None
     hurdle: float | None
     watch: bool
@@ -120,12 +124,20 @@ def price_market(
             estimate,
             context_model.predict(forms, fighter_1, fighter_2, cutoff_date),
         )
-    edge = None if book.yes_ask is None else estimate.probability - book.yes_ask
+    yes_edge = None if book.yes_ask is None else estimate.probability - book.yes_ask
+    no_edge = None if book.no_ask is None else (1.0 - estimate.probability) - book.no_ask
+    candidates = [
+        ("yes", book.yes_ask, yes_edge),
+        ("no", book.no_ask, no_edge),
+    ]
+    candidates = [candidate for candidate in candidates if candidate[1] is not None and candidate[2] is not None]
+    side, side_price, edge = max(candidates, key=lambda candidate: candidate[2]) if candidates else ("", None, None)
     hurdle = None if book.spread is None else book.spread + fee_buffer
     fight_model_ready = estimate.probability_source == "fight_context_model"
     watch = bool(
         estimate.confidence_ok
         and (fight_model_ready or not require_context_model)
+        and side in {"yes", "no"}
         and edge is not None
         and hurdle is not None
         and edge > hurdle
@@ -147,6 +159,10 @@ def price_market(
         rules=market.get("rules_primary", ""),
         book=book,
         estimate=estimate,
+        yes_edge=yes_edge,
+        no_edge=no_edge,
+        side=side,
+        side_price=side_price,
         edge=edge,
         hurdle=hurdle,
         watch=watch,
@@ -213,17 +229,17 @@ def print_rows(rows: list[PricedMarket], *, show_all: bool) -> None:
         print("No markets clear the model edge gate with adequate sample confidence.")
         return
     print(
-        f"{'phrase group':<39} {'model':>7} {'YES ask':>8} {'spread':>7} "
-        f"{'edge':>7} {'need':>7}  status"
+        f"{'phrase group':<39} {'model':>7} {'YES':>7} {'NO':>7} "
+        f"{'side':>5} {'edge':>7} {'need':>7}  status"
     )
     print("-" * 128)
     for row in shown:
         print(
             f"{row.label[:39]:<39} {_pct(row.estimate.probability):>7} "
-            f"{_pct(row.book.yes_ask):>8} "
-            f"{_pct(row.book.spread):>7} {_pct(row.edge, signed=True):>7} "
+            f"{_pct(row.book.yes_ask):>7} {_pct(row.book.no_ask):>7} "
+            f"{row.side.upper():>5} {_pct(row.edge, signed=True):>7} "
             f"{_pct(row.hurdle):>7}  "
-            f"{'WATCH' if row.watch else 'no watch'}; {row.validation_status}"
+            f"{'WATCH ' + row.side.upper() if row.watch else 'no watch'}; {row.validation_status}"
         )
         if show_all:
             prior = "league only" if row.estimate.prior_strength is None else f"k={row.estimate.prior_strength:g}"

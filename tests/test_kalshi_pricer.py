@@ -218,6 +218,8 @@ class GateTests(unittest.TestCase):
             min_fighter_fights=15,
         )
         self.assertTrue(row.estimate.confidence_ok)
+        self.assertEqual(row.side, "yes")
+        self.assertAlmostEqual(row.yes_edge, row.edge)
         self.assertGreater(row.edge, row.hurdle)
         self.assertTrue(row.watch)
 
@@ -233,6 +235,52 @@ class GateTests(unittest.TestCase):
         )
         self.assertGreater(smaller_edge.edge, smaller_edge.hurdle)
         self.assertTrue(smaller_edge.watch)
+
+    def test_low_model_probability_can_watch_no_side(self):
+        class LowFightModel:
+            def predict(self, forms, fighter_1, fighter_2, event_date):
+                return ContextPrediction(
+                    probability=0.10,
+                    status="ok",
+                    note="fake low model for test",
+                    profile="stats_only_history",
+                    training_rows=100,
+                    validation_rows=50,
+                    positive_rate=0.2,
+                    validation_log_loss=0.5,
+                    base_log_loss=0.6,
+                    log_loss_improvement=0.1,
+                    best_c=0.01,
+                    calibrated=True,
+                    row_source="test",
+                )
+
+        corpus = TranscriptCorpus([
+            fight(str(i), "A", f"B{i}", "Suga lands", "Suga", "") for i in range(16)
+        ] + [
+            fight(f"x{i}", f"X{i}", f"Y{i}", "nothing") for i in range(64)
+        ])
+        market = {
+            "ticker": "KX-TEST",
+            "custom_strike": {"Word": "Suga"},
+            "rules_primary": "If the commentator says Suga as part of the fight, resolves Yes.",
+        }
+        row = price_market(
+            market,
+            TopOfBook(yes_bid=0.70, yes_ask=0.80, no_bid=0.20, no_ask=0.30),
+            corpus,
+            "A",
+            "B0",
+            cutoff_date="2026-01-01",
+            fee_buffer=0.02,
+            min_fighter_fights=15,
+            context_model=LowFightModel(),
+            require_context_model=True,
+        )
+        self.assertEqual(row.side, "no")
+        self.assertAlmostEqual(row.no_edge, row.edge)
+        self.assertGreater(row.edge, row.hurdle)
+        self.assertTrue(row.watch)
 
         low_confidence = price_market(
             market,
@@ -314,6 +362,7 @@ class GateTests(unittest.TestCase):
         )
         self.assertEqual(row.estimate.probability_source, "fight_context_model")
         self.assertAlmostEqual(row.estimate.probability, 0.9)
+        self.assertEqual(row.side, "yes")
         self.assertTrue(row.watch)
 
 
@@ -353,6 +402,9 @@ class DashboardFeedTests(unittest.TestCase):
         self.assertEqual(rows[0]["watch"], "yes")
         self.assertEqual(rows[0]["probability_source"], "simple_history")
         self.assertIn("model_probability", rows[0])
+        self.assertIn("yes_edge", rows[0])
+        self.assertIn("no_edge", rows[0])
+        self.assertEqual(rows[0]["side"], "yes")
         self.assertEqual(rows[0]["event_date"], "2026-06-20")
         add_price_changes(rows, [{"ticker": rows[0]["ticker"], "yes_ask": "0.45"}])
         self.assertAlmostEqual(float(rows[0]["ask_change"]), -0.05)

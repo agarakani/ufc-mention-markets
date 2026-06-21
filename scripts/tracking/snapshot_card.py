@@ -22,6 +22,7 @@ TRACKING_FIELDS = [
     "tracked_at",
     "paper_action",
     "paper_reason",
+    "paper_side",
     "paper_contracts",
     "paper_price",
 ]
@@ -78,12 +79,16 @@ def default_card_name(meta_path: Path) -> str:
 
 
 def classify_row(row: dict, min_lean_edge: float) -> tuple[str, str]:
+    side = str(row.get("side", "")).strip().lower()
+    if side not in {"yes", "no"}:
+        return "pass", "no side"
+
     if str(row.get("watch", "")).strip().lower() == "yes":
-        return "trade", "watch row"
+        return "trade", f"watch {side}"
 
     edge = number(row.get("edge"))
     if edge is not None and edge > min_lean_edge:
-        return "lean", "positive model edge, below watch bar"
+        return "lean", f"positive model edge on {side}, below watch bar"
 
     return "pass", "no edge"
 
@@ -99,8 +104,9 @@ def build_tracking_rows(rows: list[dict], *, card: str, min_lean_edge: float) ->
             "tracked_at": tracked_at,
             "paper_action": action,
             "paper_reason": reason,
+            "paper_side": row.get("side", ""),
             "paper_contracts": "1" if action in {"trade", "lean"} else "0",
-            "paper_price": row.get("yes_ask", ""),
+            "paper_price": row.get("side_price", ""),
         })
         out.append(enriched)
     return out

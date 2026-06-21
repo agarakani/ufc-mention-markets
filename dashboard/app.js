@@ -12,7 +12,9 @@
     { key: "phrase", label: "Phrase", type: "phrase" },
     { key: "matchup", label: "Fight", type: "fight" },
     { key: "model_probability", label: "Our %", type: "pct", className: "num" },
-    { key: "yes_ask", label: "Kalshi", type: "pct", className: "num" },
+    { key: "yes_ask", label: "YES price", type: "pct", className: "num" },
+    { key: "no_ask", label: "NO price", type: "pct", className: "num" },
+    { key: "side", label: "Side", type: "side" },
     { key: "edge", label: "Edge", type: "pct", className: "num", badge: true, signed: true },
     { key: "reason", label: "Why", type: "reason" },
   ];
@@ -92,11 +94,13 @@
     const snapshot = summary.kalshi_snapshot_timestamp
       ? formatTimestamp(summary.kalshi_snapshot_timestamp)
       : "not refreshed yet";
+    const age = summary.kalshi_snapshot_timestamp ? snapshotAge(summary.kalshi_snapshot_timestamp) : "";
+    const stale = summary.kalshi_snapshot_timestamp ? isStale(summary.kalshi_snapshot_timestamp, summary.kalshi_poll_seconds) : false;
     const access = summary.kalshi_authenticated ? "authenticated read" : "public read";
     const polling = summary.kalshi_poll_seconds > 0
       ? `; refreshes every ${formatInteger(summary.kalshi_poll_seconds)}s`
       : "";
-    els.status.textContent = `Updated ${snapshot}; ${access}; read-only${polling}`;
+    els.status.textContent = `${stale ? "STALE " : "Updated"} ${snapshot}${age ? ` (${age})` : ""}; ${access}; read-only${polling}`;
   }
 
   function render() {
@@ -115,7 +119,7 @@
     const summary = data.summary || {};
     const backtestGroups = Number(summary.kalshi_backtest_measured_groups || 0);
     const backtestWins = Number(summary.kalshi_backtest_groups_beating_base || 0);
-    const base = `${formatInteger(rows.length)} rows shown. Fight-level model first; Kalshi price only checks the edge.`;
+    const base = `${formatInteger(rows.length)} rows shown. YES uses the YES buy price; NO uses the NO buy price.`;
     if (!backtestGroups) return base;
     return `${base} Old-fight test: ${formatInteger(backtestWins)}/${formatInteger(backtestGroups)} phrase groups beat the simple average.`;
   }
@@ -157,7 +161,7 @@
     if (!cards.length) {
       els.trackingMeta.textContent = "No paper-tracking cards saved yet.";
       els.trackingCards.innerHTML = '<article class="tracking-card empty-card"><strong>No tracking cards yet</strong><span>Run snapshot_card.py before a card and it will show here.</span></article>';
-      els.trackingBody.innerHTML = '<tr><td class="empty" colspan="7">No tracked rows yet.</td></tr>';
+      els.trackingBody.innerHTML = '<tr><td class="empty" colspan="8">No tracked rows yet.</td></tr>';
       return;
     }
 
@@ -188,7 +192,7 @@
 
     const shown = positions.slice(0, 12);
     if (!shown.length) {
-      els.trackingBody.innerHTML = '<tr><td class="empty" colspan="7">This card has no paper trades or leans.</td></tr>';
+      els.trackingBody.innerHTML = '<tr><td class="empty" colspan="8">This card has no paper trades or leans.</td></tr>';
       return;
     }
 
@@ -197,10 +201,11 @@
       const outcome = row.outcome ? row.outcome.toUpperCase() : "OPEN";
       const outcomeTone = row.outcome === "yes" ? "good" : row.outcome === "no" ? "bad" : "";
       return `<tr>
-        <td>${pill((row.paper_action || "").toUpperCase(), actionTone)}</td>
+        <td>${pill(trackingAction(row), actionTone)}</td>
         <td><span class="muted">${escapeHtml(row.card || "")}</span></td>
         <td>${escapeHtml(row.matchup || "")}</td>
         <td>${pill(row.phrase || "")}</td>
+        <td>${sidePill(row.paper_side || row.side)}</td>
         <td class="num">${formatPlainPercent(row.paper_price)}</td>
         <td class="num">${pill(formatPlainPercent(row.edge, true), parseNumber(row.edge) > 0 ? "good" : "bad")}</td>
         <td>${pill(outcome, outcomeTone)}</td>
@@ -231,37 +236,42 @@
   }
 
   function callLabel(row) {
-    if (row.watch) return "WATCH";
+    const side = String(row.side || "").toUpperCase();
+    if (row.watch) return side ? `WATCH ${side}` : "WATCH";
     if (row.status === "error") return "ERROR";
     if (row.probability_source !== "fight_context_model") return "HISTORY ONLY";
     if (row.confidence_ok === false) return "LOW DATA";
+    if (parseNumber(row.edge) > 0 && side) return `LEAN ${side}`;
     return "PASS";
   }
 
   function reasonForRow(row) {
     if (row.status === "error") return row.error || "This market could not be priced.";
-    if (row.yes_ask === null || row.yes_ask === undefined || row.yes_ask === "") {
-      return "No live YES ask is available in the book yet.";
+    if (row.yes_ask === null || row.yes_ask === undefined || row.yes_ask === "" || row.no_ask === null || row.no_ask === undefined || row.no_ask === "") {
+      return "No live YES/NO ask is available in the book yet.";
     }
     if (row.probability_source !== "fight_context_model") {
       return "No fight-level number was available, so this is history only and cannot be a watch row.";
     }
 
     const model = formatPlainPercent(row.model_probability);
-    const ask = formatPlainPercent(row.yes_ask);
+    const side = String(row.side || "").toUpperCase();
+    const sidePrice = formatPlainPercent(row.side_price);
+    const yesEdge = formatPlainPercent(row.yes_edge, true);
+    const noEdge = formatPlainPercent(row.no_edge, true);
     const edge = formatPlainPercent(row.edge, true);
     const priorFights = Number(row.fighter_fights || 0);
 
     if (row.watch) {
-      return `Our number is ${model}, Kalshi asks ${ask}, and the edge is ${edge} after the spread/fee check.`;
+      return `Our YES chance is ${model}. Best side is ${side} at ${sidePrice}, with edge ${edge} after the spread/fee check.`;
     }
     if (row.confidence_ok === false) {
-      return `Low data: only ${formatInteger(priorFights)} prior fighter fights matched this phrase setup, so it stays off watch.`;
+      return `Low data: ${formatInteger(priorFights)} prior fighter fights. YES edge ${yesEdge}; NO edge ${noEdge}.`;
     }
     if (parseNumber(row.edge) <= 0) {
-      return `Kalshi asks ${ask}; our number is ${model}. Edge is ${edge}, so no play.`;
+      return `Our YES chance is ${model}. YES edge ${yesEdge}; NO edge ${noEdge}. No side is cheap enough.`;
     }
-    return `Edge is ${edge}, but it does not clear the spread/fee check.`;
+    return `Best side is ${side} at ${sidePrice}. Edge is ${edge}, but it does not clear the spread/fee check.`;
   }
 
   function applyFilters(rows) {
@@ -348,6 +358,7 @@
     if (column.type === "pct") return formatPercent(value, column);
     if (column.type === "phrase") return pill(value);
     if (column.type === "signal") return signalPill(value);
+    if (column.type === "side") return sidePill(value);
     if (column.type === "fight") return fightCell(row);
     if (column.type === "reason") return `<span class="reason" title="${escapeHtml(value || "")}">${escapeHtml(value || "")}</span>`;
     if (value === null || value === undefined || value === "") return '<span class="muted">--</span>';
@@ -356,8 +367,19 @@
 
   function signalPill(value) {
     const label = String(value || "");
-    const tone = label === "WATCH" ? "warn" : label === "ERROR" ? "bad" : label === "LOW DATA" ? "quiet-warn" : "";
+    const tone = label.startsWith("WATCH") ? "warn" : label === "ERROR" ? "bad" : label === "LOW DATA" ? "quiet-warn" : label.startsWith("LEAN") ? "quiet-warn" : "";
     return pill(label, tone);
+  }
+
+  function sidePill(value) {
+    const label = String(value || "").toUpperCase();
+    return label ? pill(label, label === "YES" ? "good" : "quiet-warn") : '<span class="muted">--</span>';
+  }
+
+  function trackingAction(row) {
+    const action = String(row.paper_action || "").toUpperCase();
+    const side = String(row.paper_side || row.side || "").toUpperCase();
+    return side ? `${action} ${side}` : action;
   }
 
   function fightCell(row) {
@@ -433,6 +455,26 @@
       hour: "numeric",
       minute: "2-digit",
     });
+  }
+
+  function snapshotAge(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    const seconds = Math.max(0, Math.round((Date.now() - date.getTime()) / 1000));
+    if (seconds < 60) return `${seconds}s old`;
+    const minutes = Math.round(seconds / 60);
+    if (minutes < 60) return `${minutes}m old`;
+    const hours = Math.round(minutes / 60);
+    return `${hours}h old`;
+  }
+
+  function isStale(value, pollSeconds) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return false;
+    const ageSeconds = (Date.now() - date.getTime()) / 1000;
+    const expected = Number(pollSeconds || 0);
+    const limit = expected > 0 ? Math.max(90, expected * 3) : 120;
+    return ageSeconds > limit;
   }
 
   function escapeHtml(value) {

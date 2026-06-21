@@ -9,7 +9,7 @@ python3 scripts/live/refresh_dashboard.py
 python3 scripts/tracking/snapshot_card.py --card "UFC Vegas 119 Kape vs Horiguchi main card"
 ```
 
-That saves the model numbers, Kalshi prices, official paper trades, and leans in
+That saves the model numbers, Kalshi YES/NO prices, official paper trades, and leans in
 `data/tracking/<card>/`.
 
 After the fights:
@@ -25,7 +25,7 @@ python3 scripts/tracking/settle_card.py --card "UFC Vegas 119 Kape vs Horiguchi 
 The tracker keeps two scores:
 
 - `official`: only rows the model marked `WATCH`.
-- `leans`: rows where the model edge was positive but did not clear the full watch bar.
+- `leans`: rows where YES or NO had positive model edge but did not clear the full watch bar.
 
 If official P/L stays flat because there are no WATCH rows, leans tell us
 whether the model is close on price or whether the prices are simply not good.

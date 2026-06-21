@@ -101,6 +101,9 @@ def build_kalshi_rows(rows: list[dict]) -> list[dict]:
             "spread",
             "fee_buffer",
             "hurdle",
+            "yes_edge",
+            "no_edge",
+            "side_price",
             "edge",
             "previous_yes_ask",
             "ask_change",
@@ -116,6 +119,7 @@ def build_kalshi_rows(rows: list[dict]) -> list[dict]:
         ]:
             item[field] = as_int(row.get(field))
 
+        item["side"] = str(row.get("side", "")).strip().lower()
         item["confidence_ok"] = as_bool(row.get("confidence_ok"))
         item["watch"] = as_bool(row.get("watch")) or legacy_watch(row, item)
         if item["watch"] and not item.get("validation_status"):
@@ -244,10 +248,16 @@ def build_tracking_positions() -> list[dict]:
                 "paper_price",
                 "model_probability",
                 "yes_ask",
+                "no_ask",
+                "yes_edge",
+                "no_edge",
+                "side_price",
                 "edge",
                 "hurdle",
             ]:
                 item[field] = number(row.get(field))
+            item["paper_side"] = str(row.get("paper_side") or row.get("side") or "").strip().lower()
+            item["side"] = str(row.get("side", "")).strip().lower()
             outcome_row = outcomes_by_ticker.get(row.get("ticker", ""), {})
             item["outcome"] = str(outcome_row.get("outcome", "")).strip().lower()
             item["notes"] = outcome_row.get("notes", "")
@@ -260,7 +270,7 @@ def build_tracking_positions() -> list[dict]:
     positions.sort(key=lambda item: (
         item.get("card", ""),
         item.get("paper_action") != "trade",
-        -(item.get("edge") if item.get("edge") is not None else -999),
+        item.get("edge") if item.get("edge") is not None else -999,
     ), reverse=True)
     return positions
 
