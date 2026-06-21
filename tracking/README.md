@@ -47,6 +47,10 @@ Manual recalculation is still available:
 python3 scripts/tracking/settle_card.py --card "UFC Vegas 119 Kape vs Horiguchi main card"
 ```
 
+If a card was just a messy practice run, put a `.practice_card` file inside
+that card folder. The dashboard will hide it from scoring, but the files stay
+there for debugging.
+
 The tracker keeps two scores:
 
 - `official`: only rows the model marked `WATCH`.

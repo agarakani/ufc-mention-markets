@@ -152,6 +152,39 @@ class TrackingTests(unittest.TestCase):
             self.assertEqual(outcomes[0]["outcome"], "")
             self.assertEqual(outcomes[0]["resolution_status"], "pending")
 
+    def test_settle_only_does_not_add_new_entries(self):
+        with TemporaryDirectory() as tmp:
+            rows = [{
+                "watch": "yes",
+                "ticker": "TEST-LATE",
+                "event_ticker": "TEST",
+                "event_title": "Blue vs Red",
+                "fighter_1": "Blue",
+                "fighter_2": "Red",
+                "event_date": "2026-06-20",
+                "phrase": "Late Watch",
+                "side": "yes",
+                "side_price": "0.20",
+                "yes_ask": "0.20",
+                "no_ask": "0.85",
+                "edge": "0.15",
+                "hurdle": "0.05",
+                "market_status": "active",
+            }]
+
+            result = record_live_entries(
+                rows,
+                card="UFC Test Card",
+                out_root=Path(tmp),
+                entered_at="2026-06-22T00:00:00+00:00",
+                allow_entries=False,
+            )
+
+            self.assertEqual(result["new_entries"], 0)
+            self.assertEqual(result["total_entries"], 0)
+            positions = read_csv(Path(tmp) / "ufc_test_card" / "paper_positions.csv")
+            self.assertEqual(positions, [])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -17,6 +17,7 @@ KALSHI_AUDIT_SUMMARY = ROOT / "model_outputs" / "kalshi_grouped_rule_audit_summa
 KALSHI_CONTEXT_BACKTEST_SUMMARY = ROOT / "model_outputs" / "kalshi_context_model_backtest_summary.json"
 TRACKING_ROOT = ROOT / "data" / "tracking"
 TRACKING_WEEKLY_SUMMARY = TRACKING_ROOT / "weekly_summary.csv"
+TRACKING_HIDDEN_MARKERS = {".dashboard_hidden", ".practice_card"}
 
 
 def read_csv(path: Path) -> list[dict]:
@@ -54,6 +55,10 @@ def as_bool(value) -> bool:
     if isinstance(value, bool):
         return value
     return str(value or "").strip().lower() in {"1", "true", "yes", "y"}
+
+
+def hidden_tracking_card(path: Path) -> bool:
+    return any((path / marker).exists() for marker in TRACKING_HIDDEN_MARKERS)
 
 
 def build_kalshi_rows(rows: list[dict]) -> list[dict]:
@@ -197,7 +202,7 @@ def build_tracking_cards() -> list[dict]:
         return cards
 
     summary_by_card = {row.get("card", ""): row for row in read_csv(TRACKING_WEEKLY_SUMMARY)}
-    for card_dir in sorted(path for path in TRACKING_ROOT.iterdir() if path.is_dir()):
+    for card_dir in sorted(path for path in TRACKING_ROOT.iterdir() if path.is_dir() and not hidden_tracking_card(path)):
         card = card_dir.name
         predictions = read_csv(card_dir / "predictions.csv")
         positions = read_csv(card_dir / "paper_positions.csv")
@@ -234,7 +239,7 @@ def build_tracking_positions() -> list[dict]:
     if not TRACKING_ROOT.exists():
         return []
     positions = []
-    for card_dir in sorted(path for path in TRACKING_ROOT.iterdir() if path.is_dir()):
+    for card_dir in sorted(path for path in TRACKING_ROOT.iterdir() if path.is_dir() and not hidden_tracking_card(path)):
         outcomes_by_ticker = {
             row.get("ticker", ""): row
             for row in read_csv(card_dir / "outcomes.csv")

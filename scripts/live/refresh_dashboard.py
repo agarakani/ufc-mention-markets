@@ -272,6 +272,7 @@ def refresh_once(
     paper_card: str | None = None,
     paper_out_root: Path = PAPER_ROOT_DEFAULT,
     paper_contracts: float = 1.0,
+    paper_settle_only: bool = False,
 ) -> list[dict]:
     snapshot_timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
     if event_ticker:
@@ -333,6 +334,7 @@ def refresh_once(
             out_root=paper_out_root,
             contracts=paper_contracts,
             client=client,
+            allow_entries=not paper_settle_only,
         )
         if verbose:
             print(
@@ -383,6 +385,7 @@ def main() -> None:
     parser.add_argument("--paper-card", help="record one paper entry the first time a market becomes WATCH")
     parser.add_argument("--paper-contracts", type=float, default=1.0, help="paper contracts per live entry")
     parser.add_argument("--paper-out-root", default=str(PAPER_ROOT_DEFAULT), help="where paper tracking files are written")
+    parser.add_argument("--paper-settle-only", action="store_true", help="update paper outcomes without adding new entries")
     parser.add_argument("--poll-seconds", type=float, default=0, help="0 refreshes once")
     parser.add_argument("--iterations", type=int, default=0, help="0 polls until interrupted")
     args = parser.parse_args()
@@ -417,6 +420,7 @@ def main() -> None:
                 paper_card=args.paper_card,
                 paper_out_root=Path(args.paper_out_root),
                 paper_contracts=args.paper_contracts,
+                paper_settle_only=args.paper_settle_only,
                 verbose=True,
             )
             print(
