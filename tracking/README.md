@@ -2,6 +2,11 @@
 
 Use this to track the model without risking money.
 
+There are two ways to track:
+
+- `snapshot`: save one board before the card starts.
+- `live`: let the board keep ticking and save an entry only when a market first becomes `WATCH`.
+
 Before a card starts:
 
 ```bash
@@ -11,6 +16,18 @@ python3 scripts/tracking/snapshot_card.py --card "UFC Vegas 119 Kape vs Horiguch
 
 That saves the model numbers, Kalshi YES/NO prices, official paper trades, and leans in
 `data/tracking/<card>/`.
+
+Live paper tracking:
+
+```bash
+python3 scripts/live/refresh_dashboard.py \
+  --poll-seconds 30 \
+  --paper-card "UFC Vegas 119 Kape vs Horiguchi main card"
+```
+
+The live tracker checks Kalshi every refresh. If a row becomes `WATCH YES` or
+`WATCH NO`, it records one fake contract at the current buy price. If that same
+market stays a watch later, it does not add another entry.
 
 After the fights:
 

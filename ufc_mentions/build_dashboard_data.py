@@ -236,6 +236,9 @@ def build_tracking_positions() -> list[dict]:
         for row in read_csv(card_dir / "paper_positions.csv"):
             item = trim(row, [
                 "card",
+                "tracked_at",
+                "entered_at",
+                "entry_source",
                 "paper_action",
                 "paper_reason",
                 "event_title",
@@ -307,6 +310,7 @@ def summarize(
     tracking_cards: list[dict],
     tracking_positions: list[dict],
 ) -> dict:
+    paper_tracking = kalshi_meta.get("paper_tracking") or {}
     summary = {
         "kalshi_event_count": len(kalshi_events),
         "kalshi_market_count": len(kalshi_rows),
@@ -327,6 +331,10 @@ def summarize(
         "kalshi_poll_seconds": number(kalshi_meta.get("poll_seconds")) or 0,
         "kalshi_authenticated": bool(kalshi_meta.get("authenticated")),
         "kalshi_fight_model_required": bool(kalshi_meta.get("fight_model_required")),
+        "paper_tracking_card": paper_tracking.get("card", ""),
+        "paper_tracking_path": paper_tracking.get("path", ""),
+        "paper_tracking_new_entries": as_int(paper_tracking.get("new_entries")),
+        "paper_tracking_total_entries": as_int(paper_tracking.get("total_entries")),
         "kalshi_audit_status": kalshi_audit_summary.get("status", ""),
         "kalshi_backtest_status": kalshi_context_backtest_summary.get("status", ""),
         "kalshi_backtest_measured_groups": as_int(kalshi_context_backtest_summary.get("measured_groups")),

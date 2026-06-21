@@ -24,6 +24,8 @@ from ufc_mentions.kalshi_mentions import (
     fighters_from_market_title,
 )
 from scripts.live.price_fight import price_market
+from scripts.tracking.live_paper import OUT_ROOT_DEFAULT as PAPER_ROOT_DEFAULT
+from scripts.tracking.live_paper import record_live_entries
 
 
 DATA_DEFAULT = ROOT / "ufc_cleaned_export"
@@ -257,6 +259,9 @@ def refresh_once(
     live_path: Path = LIVE_DEFAULT,
     history_path: Path = HISTORY_DEFAULT,
     meta_path: Path = META_DEFAULT,
+    paper_card: str | None = None,
+    paper_out_root: Path = PAPER_ROOT_DEFAULT,
+    paper_contracts: float = 1.0,
 ) -> list[dict]:
     snapshot_timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
     if event_ticker:
@@ -310,6 +315,23 @@ def refresh_once(
     add_price_changes(rows, previous)
     write_csv(live_path, rows, FIELDS)
     append_csv(history_path, rows, HISTORY_FIELDS)
+    paper_tracking = None
+    if paper_card:
+        paper_tracking = record_live_entries(
+            rows,
+            card=paper_card,
+            out_root=paper_out_root,
+            contracts=paper_contracts,
+        )
+        if verbose:
+            print(
+                "  paper tracker: "
+                f"{paper_tracking['new_entries']} new, "
+                f"{paper_tracking['total_entries']} total "
+                f"({paper_tracking['path']})",
+                flush=True,
+            )
+
     meta = {
         "snapshot_timestamp": snapshot_timestamp,
         "series_ticker": series_ticker,
@@ -321,6 +343,7 @@ def refresh_once(
         "low_data_buffer": low_data_buffer,
         "fight_model_required": require_context_model,
         "authenticated": client.authenticated,
+        "paper_tracking": paper_tracking,
         "errors": errors,
     }
     meta_path.parent.mkdir(parents=True, exist_ok=True)
@@ -346,6 +369,9 @@ def main() -> None:
     parser.add_argument("--low-data-buffer-cents", type=float, default=10.0)
     parser.add_argument("--min-fighter-fights", type=int, default=15)
     parser.add_argument("--no-fight-model", action="store_true", help="use simple history only")
+    parser.add_argument("--paper-card", help="record one paper entry the first time a market becomes WATCH")
+    parser.add_argument("--paper-contracts", type=float, default=1.0, help="paper contracts per live entry")
+    parser.add_argument("--paper-out-root", default=str(PAPER_ROOT_DEFAULT), help="where paper tracking files are written")
     parser.add_argument("--poll-seconds", type=float, default=0, help="0 refreshes once")
     parser.add_argument("--iterations", type=int, default=0, help="0 polls until interrupted")
     args = parser.parse_args()
@@ -377,6 +403,9 @@ def main() -> None:
                 low_data_buffer=args.low_data_buffer_cents / 100.0,
                 min_fighter_fights=args.min_fighter_fights,
                 poll_seconds=args.poll_seconds,
+                paper_card=args.paper_card,
+                paper_out_root=Path(args.paper_out_root),
+                paper_contracts=args.paper_contracts,
                 verbose=True,
             )
             print(

@@ -100,7 +100,10 @@
     const polling = summary.kalshi_poll_seconds > 0
       ? `; refreshes every ${formatInteger(summary.kalshi_poll_seconds)}s`
       : "";
-    els.status.textContent = `${stale ? "STALE " : "Updated"} ${snapshot}${age ? ` (${age})` : ""}; ${access}; read-only${polling}`;
+    const paper = summary.paper_tracking_card
+      ? `; paper: ${formatInteger(summary.paper_tracking_total_entries)} entries in ${summary.paper_tracking_card}`
+      : "";
+    els.status.textContent = `${stale ? "STALE " : "Updated"} ${snapshot}${age ? ` (${age})` : ""}; ${access}; read-only${polling}${paper}`;
   }
 
   function render() {
@@ -160,8 +163,8 @@
 
     if (!cards.length) {
       els.trackingMeta.textContent = "No paper-tracking cards saved yet.";
-      els.trackingCards.innerHTML = '<article class="tracking-card empty-card"><strong>No tracking cards yet</strong><span>Run snapshot_card.py before a card and it will show here.</span></article>';
-      els.trackingBody.innerHTML = '<tr><td class="empty" colspan="8">No tracked rows yet.</td></tr>';
+      els.trackingCards.innerHTML = '<article class="tracking-card empty-card"><strong>No tracking cards yet</strong><span>Run the live dashboard with a paper card name and entries will show here.</span></article>';
+      els.trackingBody.innerHTML = '<tr><td class="empty" colspan="9">No tracked rows yet.</td></tr>';
       return;
     }
 
@@ -192,7 +195,7 @@
 
     const shown = positions.slice(0, 12);
     if (!shown.length) {
-      els.trackingBody.innerHTML = '<tr><td class="empty" colspan="8">This card has no paper trades or leans.</td></tr>';
+      els.trackingBody.innerHTML = '<tr><td class="empty" colspan="9">This card has no paper trades yet.</td></tr>';
       return;
     }
 
@@ -200,11 +203,13 @@
       const actionTone = row.paper_action === "trade" ? "warn" : "quiet-warn";
       const outcome = row.outcome ? row.outcome.toUpperCase() : "OPEN";
       const outcomeTone = row.outcome === "yes" ? "good" : row.outcome === "no" ? "bad" : "";
+      const entryTime = formatShortTimestamp(row.entered_at || row.tracked_at);
       return `<tr>
         <td>${pill(trackingAction(row), actionTone)}</td>
         <td><span class="muted">${escapeHtml(row.card || "")}</span></td>
         <td>${escapeHtml(row.matchup || "")}</td>
         <td>${pill(row.phrase || "")}</td>
+        <td>${escapeHtml(entryTime || "--")}</td>
         <td>${sidePill(row.paper_side || row.side)}</td>
         <td class="num">${formatPlainPercent(row.paper_price)}</td>
         <td class="num">${pill(formatPlainPercent(row.edge, true), parseNumber(row.edge) > 0 ? "good" : "bad")}</td>
@@ -457,6 +462,16 @@
     return date.toLocaleString(undefined, {
       month: "short",
       day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+
+  function formatShortTimestamp(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleTimeString(undefined, {
       hour: "numeric",
       minute: "2-digit",
     });

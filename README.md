@@ -4,7 +4,7 @@ Read-only tools for UFC Kalshi mention markets.
 
 The goal is simple: for each listed fight, look at the exact phrase Kalshi is
 offering, estimate how likely that phrase is to be said during that fight, then
-compare that number with the live YES ask.
+compare that number with the live YES and NO buy prices.
 
 This repo does not place trades.
 
@@ -37,6 +37,16 @@ Easiest live mode on this Mac:
 That refreshes once, opens `dashboard/index.html`, then keeps checking Kalshi
 every 30 seconds. Leave that terminal window open while using the dashboard.
 
+To let it paper-track entries while it refreshes:
+
+```bash
+PAPER_CARD="UFC Vegas 119 Kape vs Horiguchi main card" ./start_live_dashboard.command
+```
+
+That still cannot spend real money. It records one fake contract the first time
+a market becomes `WATCH YES` or `WATCH NO`, using the live buy price at that
+moment.
+
 Refresh the live dashboard once:
 
 ```bash
@@ -53,6 +63,14 @@ Keep it updating:
 
 ```bash
 python3 scripts/live/refresh_dashboard.py --poll-seconds 30
+```
+
+Keep it updating and paper-track live entries:
+
+```bash
+python3 scripts/live/refresh_dashboard.py \
+  --poll-seconds 30 \
+  --paper-card "UFC Vegas 119 Kape vs Horiguchi main card"
 ```
 
 Price one listed fight by event ticker:
@@ -130,6 +148,7 @@ The main commands live in `scripts/`:
 - `scripts/data/build_match_csv.py`: rebuilds `fight_mentions.csv` from transcripts.
 - `scripts/data/join_kaggle_outcomes.py`: joins transcript rows with UFC stats.
 - `scripts/tracking/snapshot_card.py`: saves the current board before a card starts.
+- `scripts/tracking/live_paper.py`: records live paper entries when WATCH rows appear.
 - `scripts/tracking/settle_card.py`: calculates paper P/L after results are filled in.
 
 ## Weekly Tracking
@@ -140,6 +159,17 @@ Before a card starts:
 python3 scripts/live/refresh_dashboard.py
 python3 scripts/tracking/snapshot_card.py --card "UFC Vegas 119 Kape vs Horiguchi main card"
 ```
+
+For live paper entries instead, leave this running before the fights:
+
+```bash
+python3 scripts/live/refresh_dashboard.py \
+  --poll-seconds 30 \
+  --paper-card "UFC Vegas 119 Kape vs Horiguchi main card"
+```
+
+The live tracker buys nothing for real. It logs one paper contract when a row
+first becomes `WATCH`, then ignores that same market on later refreshes.
 
 After the card, fill `data/tracking/<card>/outcomes.csv` with `yes` or `no`,
 then run:
