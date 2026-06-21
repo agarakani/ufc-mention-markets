@@ -43,6 +43,8 @@ class PricedMarket:
     side: str
     side_price: float | None
     edge: float | None
+    data_risk: bool
+    data_buffer: float
     hurdle: float | None
     watch: bool
     validation_status: str
@@ -103,6 +105,7 @@ def price_market(
     cutoff_date: str | None,
     fee_buffer: float,
     min_fighter_fights: int,
+    low_data_buffer: float = 0.10,
     context_model: Any | None = None,
     require_context_model: bool = False,
 ) -> PricedMarket | None:
@@ -132,11 +135,12 @@ def price_market(
     ]
     candidates = [candidate for candidate in candidates if candidate[1] is not None and candidate[2] is not None]
     side, side_price, edge = max(candidates, key=lambda candidate: candidate[2]) if candidates else ("", None, None)
-    hurdle = None if book.spread is None else book.spread + fee_buffer
+    data_risk = not estimate.confidence_ok
+    data_buffer = low_data_buffer if data_risk else 0.0
+    hurdle = None if book.spread is None else book.spread + fee_buffer + data_buffer
     fight_model_ready = estimate.probability_source == "fight_context_model"
     watch = bool(
-        estimate.confidence_ok
-        and (fight_model_ready or not require_context_model)
+        (fight_model_ready or not require_context_model)
         and side in {"yes", "no"}
         and edge is not None
         and hurdle is not None
@@ -146,10 +150,13 @@ def price_market(
         note = "missing executable two-sided order book"
     elif require_context_model and not fight_model_ready:
         note = f"fight-specific model unavailable; {estimate.context_note or estimate.context_status or 'simple history only'}"
-    elif not estimate.confidence_ok:
-        note = estimate.confidence_note
     elif edge is not None and hurdle is not None and edge <= hurdle:
-        note = "model edge does not clear spread + fee buffer"
+        if data_risk:
+            note = f"low data; needs bigger edge: {estimate.confidence_note}"
+        else:
+            note = "model edge does not clear spread + fee buffer"
+    elif data_risk:
+        note = f"data-risk watch; {estimate.confidence_note}"
     else:
         note = "unvalidated watch; exact grouped-rule audit required before any trade claim"
     return PricedMarket(
@@ -164,6 +171,8 @@ def price_market(
         side=side,
         side_price=side_price,
         edge=edge,
+        data_risk=data_risk,
+        data_buffer=data_buffer,
         hurdle=hurdle,
         watch=watch,
         validation_status="unvalidated",
@@ -182,6 +191,7 @@ def analyze_event(
     require_context_model: bool = False,
     fee_buffer: float = 0.02,
     min_fighter_fights: int = 15,
+    low_data_buffer: float = 0.10,
 ) -> tuple[str, str, list[PricedMarket]]:
     markets = client.get_markets(event_ticker=event_ticker)
     if not markets:
@@ -201,6 +211,7 @@ def analyze_event(
             cutoff_date=cutoff_date,
             fee_buffer=fee_buffer,
             min_fighter_fights=min_fighter_fights,
+            low_data_buffer=low_data_buffer,
             context_model=context_model,
             require_context_model=require_context_model,
         )
@@ -234,12 +245,15 @@ def print_rows(rows: list[PricedMarket], *, show_all: bool) -> None:
     )
     print("-" * 128)
     for row in shown:
+        status = f"WATCH {row.side.upper()}" if row.watch else "no watch"
+        if row.watch and row.data_risk:
+            status += " DATA"
         print(
             f"{row.label[:39]:<39} {_pct(row.estimate.probability):>7} "
             f"{_pct(row.book.yes_ask):>7} {_pct(row.book.no_ask):>7} "
             f"{row.side.upper():>5} {_pct(row.edge, signed=True):>7} "
             f"{_pct(row.hurdle):>7}  "
-            f"{'WATCH ' + row.side.upper() if row.watch else 'no watch'}; {row.validation_status}"
+            f"{status}; {row.validation_status}"
         )
         if show_all:
             prior = "league only" if row.estimate.prior_strength is None else f"k={row.estimate.prior_strength:g}"
@@ -273,6 +287,7 @@ def main() -> None:
     parser.add_argument("--series", default="KXFIGHTMENTION")
     parser.add_argument("--data-dir", default=str(DATA_DEFAULT))
     parser.add_argument("--fee-buffer-cents", type=float, default=2.0)
+    parser.add_argument("--low-data-buffer-cents", type=float, default=10.0)
     parser.add_argument("--min-fighter-fights", type=int, default=15)
     parser.add_argument("--no-fight-model", action="store_true", help="use simple history only")
     parser.add_argument("--show-all", action="store_true", help="show rejected rows and audit details")
@@ -308,6 +323,7 @@ def main() -> None:
             context_model=context_model,
             require_context_model=not args.no_fight_model,
             fee_buffer=args.fee_buffer_cents / 100.0,
+            low_data_buffer=args.low_data_buffer_cents / 100.0,
             min_fighter_fights=args.min_fighter_fights,
         )
         print(f"{event_ticker} | {fighter_1} vs {fighter_2} | live order books | {len(rows)} phrase markets")

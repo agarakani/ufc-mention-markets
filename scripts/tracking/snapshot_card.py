@@ -84,6 +84,8 @@ def classify_row(row: dict, min_lean_edge: float) -> tuple[str, str]:
         return "pass", "no side"
 
     if str(row.get("watch", "")).strip().lower() == "yes":
+        if str(row.get("data_risk", "")).strip().lower() in {"1", "true", "yes", "y"}:
+            return "trade", f"data-risk watch {side}"
         return "trade", f"watch {side}"
 
     edge = number(row.get("edge"))

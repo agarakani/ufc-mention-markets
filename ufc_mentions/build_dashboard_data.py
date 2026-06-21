@@ -100,6 +100,7 @@ def build_kalshi_rows(rows: list[dict]) -> list[dict]:
             "no_ask",
             "spread",
             "fee_buffer",
+            "data_buffer",
             "hurdle",
             "yes_edge",
             "no_edge",
@@ -119,8 +120,9 @@ def build_kalshi_rows(rows: list[dict]) -> list[dict]:
         ]:
             item[field] = as_int(row.get(field))
 
-        item["side"] = str(row.get("side", "")).strip().lower()
         item["confidence_ok"] = as_bool(row.get("confidence_ok"))
+        item["data_risk"] = as_bool(row.get("data_risk"))
+        item["side"] = str(row.get("side", "")).strip().lower()
         item["watch"] = as_bool(row.get("watch")) or legacy_watch(row, item)
         if item["watch"] and not item.get("validation_status"):
             item["validation_status"] = "unvalidated"
@@ -252,12 +254,14 @@ def build_tracking_positions() -> list[dict]:
                 "yes_edge",
                 "no_edge",
                 "side_price",
+                "data_buffer",
                 "edge",
                 "hurdle",
             ]:
                 item[field] = number(row.get(field))
             item["paper_side"] = str(row.get("paper_side") or row.get("side") or "").strip().lower()
             item["side"] = str(row.get("side", "")).strip().lower()
+            item["data_risk"] = as_bool(row.get("data_risk"))
             outcome_row = outcomes_by_ticker.get(row.get("ticker", ""), {})
             item["outcome"] = str(outcome_row.get("outcome", "")).strip().lower()
             item["notes"] = outcome_row.get("notes", "")

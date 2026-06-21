@@ -27,5 +27,8 @@ The tracker keeps two scores:
 - `official`: only rows the model marked `WATCH`.
 - `leans`: rows where YES or NO had positive model edge but did not clear the full watch bar.
 
+Rows marked `data-risk watch` had thin fighter history, so they cleared a higher
+edge bar before being tracked as official.
+
 If official P/L stays flat because there are no WATCH rows, leans tell us
 whether the model is close on price or whether the prices are simply not good.

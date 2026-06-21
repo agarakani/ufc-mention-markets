@@ -10,6 +10,11 @@ class TrackingTests(unittest.TestCase):
         self.assertEqual(action, "trade")
         self.assertIn("watch", reason)
 
+    def test_data_risk_watch_is_labeled(self):
+        action, reason = classify_row({"watch": "yes", "side": "no", "edge": "0.20", "data_risk": "yes"}, 0.0)
+        self.assertEqual(action, "trade")
+        self.assertIn("data-risk", reason)
+
     def test_positive_model_edge_below_watch_bar_is_a_lean(self):
         action, reason = classify_row({"watch": "no", "side": "no", "edge": "0.03"}, 0.0)
         self.assertEqual(action, "lean")
