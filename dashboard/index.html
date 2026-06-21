@@ -89,7 +89,16 @@
       </section>
     </main>
 
-    <script src="data.js"></script>
-    <script src="app.js"></script>
+    <script>
+      const cacheBust = Date.now().toString();
+      const dataScript = document.createElement("script");
+      dataScript.src = `data.js?v=${cacheBust}`;
+      dataScript.onload = () => {
+        const appScript = document.createElement("script");
+        appScript.src = `app.js?v=${cacheBust}`;
+        document.body.appendChild(appScript);
+      };
+      document.body.appendChild(dataScript);
+    </script>
   </body>
 </html>
