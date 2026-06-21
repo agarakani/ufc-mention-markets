@@ -61,6 +61,19 @@ def hidden_tracking_card(path: Path) -> bool:
     return any((path / marker).exists() for marker in TRACKING_HIDDEN_MARKERS)
 
 
+def hidden_event_tickers() -> set[str]:
+    if not TRACKING_ROOT.exists():
+        return set()
+    tickers: set[str] = set()
+    for card_dir in sorted(path for path in TRACKING_ROOT.iterdir() if path.is_dir() and hidden_tracking_card(path)):
+        for filename in ("paper_positions.csv", "predictions.csv", "outcomes.csv"):
+            for row in read_csv(card_dir / filename):
+                event_ticker = str(row.get("event_ticker", "")).strip()
+                if event_ticker:
+                    tickers.add(event_ticker)
+    return tickers
+
+
 def build_kalshi_rows(rows: list[dict]) -> list[dict]:
     out = []
     for row in rows:
@@ -372,7 +385,12 @@ def build_payload() -> dict:
     kalshi_meta = read_json(KALSHI_META)
     kalshi_audit_summary = read_json(KALSHI_AUDIT_SUMMARY)
     kalshi_context_backtest_summary = read_json(KALSHI_CONTEXT_BACKTEST_SUMMARY)
-    kalshi_rows = build_kalshi_rows(read_csv(KALSHI_LIVE))
+    hidden_events = hidden_event_tickers()
+    kalshi_source_rows = [
+        row for row in read_csv(KALSHI_LIVE)
+        if str(row.get("event_ticker", "")).strip() not in hidden_events
+    ]
+    kalshi_rows = build_kalshi_rows(kalshi_source_rows)
     kalshi_events = build_kalshi_event_rows(kalshi_rows)
     tracking_cards = build_tracking_cards()
     tracking_positions = build_tracking_positions()
