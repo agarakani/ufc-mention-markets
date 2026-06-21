@@ -61,6 +61,10 @@ def hidden_tracking_card(path: Path) -> bool:
     return any((path / marker).exists() for marker in TRACKING_HIDDEN_MARKERS)
 
 
+def hidden_tracking_card_name(card: str) -> bool:
+    return bool(card) and hidden_tracking_card(TRACKING_ROOT / card)
+
+
 def hidden_event_tickers() -> set[str]:
     if not TRACKING_ROOT.exists():
         return set()
@@ -340,6 +344,8 @@ def summarize(
     tracking_positions: list[dict],
 ) -> dict:
     paper_tracking = kalshi_meta.get("paper_tracking") or {}
+    if hidden_tracking_card_name(str(paper_tracking.get("card", ""))):
+        paper_tracking = {}
     summary = {
         "kalshi_event_count": len(kalshi_events),
         "kalshi_market_count": len(kalshi_rows),
