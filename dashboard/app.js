@@ -12,10 +12,8 @@
     { key: "phrase", label: "Phrase", type: "phrase" },
     { key: "matchup", label: "Fight", type: "fight" },
     { key: "model_probability", label: "Our %", type: "pct", className: "num" },
-    { key: "conservative_probability", label: "Safe %", type: "pct", className: "num" },
     { key: "yes_ask", label: "Kalshi", type: "pct", className: "num" },
     { key: "edge", label: "Edge", type: "pct", className: "num", badge: true, signed: true },
-    { key: "conservative_edge", label: "Safe edge", type: "pct", className: "num", badge: true, signed: true },
     { key: "reason", label: "Why", type: "reason" },
   ];
 
@@ -134,8 +132,8 @@
         ? `${event.fighter_1} vs ${event.fighter_2}`
         : event.event_title || event.event_ticker || "Upcoming fight";
       const watchCount = Number(event.watch_count || 0);
-      const bestSafeEdge = parseNumber(event.best_conservative_edge);
-      const edgeText = bestSafeEdge === null ? "no safe edge yet" : `best safe edge ${formatPlainPercent(bestSafeEdge, true)}`;
+      const bestEdge = parseNumber(event.best_edge);
+      const edgeText = bestEdge === null ? "no edge yet" : `best edge ${formatPlainPercent(bestEdge, true)}`;
       const call = watchCount > 0 ? `${formatInteger(watchCount)} watch` : edgeText;
       return `<article class="fight-card ${watchCount > 0 ? "is-live" : ""}">
         <div>
@@ -204,7 +202,7 @@
         <td>${escapeHtml(row.matchup || "")}</td>
         <td>${pill(row.phrase || "")}</td>
         <td class="num">${formatPlainPercent(row.paper_price)}</td>
-        <td class="num">${pill(formatPlainPercent(row.conservative_edge, true), parseNumber(row.conservative_edge) > 0 ? "good" : "bad")}</td>
+        <td class="num">${pill(formatPlainPercent(row.edge, true), parseNumber(row.edge) > 0 ? "good" : "bad")}</td>
         <td>${pill(outcome, outcomeTone)}</td>
       </tr>`;
     }).join("");
@@ -250,14 +248,12 @@
     }
 
     const model = formatPlainPercent(row.model_probability);
-    const safe = formatPlainPercent(row.conservative_probability);
     const ask = formatPlainPercent(row.yes_ask);
     const edge = formatPlainPercent(row.edge, true);
-    const safeEdge = formatPlainPercent(row.conservative_edge, true);
     const priorFights = Number(row.fighter_fights || 0);
 
     if (row.watch) {
-      return `Our number is ${model}, the safer number is ${safe}, and Kalshi asks ${ask}. Safe edge is ${safeEdge} after the spread/fee check.`;
+      return `Our number is ${model}, Kalshi asks ${ask}, and the edge is ${edge} after the spread/fee check.`;
     }
     if (row.confidence_ok === false) {
       return `Low data: only ${formatInteger(priorFights)} prior fighter fights matched this phrase setup, so it stays off watch.`;
@@ -265,10 +261,7 @@
     if (parseNumber(row.edge) <= 0) {
       return `Kalshi asks ${ask}; our number is ${model}. Edge is ${edge}, so no play.`;
     }
-    if (parseNumber(row.conservative_edge) <= parseNumber(row.hurdle)) {
-      return `Main edge is ${edge}, but the safer edge is only ${safeEdge}, so it does not clear the spread/fee check.`;
-    }
-    return `Close, but it does not clear the spread/fee check.`;
+    return `Edge is ${edge}, but it does not clear the spread/fee check.`;
   }
 
   function applyFilters(rows) {
@@ -291,8 +284,6 @@
   function defaultCompare(a, b) {
     const watchDiff = Number(b.watch) - Number(a.watch);
     if (watchDiff) return watchDiff;
-    const safeDiff = compareNumbers(b.conservative_edge, a.conservative_edge);
-    if (safeDiff) return safeDiff;
     const edgeDiff = compareNumbers(b.edge, a.edge);
     if (edgeDiff) return edgeDiff;
     return String(a.matchup || "").localeCompare(String(b.matchup || ""));

@@ -39,7 +39,6 @@ class PricedMarket:
     book: TopOfBook
     estimate: MentionEstimate
     edge: float | None
-    conservative_edge: float | None
     hurdle: float | None
     watch: bool
     validation_status: str
@@ -70,18 +69,9 @@ def apply_context_prediction(
             context_row_source=prediction.row_source,
         )
 
-    conservative_probability = prediction.probability
-    conservative_source = "fight model point"
-    if estimate.conservative_probability is not None:
-        conservative_probability = min(prediction.probability, estimate.conservative_probability)
-        conservative_source = (
-            f"lower of fight model and simple-history lower ({estimate.conservative_probability_source})"
-        )
     return replace(
         estimate,
         probability=prediction.probability,
-        conservative_probability=conservative_probability,
-        conservative_probability_source=conservative_source,
         probability_source="fight_context_model",
         context_probability=prediction.probability,
         context_status=prediction.status,
@@ -131,21 +121,14 @@ def price_market(
             context_model.predict(forms, fighter_1, fighter_2, cutoff_date),
         )
     edge = None if book.yes_ask is None else estimate.probability - book.yes_ask
-    conservative_edge = (
-        None
-        if book.yes_ask is None or estimate.conservative_probability is None
-        else estimate.conservative_probability - book.yes_ask
-    )
     hurdle = None if book.spread is None else book.spread + fee_buffer
     fight_model_ready = estimate.probability_source == "fight_context_model"
     watch = bool(
         estimate.confidence_ok
         and (fight_model_ready or not require_context_model)
         and edge is not None
-        and conservative_edge is not None
         and hurdle is not None
         and edge > hurdle
-        and conservative_edge > hurdle
     )
     if book.yes_ask is None or book.no_ask is None:
         note = "missing executable two-sided order book"
@@ -154,9 +137,7 @@ def price_market(
     elif not estimate.confidence_ok:
         note = estimate.confidence_note
     elif edge is not None and hurdle is not None and edge <= hurdle:
-        note = "raw point estimate does not clear spread + fee buffer"
-    elif conservative_edge is not None and hurdle is not None and conservative_edge <= hurdle:
-        note = "conservative lower bound does not clear spread + fee buffer"
+        note = "model edge does not clear spread + fee buffer"
     else:
         note = "unvalidated watch; exact grouped-rule audit required before any trade claim"
     return PricedMarket(
@@ -167,7 +148,6 @@ def price_market(
         book=book,
         estimate=estimate,
         edge=edge,
-        conservative_edge=conservative_edge,
         hurdle=hurdle,
         watch=watch,
         validation_status="unvalidated",
@@ -213,7 +193,6 @@ def analyze_event(
     rows.sort(
         key=lambda row: (
             row.watch,
-            row.conservative_edge if row.conservative_edge is not None else -999,
             row.edge if row.edge is not None else -999,
         ),
         reverse=True,
@@ -231,19 +210,19 @@ def _pct(value: float | None, signed: bool = False) -> str:
 def print_rows(rows: list[PricedMarket], *, show_all: bool) -> None:
     shown = rows if show_all else [row for row in rows if row.watch]
     if not shown:
-        print("No markets clear the conservative watch gate with adequate sample confidence.")
+        print("No markets clear the model edge gate with adequate sample confidence.")
         return
     print(
-        f"{'phrase group':<39} {'point':>7} {'lower':>7} {'YES ask':>8} {'spread':>7} "
-        f"{'raw':>7} {'cons':>7} {'need':>7}  status"
+        f"{'phrase group':<39} {'model':>7} {'YES ask':>8} {'spread':>7} "
+        f"{'edge':>7} {'need':>7}  status"
     )
     print("-" * 128)
     for row in shown:
         print(
             f"{row.label[:39]:<39} {_pct(row.estimate.probability):>7} "
-            f"{_pct(row.estimate.conservative_probability):>7} {_pct(row.book.yes_ask):>8} "
+            f"{_pct(row.book.yes_ask):>8} "
             f"{_pct(row.book.spread):>7} {_pct(row.edge, signed=True):>7} "
-            f"{_pct(row.conservative_edge, signed=True):>7} {_pct(row.hurdle):>7}  "
+            f"{_pct(row.hurdle):>7}  "
             f"{'WATCH' if row.watch else 'no watch'}; {row.validation_status}"
         )
         if show_all:
@@ -253,7 +232,7 @@ def print_rows(rows: list[PricedMarket], *, show_all: bool) -> None:
                 f"({row.estimate.league_hits}/{row.estimate.league_fights}); "
                 f"fighters={row.estimate.fighter_hits}/{row.estimate.fighter_fights}; "
                 f"source={row.estimate.probability_source}; "
-                f"lower={row.estimate.conservative_probability_source}; {prior}; {row.note}"
+                f"{prior}; {row.note}"
             )
             if row.estimate.context_note:
                 check = (

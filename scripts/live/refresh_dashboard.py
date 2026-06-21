@@ -34,8 +34,7 @@ META_DEFAULT = ROOT / "market_data" / "kalshi_live_meta.json"
 FIELDS = [
     "snapshot_timestamp", "series_ticker", "event_ticker", "event_date",
     "event_title", "fighter_1", "fighter_2", "ticker", "phrase", "forms",
-    "rules_primary", "model_probability", "conservative_probability",
-    "conservative_probability_source", "history_probability", "probability_source",
+    "rules_primary", "model_probability", "history_probability", "probability_source",
     "context_probability", "context_status", "context_note", "context_profile",
     "context_training_rows", "context_validation_rows", "context_positive_rate",
     "context_validation_log_loss", "context_base_log_loss",
@@ -44,15 +43,15 @@ FIELDS = [
     "league_fights", "fighter_rate", "fighter_hits", "fighter_fights",
     "word_type", "prior_strength", "confidence_ok", "confidence_note",
     "yes_bid", "yes_ask", "no_bid", "no_ask", "spread", "fee_buffer",
-    "hurdle", "edge", "conservative_edge", "watch", "validation_status",
+    "hurdle", "edge", "watch", "validation_status",
     "previous_yes_ask", "ask_change", "status", "error",
 ]
 
 HISTORY_FIELDS = [
     "snapshot_timestamp", "event_ticker", "ticker", "phrase", "yes_bid",
     "yes_ask", "no_bid", "no_ask", "spread", "model_probability",
-    "conservative_probability", "history_probability", "probability_source",
-    "context_status", "edge", "conservative_edge", "hurdle", "watch",
+    "history_probability", "probability_source",
+    "context_status", "edge", "hurdle", "watch",
 ]
 
 
@@ -178,8 +177,6 @@ def event_snapshot(
             "forms": " | ".join(priced.forms),
             "rules_primary": priced.rules,
             "model_probability": value(estimate.probability),
-            "conservative_probability": value(estimate.conservative_probability),
-            "conservative_probability_source": estimate.conservative_probability_source,
             "history_probability": value(estimate.history_probability),
             "probability_source": estimate.probability_source,
             "context_probability": value(estimate.context_probability),
@@ -213,7 +210,6 @@ def event_snapshot(
             "fee_buffer": value(fee_buffer),
             "hurdle": value(priced.hurdle),
             "edge": value(priced.edge),
-            "conservative_edge": value(priced.conservative_edge),
             "watch": bool_text(priced.watch),
             "validation_status": priced.validation_status,
             "status": "ok",
@@ -294,7 +290,7 @@ def refresh_once(
 
     rows.sort(key=lambda row: (
         row.get("watch") != "yes",
-        -(float(row.get("conservative_edge") or row.get("edge") or -999)),
+        -(float(row.get("edge") or -999)),
         row.get("event_date", ""),
         row.get("phrase", ""),
     ))

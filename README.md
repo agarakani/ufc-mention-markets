@@ -14,7 +14,7 @@ This repo does not place trades.
 2. Reads the exact phrase rules, including grouped phrases like `Choke / Choked / Chokehold`.
 3. Builds a fight-level probability for that exact phrase and that exact fight.
 4. Compares the model number with the live Kalshi YES ask.
-5. Marks a row `WATCH` only when the safer number still clears the price after the spread/fee check.
+5. Marks a row `WATCH` only when the model edge clears the spread/fee check.
 
 Kalshi prices are not fed into the model. They are only used after the model has
 made its number.
@@ -75,11 +75,9 @@ python3 scripts/live/price_fight.py \
 ## How To Read The Dashboard
 
 - `Our %`: the fight-level model's probability for that phrase.
-- `Safe %`: a more cautious version of the model number.
 - `Kalshi`: the live YES ask.
 - `Edge`: `Our % - Kalshi`.
-- `Safe edge`: `Safe % - Kalshi`.
-- `WATCH`: research flag only. It means the safe edge cleared the current checks.
+- `WATCH`: research flag only. It means the model edge cleared the current checks.
 - `LOW DATA`: the model ran, but there is not enough matching fighter history to trust it as a watch row.
 - `PASS`: no edge worth flagging right now.
 
@@ -149,7 +147,7 @@ python3 scripts/tracking/settle_card.py --card "UFC Vegas 119 Kape vs Horiguchi 
 This tracks two numbers:
 
 - `official`: only rows the model marked `WATCH`.
-- `leans`: rows the model liked but did not clear the safety bar.
+- `leans`: rows where the model edge was positive but did not clear the full watch bar.
 
 ## Data
 
@@ -162,7 +160,7 @@ Local data folders are gitignored:
 - `market_data/`: live Kalshi snapshots and price history
 - `model_outputs/`: model and backtest outputs
 
-## Safety Notes
+## Limits
 
 The Kalshi client supports GET requests only. There is no order-placement method.
 
@@ -174,4 +172,4 @@ KALSHI_KEY_ID=...
 KALSHI_PRIVATE_KEY_PATH=/absolute/path/to/private-key.pem
 ```
 
-Keep all claims conservative until there is enough exact market backtest data.
+Do not claim the model is trade-ready until there are enough resolved Kalshi cards in paper tracking.
