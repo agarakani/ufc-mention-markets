@@ -79,6 +79,79 @@ class TrackingTests(unittest.TestCase):
             self.assertEqual(positions[0]["paper_price"], "0.43")
             self.assertIn("data-risk", positions[0]["paper_reason"])
 
+    def test_live_paper_auto_fills_resolved_outcome_and_pnl(self):
+        with TemporaryDirectory() as tmp:
+            rows = [{
+                "watch": "yes",
+                "ticker": "TEST-CHOKE",
+                "event_ticker": "TEST",
+                "event_title": "Blue vs Red",
+                "fighter_1": "Blue",
+                "fighter_2": "Red",
+                "event_date": "2026-06-20",
+                "phrase": "Choke",
+                "side": "no",
+                "side_price": "0.43",
+                "yes_ask": "0.62",
+                "no_ask": "0.43",
+                "edge": "0.32",
+                "hurdle": "0.17",
+                "data_risk": "yes",
+                "model_probability": "0.25",
+                "market_status": "settled",
+                "market_result": "no",
+            }]
+
+            result = record_live_entries(
+                rows,
+                card="UFC Test Card",
+                out_root=Path(tmp),
+                entered_at="2026-06-22T00:00:00+00:00",
+            )
+
+            self.assertEqual(result["resolved"], 1)
+            outcomes = read_csv(Path(tmp) / "ufc_test_card" / "outcomes.csv")
+            self.assertEqual(outcomes[0]["outcome"], "no")
+            self.assertEqual(outcomes[0]["resolution_status"], "resolved")
+
+            settled = read_csv(Path(tmp) / "ufc_test_card" / "settled_predictions.csv")
+            self.assertEqual(settled[0]["paper_pnl"], "0.5700")
+
+    def test_live_paper_marks_past_unresolved_market_pending(self):
+        with TemporaryDirectory() as tmp:
+            rows = [{
+                "watch": "yes",
+                "ticker": "TEST-OPEN",
+                "event_ticker": "TEST",
+                "event_title": "Blue vs Red",
+                "fighter_1": "Blue",
+                "fighter_2": "Red",
+                "event_date": "2026-06-20",
+                "phrase": "Triangle",
+                "side": "yes",
+                "side_price": "0.20",
+                "yes_ask": "0.20",
+                "no_ask": "0.85",
+                "edge": "0.15",
+                "hurdle": "0.05",
+                "data_risk": "no",
+                "model_probability": "0.35",
+                "market_status": "active",
+                "market_result": "",
+            }]
+
+            result = record_live_entries(
+                rows,
+                card="UFC Test Card",
+                out_root=Path(tmp),
+                entered_at="2026-06-22T00:00:00+00:00",
+            )
+
+            self.assertEqual(result["pending"], 1)
+            outcomes = read_csv(Path(tmp) / "ufc_test_card" / "outcomes.csv")
+            self.assertEqual(outcomes[0]["outcome"], "")
+            self.assertEqual(outcomes[0]["resolution_status"], "pending")
+
 
 if __name__ == "__main__":
     unittest.main()

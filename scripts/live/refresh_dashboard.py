@@ -36,7 +36,8 @@ META_DEFAULT = ROOT / "market_data" / "kalshi_live_meta.json"
 FIELDS = [
     "snapshot_timestamp", "series_ticker", "event_ticker", "event_date",
     "event_title", "fighter_1", "fighter_2", "ticker", "phrase", "forms",
-    "rules_primary", "model_probability", "history_probability", "probability_source",
+    "rules_primary", "market_status", "market_result", "market_expiration_value",
+    "market_close_time", "model_probability", "history_probability", "probability_source",
     "context_probability", "context_status", "context_note", "context_profile",
     "context_training_rows", "context_validation_rows", "context_positive_rate",
     "context_validation_log_loss", "context_base_log_loss",
@@ -53,7 +54,8 @@ HISTORY_FIELDS = [
     "snapshot_timestamp", "event_ticker", "ticker", "phrase", "yes_bid",
     "yes_ask", "no_bid", "no_ask", "spread", "model_probability",
     "history_probability", "probability_source",
-    "context_status", "yes_edge", "no_edge", "side", "side_price", "edge", "data_risk", "data_buffer", "hurdle", "watch",
+    "context_status", "market_status", "market_result", "market_expiration_value",
+    "yes_edge", "no_edge", "side", "side_price", "edge", "data_risk", "data_buffer", "hurdle", "watch",
 ]
 
 
@@ -152,6 +154,10 @@ def event_snapshot(
                 "phrase": phrase,
                 "forms": phrase,
                 "rules_primary": market.get("rules_primary", ""),
+                "market_status": market.get("status", ""),
+                "market_result": market.get("result", ""),
+                "market_expiration_value": market.get("expiration_value", ""),
+                "market_close_time": market.get("close_time", ""),
                 "yes_bid": value(book.yes_bid),
                 "yes_ask": value(book.yes_ask),
                 "no_bid": value(book.no_bid),
@@ -182,6 +188,10 @@ def event_snapshot(
             "phrase": priced.label,
             "forms": " | ".join(priced.forms),
             "rules_primary": priced.rules,
+            "market_status": market.get("status", ""),
+            "market_result": market.get("result", ""),
+            "market_expiration_value": market.get("expiration_value", ""),
+            "market_close_time": market.get("close_time", ""),
             "model_probability": value(estimate.probability),
             "history_probability": value(estimate.history_probability),
             "probability_source": estimate.probability_source,
@@ -322,6 +332,7 @@ def refresh_once(
             card=paper_card,
             out_root=paper_out_root,
             contracts=paper_contracts,
+            client=client,
         )
         if verbose:
             print(

@@ -71,6 +71,10 @@ def build_kalshi_rows(rows: list[dict]) -> list[dict]:
             "phrase",
             "forms",
             "rules_primary",
+            "market_status",
+            "market_result",
+            "market_expiration_value",
+            "market_close_time",
             "word_type",
             "confidence_note",
             "status",
@@ -203,12 +207,14 @@ def build_tracking_cards() -> list[dict]:
         official_rows = [row for row in positions if row.get("paper_action") == "trade"]
         lean_rows = [row for row in positions if row.get("paper_action") == "lean"]
         outcomes_filled = sum(str(row.get("outcome", "")).strip().lower() in {"yes", "no"} for row in outcomes)
+        pending = sum(str(row.get("resolution_status", "")).strip().lower() == "pending" for row in outcomes)
 
         cards.append({
             "card": card,
             "label": card.replace("_", " ").title(),
             "prediction_rows": as_int(weekly.get("prediction_rows")) or len(predictions),
             "outcomes_filled": as_int(weekly.get("outcomes_filled")) or outcomes_filled,
+            "pending": pending,
             "official_trades": as_int(weekly.get("official_trades")) or len(official_rows),
             "official_wins": as_int(weekly.get("official_wins")),
             "official_pnl": number(weekly.get("official_pnl")),
@@ -267,6 +273,10 @@ def build_tracking_positions() -> list[dict]:
             item["data_risk"] = as_bool(row.get("data_risk"))
             outcome_row = outcomes_by_ticker.get(row.get("ticker", ""), {})
             item["outcome"] = str(outcome_row.get("outcome", "")).strip().lower()
+            item["resolution_status"] = str(outcome_row.get("resolution_status", "")).strip().lower()
+            item["checked_at"] = outcome_row.get("checked_at", "")
+            item["resolved_at"] = outcome_row.get("resolved_at", "")
+            item["market_status"] = outcome_row.get("market_status", "")
             item["notes"] = outcome_row.get("notes", "")
             item["matchup"] = (
                 f"{row.get('fighter_1')} vs {row.get('fighter_2')}"
@@ -289,6 +299,7 @@ def summarize_tracking(cards: list[dict], positions: list[dict]) -> dict:
         "tracking_official_trade_count": sum(card.get("official_trades") or 0 for card in cards),
         "tracking_lean_count": sum(card.get("leans") or 0 for card in cards),
         "tracking_outcomes_filled": sum(card.get("outcomes_filled") or 0 for card in cards),
+        "tracking_pending_count": sum(card.get("pending") or 0 for card in cards),
         "tracking_official_pnl": sum(card.get("official_pnl") or 0 for card in cards),
         "tracking_lean_pnl": sum(card.get("lean_pnl") or 0 for card in cards),
     }
@@ -335,6 +346,9 @@ def summarize(
         "paper_tracking_path": paper_tracking.get("path", ""),
         "paper_tracking_new_entries": as_int(paper_tracking.get("new_entries")),
         "paper_tracking_total_entries": as_int(paper_tracking.get("total_entries")),
+        "paper_tracking_resolved": as_int(paper_tracking.get("resolved")),
+        "paper_tracking_pending": as_int(paper_tracking.get("pending")),
+        "paper_tracking_open": as_int(paper_tracking.get("open")),
         "kalshi_audit_status": kalshi_audit_summary.get("status", ""),
         "kalshi_backtest_status": kalshi_context_backtest_summary.get("status", ""),
         "kalshi_backtest_measured_groups": as_int(kalshi_context_backtest_summary.get("measured_groups")),

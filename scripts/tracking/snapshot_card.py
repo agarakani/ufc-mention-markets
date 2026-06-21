@@ -35,6 +35,12 @@ OUTCOME_FIELDS = [
     "fighter_2",
     "phrase",
     "outcome",
+    "resolution_status",
+    "checked_at",
+    "resolved_at",
+    "market_status",
+    "market_result",
+    "market_expiration_value",
     "notes",
 ]
 
