@@ -18,6 +18,7 @@ SUMMARY_DEFAULT = ROOT / "data" / "tracking" / "weekly_summary.csv"
 SETTLED_FIELDS = [
     "card",
     "paper_action",
+    "paper_side",
     "outcome",
     "paper_price",
     "paper_contracts",
@@ -27,6 +28,11 @@ SETTLED_FIELDS = [
     "ticker",
     "model_probability",
     "yes_ask",
+    "no_ask",
+    "side_price",
+    "yes_edge",
+    "no_edge",
+    "side",
     "edge",
     "watch",
     "confidence_note",
@@ -88,12 +94,15 @@ def slug(value: str) -> str:
     return text or "card"
 
 
-def yes_contract_pnl(price: float, outcome: str, contracts: float = 1.0) -> float:
-    if outcome == "yes":
+def contract_pnl(side: str, price: float, outcome: str, contracts: float = 1.0) -> float:
+    side = str(side or "").strip().lower()
+    if side not in {"yes", "no"}:
+        raise ValueError(f"Unknown side: {side!r}")
+    if outcome not in {"yes", "no"}:
+        raise ValueError(f"Unknown outcome: {outcome!r}")
+    if side == outcome:
         return (1.0 - price) * contracts
-    if outcome == "no":
-        return -price * contracts
-    raise ValueError(f"Unknown outcome: {outcome!r}")
+    return -price * contracts
 
 
 def money(value: float) -> str:
@@ -110,7 +119,7 @@ def summarize(rows: list[dict], action: str) -> dict:
     selected = [row for row in rows if row.get("paper_action") == action and row.get("outcome") in {"yes", "no"}]
     cost = sum(number(row.get("paper_price")) or 0.0 for row in selected)
     pnl = sum(number(row.get("paper_pnl")) or 0.0 for row in selected)
-    wins = sum(row.get("outcome") == "yes" for row in selected)
+    wins = sum(row.get("paper_side") == row.get("outcome") for row in selected)
     roi = None if cost <= 0 else pnl / cost
     return {
         "count": len(selected),
@@ -162,13 +171,16 @@ def main() -> None:
         outcome = result.get("outcome", "")
         if outcome:
             outcomes_filled += 1
-        price = number(row.get("paper_price")) or number(row.get("yes_ask"))
+        side = str(row.get("paper_side") or row.get("side") or "").strip().lower()
+        fallback_price = row.get("yes_ask") if side == "yes" else row.get("no_ask") if side == "no" else ""
+        price = number(row.get("paper_price")) or number(row.get("side_price")) or number(fallback_price)
         contracts = number(row.get("paper_contracts")) or 0.0
         pnl = ""
-        if row.get("paper_action") in {"trade", "lean"} and outcome and price is not None:
-            pnl = money(yes_contract_pnl(price, outcome, contracts))
+        if row.get("paper_action") in {"trade", "lean"} and outcome and price is not None and side in {"yes", "no"}:
+            pnl = money(contract_pnl(side, price, outcome, contracts))
 
         enriched = dict(row)
+        enriched["paper_side"] = side
         enriched["outcome"] = outcome
         enriched["notes"] = result.get("notes", "")
         enriched["paper_pnl"] = pnl

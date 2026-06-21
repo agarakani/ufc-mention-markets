@@ -43,7 +43,7 @@ FIELDS = [
     "league_fights", "fighter_rate", "fighter_hits", "fighter_fights",
     "word_type", "prior_strength", "confidence_ok", "confidence_note",
     "yes_bid", "yes_ask", "no_bid", "no_ask", "spread", "fee_buffer",
-    "hurdle", "edge", "watch", "validation_status",
+    "hurdle", "yes_edge", "no_edge", "side", "side_price", "edge", "watch", "validation_status",
     "previous_yes_ask", "ask_change", "status", "error",
 ]
 
@@ -51,7 +51,7 @@ HISTORY_FIELDS = [
     "snapshot_timestamp", "event_ticker", "ticker", "phrase", "yes_bid",
     "yes_ask", "no_bid", "no_ask", "spread", "model_probability",
     "history_probability", "probability_source",
-    "context_status", "edge", "hurdle", "watch",
+    "context_status", "yes_edge", "no_edge", "side", "side_price", "edge", "hurdle", "watch",
 ]
 
 
@@ -209,6 +209,10 @@ def event_snapshot(
             "spread": value(book.spread),
             "fee_buffer": value(fee_buffer),
             "hurdle": value(priced.hurdle),
+            "yes_edge": value(priced.yes_edge),
+            "no_edge": value(priced.no_edge),
+            "side": priced.side,
+            "side_price": value(priced.side_price),
             "edge": value(priced.edge),
             "watch": bool_text(priced.watch),
             "validation_status": priced.validation_status,

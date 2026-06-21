@@ -13,8 +13,8 @@ This repo does not place trades.
 1. Finds open Kalshi UFC mention markets.
 2. Reads the exact phrase rules, including grouped phrases like `Choke / Choked / Chokehold`.
 3. Builds a fight-level probability for that exact phrase and that exact fight.
-4. Compares the model number with the live Kalshi YES ask.
-5. Marks a row `WATCH` only when the model edge clears the spread/fee check.
+4. Compares the model's YES chance with the live YES buy price, and the model's NO chance with the live NO buy price.
+5. Marks a row `WATCH YES` or `WATCH NO` only when that side clears the spread/fee check.
 
 Kalshi prices are not fed into the model. They are only used after the model has
 made its number.
@@ -74,10 +74,12 @@ python3 scripts/live/price_fight.py \
 
 ## How To Read The Dashboard
 
-- `Our %`: the fight-level model's probability for that phrase.
-- `Kalshi`: the live YES ask.
-- `Edge`: `Our % - Kalshi`.
-- `WATCH`: research flag only. It means the model edge cleared the current checks.
+- `Our %`: the fight-level model's YES probability for that phrase.
+- `YES price`: what buying YES currently costs.
+- `NO price`: what buying NO currently costs.
+- `Side`: the cheaper side according to our model.
+- `Edge`: model chance for that side minus that side's buy price.
+- `WATCH YES` / `WATCH NO`: research flag only. It means that side cleared the current checks.
 - `LOW DATA`: the model ran, but there is not enough matching fighter history to trust it as a watch row.
 - `PASS`: no edge worth flagging right now.
 
@@ -147,7 +149,7 @@ python3 scripts/tracking/settle_card.py --card "UFC Vegas 119 Kape vs Horiguchi 
 This tracks two numbers:
 
 - `official`: only rows the model marked `WATCH`.
-- `leans`: rows where the model edge was positive but did not clear the full watch bar.
+- `leans`: rows where either YES or NO had positive model edge but did not clear the full watch bar.
 
 ## Data
 
