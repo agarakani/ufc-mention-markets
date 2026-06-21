@@ -34,6 +34,8 @@ SETTLED_FIELDS = [
     "no_edge",
     "side",
     "edge",
+    "data_risk",
+    "data_buffer",
     "watch",
     "confidence_note",
     "notes",

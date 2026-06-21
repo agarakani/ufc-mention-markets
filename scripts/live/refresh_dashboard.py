@@ -43,7 +43,7 @@ FIELDS = [
     "league_fights", "fighter_rate", "fighter_hits", "fighter_fights",
     "word_type", "prior_strength", "confidence_ok", "confidence_note",
     "yes_bid", "yes_ask", "no_bid", "no_ask", "spread", "fee_buffer",
-    "hurdle", "yes_edge", "no_edge", "side", "side_price", "edge", "watch", "validation_status",
+    "data_risk", "data_buffer", "hurdle", "yes_edge", "no_edge", "side", "side_price", "edge", "watch", "validation_status",
     "previous_yes_ask", "ask_change", "status", "error",
 ]
 
@@ -51,7 +51,7 @@ HISTORY_FIELDS = [
     "snapshot_timestamp", "event_ticker", "ticker", "phrase", "yes_bid",
     "yes_ask", "no_bid", "no_ask", "spread", "model_probability",
     "history_probability", "probability_source",
-    "context_status", "yes_edge", "no_edge", "side", "side_price", "edge", "hurdle", "watch",
+    "context_status", "yes_edge", "no_edge", "side", "side_price", "edge", "data_risk", "data_buffer", "hurdle", "watch",
 ]
 
 
@@ -107,6 +107,7 @@ def event_snapshot(
     *,
     fee_buffer: float,
     min_fighter_fights: int,
+    low_data_buffer: float = 0.10,
     snapshot_timestamp: str,
     context_model=None,
     require_context_model: bool = False,
@@ -132,6 +133,7 @@ def event_snapshot(
                 cutoff_date=event_date or None,
                 fee_buffer=fee_buffer,
                 min_fighter_fights=min_fighter_fights,
+                low_data_buffer=low_data_buffer,
                 context_model=context_model,
                 require_context_model=require_context_model,
             )
@@ -154,6 +156,8 @@ def event_snapshot(
                 "no_ask": value(book.no_ask),
                 "spread": value(book.spread),
                 "fee_buffer": value(fee_buffer),
+                "data_risk": bool_text(False),
+                "data_buffer": value(0),
                 "watch": bool_text(False),
                 "validation_status": "unvalidated",
                 "probability_source": "unavailable",
@@ -208,6 +212,8 @@ def event_snapshot(
             "no_ask": value(book.no_ask),
             "spread": value(book.spread),
             "fee_buffer": value(fee_buffer),
+            "data_risk": bool_text(priced.data_risk),
+            "data_buffer": value(priced.data_buffer),
             "hurdle": value(priced.hurdle),
             "yes_edge": value(priced.yes_edge),
             "no_edge": value(priced.no_edge),
@@ -243,6 +249,7 @@ def refresh_once(
     exclude_event_tickers: set[str] | None = None,
     fee_buffer: float,
     min_fighter_fights: int,
+    low_data_buffer: float = 0.10,
     poll_seconds: float,
     context_model=None,
     require_context_model: bool = True,
@@ -285,6 +292,7 @@ def refresh_once(
                 require_context_model=require_context_model,
                 fee_buffer=fee_buffer,
                 min_fighter_fights=min_fighter_fights,
+                low_data_buffer=low_data_buffer,
                 snapshot_timestamp=snapshot_timestamp,
             ))
         except Exception as exc:
@@ -310,6 +318,7 @@ def refresh_once(
         "excluded_event_tickers": sorted(exclude_event_tickers or []),
         "markets_priced": len(rows),
         "watch_rows": sum(row.get("watch") == "yes" for row in rows),
+        "low_data_buffer": low_data_buffer,
         "fight_model_required": require_context_model,
         "authenticated": client.authenticated,
         "errors": errors,
@@ -334,6 +343,7 @@ def main() -> None:
     )
     parser.add_argument("--data-dir", default=str(DATA_DEFAULT))
     parser.add_argument("--fee-buffer-cents", type=float, default=2.0)
+    parser.add_argument("--low-data-buffer-cents", type=float, default=10.0)
     parser.add_argument("--min-fighter-fights", type=int, default=15)
     parser.add_argument("--no-fight-model", action="store_true", help="use simple history only")
     parser.add_argument("--poll-seconds", type=float, default=0, help="0 refreshes once")
@@ -364,6 +374,7 @@ def main() -> None:
                 event_ticker=args.event_ticker,
                 exclude_event_tickers={ticker.upper() for ticker in args.exclude_event_ticker},
                 fee_buffer=args.fee_buffer_cents / 100.0,
+                low_data_buffer=args.low_data_buffer_cents / 100.0,
                 min_fighter_fights=args.min_fighter_fights,
                 poll_seconds=args.poll_seconds,
                 verbose=True,

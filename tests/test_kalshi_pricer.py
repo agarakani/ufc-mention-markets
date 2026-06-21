@@ -294,6 +294,33 @@ class GateTests(unittest.TestCase):
         )
         self.assertFalse(low_confidence.watch)
 
+    def test_low_data_can_watch_with_bigger_edge(self):
+        corpus = TranscriptCorpus([
+            fight(str(i), "A", f"B{i}", "Suga lands", "Suga", "") for i in range(16)
+        ] + [
+            fight(f"x{i}", f"X{i}", f"Y{i}", "nothing") for i in range(64)
+        ])
+        market = {
+            "ticker": "KX-TEST",
+            "custom_strike": {"Word": "Suga"},
+            "rules_primary": "If the commentator says Suga as part of the fight, resolves Yes.",
+        }
+        row = price_market(
+            market,
+            TopOfBook(yes_bid=0.49, yes_ask=0.50, no_bid=0.50, no_ask=0.51),
+            corpus,
+            "A",
+            "B0",
+            cutoff_date="2026-01-01",
+            fee_buffer=0.02,
+            min_fighter_fights=30,
+            low_data_buffer=0.10,
+        )
+        self.assertTrue(row.data_risk)
+        self.assertAlmostEqual(row.data_buffer, 0.10)
+        self.assertGreater(row.edge, row.hurdle)
+        self.assertTrue(row.watch)
+
     def test_required_fight_model_blocks_simple_history_watch(self):
         corpus = TranscriptCorpus([
             fight(str(i), "A", f"B{i}", "Suga lands", "Suga", "") for i in range(16)

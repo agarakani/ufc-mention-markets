@@ -14,7 +14,8 @@ This repo does not place trades.
 2. Reads the exact phrase rules, including grouped phrases like `Choke / Choked / Chokehold`.
 3. Builds a fight-level probability for that exact phrase and that exact fight.
 4. Compares the model's YES chance with the live YES buy price, and the model's NO chance with the live NO buy price.
-5. Marks a row `WATCH YES` or `WATCH NO` only when that side clears the spread/fee check.
+5. Marks a row `WATCH YES` or `WATCH NO` when that side clears the required edge.
+6. If fighter history is thin, the row can still be a watch, but it has to clear a bigger edge bar and is flagged as data-risk.
 
 Kalshi prices are not fed into the model. They are only used after the model has
 made its number.
@@ -80,6 +81,7 @@ python3 scripts/live/price_fight.py \
 - `Side`: the cheaper side according to our model.
 - `Edge`: model chance for that side minus that side's buy price.
 - `WATCH YES` / `WATCH NO`: research flag only. It means that side cleared the current checks.
+- `WATCH YES DATA` / `WATCH NO DATA`: same idea, but fighter history was thin, so the row had to clear a higher bar.
 - `LOW DATA`: the model ran, but there is not enough matching fighter history to trust it as a watch row.
 - `PASS`: no edge worth flagging right now.
 

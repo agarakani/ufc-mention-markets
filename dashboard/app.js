@@ -237,10 +237,11 @@
 
   function callLabel(row) {
     const side = String(row.side || "").toUpperCase();
-    if (row.watch) return side ? `WATCH ${side}` : "WATCH";
+    if (row.watch) return side ? `WATCH ${side}${row.data_risk ? " DATA" : ""}` : "WATCH";
     if (row.status === "error") return "ERROR";
     if (row.probability_source !== "fight_context_model") return "HISTORY ONLY";
-    if (row.confidence_ok === false) return "LOW DATA";
+    if (row.data_risk && parseNumber(row.edge) > 0 && side) return `DATA LEAN ${side}`;
+    if (row.data_risk) return "LOW DATA";
     if (parseNumber(row.edge) > 0 && side) return `LEAN ${side}`;
     return "PASS";
   }
@@ -260,13 +261,17 @@
     const yesEdge = formatPlainPercent(row.yes_edge, true);
     const noEdge = formatPlainPercent(row.no_edge, true);
     const edge = formatPlainPercent(row.edge, true);
+    const dataBuffer = formatPlainPercent(row.data_buffer);
     const priorFights = Number(row.fighter_fights || 0);
 
     if (row.watch) {
+      if (row.data_risk) {
+        return `Data-risk watch. Our YES chance is ${model}. Best side is ${side} at ${sidePrice}, edge ${edge}. Low-data buffer added: ${dataBuffer}.`;
+      }
       return `Our YES chance is ${model}. Best side is ${side} at ${sidePrice}, with edge ${edge} after the spread/fee check.`;
     }
-    if (row.confidence_ok === false) {
-      return `Low data: ${formatInteger(priorFights)} prior fighter fights. YES edge ${yesEdge}; NO edge ${noEdge}.`;
+    if (row.data_risk) {
+      return `Low data: ${formatInteger(priorFights)} prior fighter fights. YES edge ${yesEdge}; NO edge ${noEdge}. Extra required edge: ${dataBuffer}.`;
     }
     if (parseNumber(row.edge) <= 0) {
       return `Our YES chance is ${model}. YES edge ${yesEdge}; NO edge ${noEdge}. No side is cheap enough.`;
@@ -367,7 +372,7 @@
 
   function signalPill(value) {
     const label = String(value || "");
-    const tone = label.startsWith("WATCH") ? "warn" : label === "ERROR" ? "bad" : label === "LOW DATA" ? "quiet-warn" : label.startsWith("LEAN") ? "quiet-warn" : "";
+    const tone = label.startsWith("WATCH") ? "warn" : label === "ERROR" ? "bad" : label === "LOW DATA" || label.startsWith("DATA LEAN") ? "quiet-warn" : label.startsWith("LEAN") ? "quiet-warn" : "";
     return pill(label, tone);
   }
 
