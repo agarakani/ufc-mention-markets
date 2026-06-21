@@ -20,6 +20,8 @@ SETTLED_FIELDS = [
     "paper_action",
     "paper_side",
     "outcome",
+    "resolution_status",
+    "resolved_at",
     "paper_price",
     "paper_contracts",
     "paper_pnl",
@@ -141,15 +143,14 @@ def upsert_summary(path: Path, summary: dict) -> None:
     write_csv(path, rows, SUMMARY_FIELDS)
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Calculate paper P/L after outcomes are filled in.")
-    parser.add_argument("--card", required=True, help="card folder name under data/tracking")
-    parser.add_argument("--tracking-root", default=str(TRACKING_ROOT_DEFAULT))
-    parser.add_argument("--summary", default=str(SUMMARY_DEFAULT))
-    args = parser.parse_args()
-
-    card = slug(args.card)
-    card_dir = Path(args.tracking_root) / card
+def settle_card(
+    card: str,
+    *,
+    tracking_root: Path = TRACKING_ROOT_DEFAULT,
+    summary_path: Path = SUMMARY_DEFAULT,
+) -> dict:
+    card = slug(card)
+    card_dir = Path(tracking_root) / card
     predictions_path = card_dir / "predictions.csv"
     outcomes_path = card_dir / "outcomes.csv"
     if not predictions_path.exists():
@@ -161,6 +162,8 @@ def main() -> None:
     outcomes_by_ticker = {
         row.get("ticker", ""): {
             "outcome": normalize_outcome(row.get("outcome", "")),
+            "resolution_status": row.get("resolution_status", ""),
+            "resolved_at": row.get("resolved_at", ""),
             "notes": row.get("notes", ""),
         }
         for row in read_csv(outcomes_path)
@@ -184,6 +187,8 @@ def main() -> None:
         enriched = dict(row)
         enriched["paper_side"] = side
         enriched["outcome"] = outcome
+        enriched["resolution_status"] = result.get("resolution_status", "")
+        enriched["resolved_at"] = result.get("resolved_at", "")
         enriched["notes"] = result.get("notes", "")
         enriched["paper_pnl"] = pnl
         settled.append(enriched)
@@ -209,12 +214,27 @@ def main() -> None:
 
     write_csv(card_dir / "settled_predictions.csv", settled, SETTLED_FIELDS)
     (card_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
-    upsert_summary(Path(args.summary), summary)
+    upsert_summary(Path(summary_path), summary)
+    return summary
 
-    print(f"Settled card: {card}")
-    print(f"Outcomes filled: {outcomes_filled}/{len(predictions)}")
-    print(f"Official trades: {official['count']}, P/L: {official['pnl']:.4f}")
-    print(f"Leans: {leans['count']}, P/L: {leans['pnl']:.4f}")
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Calculate paper P/L after outcomes are filled in.")
+    parser.add_argument("--card", required=True, help="card folder name under data/tracking")
+    parser.add_argument("--tracking-root", default=str(TRACKING_ROOT_DEFAULT))
+    parser.add_argument("--summary", default=str(SUMMARY_DEFAULT))
+    args = parser.parse_args()
+
+    summary = settle_card(
+        args.card,
+        tracking_root=Path(args.tracking_root),
+        summary_path=Path(args.summary),
+    )
+
+    print(f"Settled card: {summary['card']}")
+    print(f"Outcomes filled: {summary['outcomes_filled']}/{summary['prediction_rows']}")
+    print(f"Official trades: {summary['official_trades']}, P/L: {summary['official_pnl']}")
+    print(f"Leans: {summary['leans']}, P/L: {summary['lean_pnl']}")
     print(f"Summary: {Path(args.summary).relative_to(ROOT)}")
 
 

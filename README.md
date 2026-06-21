@@ -45,7 +45,8 @@ PAPER_CARD="UFC Vegas 119 Kape vs Horiguchi main card" ./start_live_dashboard.co
 
 That still cannot spend real money. It records one fake contract the first time
 a market becomes `WATCH YES` or `WATCH NO`, using the live buy price at that
-moment.
+moment. It also keeps checking Kalshi for final results, fills outcomes when
+Kalshi resolves a market, and recalculates paper P/L.
 
 Refresh the live dashboard once:
 
@@ -171,8 +172,11 @@ python3 scripts/live/refresh_dashboard.py \
 The live tracker buys nothing for real. It logs one paper contract when a row
 first becomes `WATCH`, then ignores that same market on later refreshes.
 
-After the card, fill `data/tracking/<card>/outcomes.csv` with `yes` or `no`,
-then run:
+When Kalshi posts a final result, the tracker fills `yes` or `no` on its own.
+Rows show as `pending` when the fight date has passed but Kalshi has not posted
+the final result yet.
+
+The settlement command is still available if you need to recalculate manually:
 
 ```bash
 python3 scripts/tracking/settle_card.py --card "UFC Vegas 119 Kape vs Horiguchi main card"

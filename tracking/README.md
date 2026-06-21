@@ -31,9 +31,17 @@ market stays a watch later, it does not add another entry.
 
 After the fights:
 
-1. Open `data/tracking/<card>/outcomes.csv`.
-2. Put `yes` or `no` in the `outcome` column for each phrase.
-3. Run:
+Keep the refresher running, or run it again later with the same `--paper-card`.
+It checks Kalshi for final results. Once Kalshi resolves a market, the tracker
+fills `yes` or `no` and recalculates paper P/L.
+
+Rows can show three outcome states:
+
+- `open`: still normal/open.
+- `pending`: the fight date has passed, but Kalshi has not posted the final result.
+- `yes` / `no`: Kalshi has resolved it.
+
+Manual recalculation is still available:
 
 ```bash
 python3 scripts/tracking/settle_card.py --card "UFC Vegas 119 Kape vs Horiguchi main card"

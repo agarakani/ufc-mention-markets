@@ -101,7 +101,7 @@
       ? `; refreshes every ${formatInteger(summary.kalshi_poll_seconds)}s`
       : "";
     const paper = summary.paper_tracking_card
-      ? `; paper: ${formatInteger(summary.paper_tracking_total_entries)} entries in ${summary.paper_tracking_card}`
+      ? `; paper: ${formatInteger(summary.paper_tracking_total_entries)} entries, ${formatInteger(summary.paper_tracking_pending)} pending`
       : "";
     els.status.textContent = `${stale ? "STALE " : "Updated"} ${snapshot}${age ? ` (${age})` : ""}; ${access}; read-only${polling}${paper}`;
   }
@@ -173,6 +173,7 @@
       `${formatInteger(summary.tracking_official_trade_count)} official paper trades`,
       `${formatInteger(summary.tracking_lean_count)} leans`,
       `${formatInteger(summary.tracking_outcomes_filled)} outcomes filled`,
+      `${formatInteger(summary.tracking_pending_count)} pending`,
     ].join(" · ");
 
     els.trackingCards.innerHTML = cards.map((card) => {
@@ -187,6 +188,7 @@
           <span><strong>${formatInteger(card.official_trades)}</strong> official</span>
           <span><strong>${formatInteger(card.leans)}</strong> leans</span>
           <span><strong>${formatInteger(card.outcomes_filled)}</strong> outcomes</span>
+          <span><strong>${formatInteger(card.pending)}</strong> pending</span>
           <span class="${pnlClass(officialPnl)}"><strong>${formatMoney(officialPnl)}</strong> official P/L</span>
           <span class="${pnlClass(leanPnl)}"><strong>${formatMoney(leanPnl)}</strong> lean P/L</span>
         </div>
@@ -201,8 +203,8 @@
 
     els.trackingBody.innerHTML = shown.map((row) => {
       const actionTone = row.paper_action === "trade" ? "warn" : "quiet-warn";
-      const outcome = row.outcome ? row.outcome.toUpperCase() : "OPEN";
-      const outcomeTone = row.outcome === "yes" ? "good" : row.outcome === "no" ? "bad" : "";
+      const outcome = outcomeLabel(row);
+      const outcomeTone = outcomeToneFor(row, outcome);
       const entryTime = formatShortTimestamp(row.entered_at || row.tracked_at);
       return `<tr>
         <td>${pill(trackingAction(row), actionTone)}</td>
@@ -216,6 +218,20 @@
         <td>${pill(outcome, outcomeTone)}</td>
       </tr>`;
     }).join("");
+  }
+
+  function outcomeLabel(row) {
+    if (row.outcome) return String(row.outcome).toUpperCase();
+    if (row.resolution_status === "pending") return "PENDING";
+    if (row.resolution_status === "resolved") return "RESOLVED";
+    return "OPEN";
+  }
+
+  function outcomeToneFor(row, label) {
+    if (row.outcome === "yes") return "good";
+    if (row.outcome === "no") return "bad";
+    if (label === "PENDING") return "quiet-warn";
+    return "";
   }
 
   function getRows() {
