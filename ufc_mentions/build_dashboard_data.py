@@ -5,10 +5,20 @@ from __future__ import annotations
 
 import csv
 import json
+import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+try:
+    from .kalshi_mentions import event_date_from_ticker, fighters_from_market_title
+except ImportError:  # pragma: no cover - direct script execution
+    from ufc_mentions.kalshi_mentions import event_date_from_ticker, fighters_from_market_title
+
 OUT_DEFAULT = ROOT / "dashboard" / "data.js"
 
 KALSHI_LIVE = ROOT / "market_data" / "kalshi_live_edges.csv"
@@ -334,9 +344,190 @@ def keep_best(item: dict, field: str, value) -> None:
         item[field] = value
 
 
+def parse_event_fighters(title: str) -> tuple[str, str]:
+    try:
+        return fighters_from_market_title(title)
+    except Exception:
+        match = re.search(r"^(.+?)\s+vs\.?\s+(.+?)\s+(?:UFC\s+)?Fight\b", title or "", re.IGNORECASE)
+        if match:
+            return match.group(1).strip(), match.group(2).strip()
+        return "", ""
+
+
+def event_display_title(event: dict) -> str:
+    return (
+        event.get("sub_title")
+        or event.get("event_title")
+        or event.get("title")
+        or event.get("event_ticker")
+        or ""
+    )
+
+
+def event_catalog(events: list[dict], rows: list[dict], hidden_events: set[str]) -> dict[str, dict]:
+    catalog: dict[str, dict] = {}
+
+    for event in events:
+        event_ticker = str(event.get("event_ticker", "")).strip()
+        if not event_ticker or event_ticker in hidden_events:
+            continue
+        title = event_display_title(event)
+        fighter_1 = str(event.get("fighter_1") or "").strip()
+        fighter_2 = str(event.get("fighter_2") or "").strip()
+        if not fighter_1 or not fighter_2:
+            fighter_1, fighter_2 = parse_event_fighters(title)
+        catalog[event_ticker] = {
+            "event_ticker": event_ticker,
+            "series_ticker": event.get("series_ticker", "KXFIGHTMENTION"),
+            "event_date": event.get("event_date") or event_date_from_ticker(event_ticker) or "",
+            "event_title": title,
+            "fighter_1": fighter_1,
+            "fighter_2": fighter_2,
+            "available_on_brokers": as_bool(event.get("available_on_brokers")),
+            "last_updated_ts": event.get("last_updated_ts", ""),
+            "market_count": 0,
+            "priced_count": 0,
+            "meta_market_count": as_int(event.get("market_rows")) or 0,
+            "meta_priced_count": as_int(event.get("priced_rows")) or 0,
+            "meta_watch_count": as_int(event.get("watch_rows")) or 0,
+            "model_ready_count": 0,
+            "error_count": 1 if event.get("error") else 0,
+            "watch_count": 0,
+            "best_edge": None,
+        }
+
+    for row in rows:
+        event_ticker = str(row.get("event_ticker", "")).strip()
+        if not event_ticker or event_ticker in hidden_events:
+            continue
+        item = catalog.setdefault(event_ticker, {
+            "event_ticker": event_ticker,
+            "series_ticker": row.get("series_ticker", "KXFIGHTMENTION"),
+            "event_date": row.get("event_date") or event_date_from_ticker(event_ticker) or "",
+            "event_title": row.get("event_title", ""),
+            "fighter_1": row.get("fighter_1", ""),
+            "fighter_2": row.get("fighter_2", ""),
+            "available_on_brokers": False,
+            "last_updated_ts": "",
+            "market_count": 0,
+            "priced_count": 0,
+            "meta_market_count": 0,
+            "meta_priced_count": 0,
+            "meta_watch_count": 0,
+            "model_ready_count": 0,
+            "error_count": 0,
+            "watch_count": 0,
+            "best_edge": None,
+        })
+        item["market_count"] += 1
+        if row.get("yes_ask") is not None:
+            item["priced_count"] += 1
+        if row.get("probability_source") == "fight_context_model":
+            item["model_ready_count"] += 1
+        if row.get("status") == "error":
+            item["error_count"] += 1
+        if row.get("watch"):
+            item["watch_count"] += 1
+        keep_best(item, "best_edge", row.get("edge"))
+    for item in catalog.values():
+        if not item.get("market_count"):
+            item["market_count"] = item.get("meta_market_count") or 0
+            item["priced_count"] = item.get("meta_priced_count") or 0
+            item["watch_count"] = item.get("meta_watch_count") or 0
+    return catalog
+
+
+def card_id_for_event(event: dict) -> str:
+    event_date = event.get("event_date") or "date-tbd"
+    series = event.get("series_ticker") or "KXFIGHTMENTION"
+    return f"{series}:{event_date}"
+
+
+def build_kalshi_cards(kalshi_meta: dict, rows: list[dict], hidden_events: set[str]) -> list[dict]:
+    events = event_catalog(kalshi_meta.get("events") or [], rows, hidden_events)
+    cards: dict[str, dict] = {}
+    for event in events.values():
+        card_id = card_id_for_event(event)
+        event_date = event.get("event_date", "")
+        event_title = event.get("event_title", "")
+        has_fighters = bool(event.get("fighter_1") and event.get("fighter_2"))
+        market_count = event.get("market_count") or 0
+        has_card_title = bool(event_title and not has_fighters and not market_count)
+        card = cards.setdefault(card_id, {
+            "card_id": card_id,
+            "card_title": event_title if has_card_title else f"UFC card · {event_date}" if event_date else "UFC card · date TBD",
+            "event_date": event_date,
+            "source_note": "Kalshi event title; fights not listed yet." if has_card_title else "Grouped by Kalshi fight-event date. No card name is guessed.",
+            "has_kalshi_card_title": has_card_title,
+            "fight_count": 0,
+            "tradable_fight_count": 0,
+            "phrase_count": 0,
+            "priced_count": 0,
+            "model_ready_count": 0,
+            "watch_count": 0,
+            "best_edge": None,
+            "fights": [],
+        })
+        if has_card_title and not card.get("has_kalshi_card_title"):
+            card["card_title"] = event_title
+            card["source_note"] = "Kalshi event title; fights not listed yet."
+            card["has_kalshi_card_title"] = True
+        matchup = (
+            f"{event.get('fighter_1')} vs {event.get('fighter_2')}"
+            if has_fighters
+            else "TBD fights" if not market_count else event_title or "TBD fight"
+        )
+        fight = {
+            "event_ticker": event.get("event_ticker", ""),
+            "event_title": event.get("event_title", ""),
+            "event_date": event_date,
+            "fighter_1": event.get("fighter_1", ""),
+            "fighter_2": event.get("fighter_2", ""),
+            "matchup": matchup,
+            "market_count": market_count,
+            "priced_count": event.get("priced_count") or 0,
+            "model_ready_count": event.get("model_ready_count") or 0,
+            "watch_count": event.get("watch_count") or 0,
+            "best_edge": event.get("best_edge"),
+            "odds_status": "live" if market_count else "tbd",
+            "tradable": bool(market_count),
+            "available_on_brokers": bool(event.get("available_on_brokers")),
+            "last_updated_ts": event.get("last_updated_ts", ""),
+        }
+        card["fights"].append(fight)
+        card["fight_count"] += 1
+        if market_count:
+            card["tradable_fight_count"] += 1
+        card["phrase_count"] += market_count
+        card["priced_count"] += event.get("priced_count") or 0
+        card["model_ready_count"] += event.get("model_ready_count") or 0
+        card["watch_count"] += event.get("watch_count") or 0
+        keep_best(card, "best_edge", event.get("best_edge"))
+
+    for card in cards.values():
+        card["fights"].sort(key=lambda item: (
+            not item.get("tradable"),
+            item.get("matchup", ""),
+            item.get("event_ticker", ""),
+        ))
+    return sorted(cards.values(), key=lambda item: (item.get("event_date", ""), item.get("card_id", "")))
+
+
+def flatten_card_fights(cards: list[dict]) -> list[dict]:
+    rows = []
+    for card in cards:
+        for fight in card.get("fights", []):
+            item = dict(fight)
+            item["card_id"] = card.get("card_id", "")
+            item["card_title"] = card.get("card_title", "")
+            rows.append(item)
+    return rows
+
+
 def summarize(
     kalshi_rows: list[dict],
     kalshi_events: list[dict],
+    kalshi_cards: list[dict],
     kalshi_meta: dict,
     kalshi_audit_summary: dict,
     kalshi_context_backtest_summary: dict,
@@ -347,6 +538,7 @@ def summarize(
     if hidden_tracking_card_name(str(paper_tracking.get("card", ""))):
         paper_tracking = {}
     summary = {
+        "kalshi_card_count": len(kalshi_cards),
         "kalshi_event_count": len(kalshi_events),
         "kalshi_market_count": len(kalshi_rows),
         "kalshi_priced_count": sum(row.get("yes_ask") is not None for row in kalshi_rows),
@@ -397,7 +589,8 @@ def build_payload() -> dict:
         if str(row.get("event_ticker", "")).strip() not in hidden_events
     ]
     kalshi_rows = build_kalshi_rows(kalshi_source_rows)
-    kalshi_events = build_kalshi_event_rows(kalshi_rows)
+    kalshi_cards = build_kalshi_cards(kalshi_meta, kalshi_rows, hidden_events)
+    kalshi_events = flatten_card_fights(kalshi_cards) or build_kalshi_event_rows(kalshi_rows)
     tracking_cards = build_tracking_cards()
     tracking_positions = build_tracking_positions()
 
@@ -413,6 +606,7 @@ def build_payload() -> dict:
         "summary": summarize(
             kalshi_rows,
             kalshi_events,
+            kalshi_cards,
             kalshi_meta,
             kalshi_audit_summary,
             kalshi_context_backtest_summary,
@@ -420,6 +614,7 @@ def build_payload() -> dict:
             tracking_positions,
         ),
         "kalshi": kalshi_rows,
+        "kalshi_cards": kalshi_cards,
         "kalshi_events": kalshi_events,
         "kalshi_meta": kalshi_meta,
         "kalshi_audit_summary": kalshi_audit_summary,

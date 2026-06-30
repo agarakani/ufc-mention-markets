@@ -1,10 +1,13 @@
 (function () {
-  const data = window.UFC_MENTION_DASHBOARD_DATA;
+  let data = window.UFC_MENTION_DASHBOARD_DATA;
   const state = {
+    selectedCard: "",
+    selectedEvent: "",
     phrase: "",
     search: "",
     sortKey: "",
     sortDir: "desc",
+    refreshing: false,
   };
 
   const columns = [
@@ -24,6 +27,7 @@
     stats: document.getElementById("stats"),
     phraseFilter: document.getElementById("phraseFilter"),
     searchInput: document.getElementById("searchInput"),
+    refreshButton: document.getElementById("refreshButton"),
     tableTitle: document.getElementById("tableTitle"),
     tableMeta: document.getElementById("tableMeta"),
     tableHead: document.getElementById("tableHead"),
@@ -42,6 +46,7 @@
     }
 
     populatePhraseFilter();
+    chooseDefaultCard();
     bindEvents();
     renderStats();
     renderTracking();
@@ -59,9 +64,65 @@
       state.search = els.searchInput.value.trim().toLowerCase();
       render();
     });
+
+    if (els.refreshButton) {
+      els.refreshButton.addEventListener("click", manualRefresh);
+    }
+  }
+
+  async function manualRefresh() {
+    if (state.refreshing) return;
+    state.refreshing = true;
+    setRefreshButton("Refreshing...");
+    try {
+      if (window.location.protocol === "http:" || window.location.protocol === "https:") {
+        const response = await fetch(`/api/refresh?ts=${Date.now()}`, { cache: "no-store" });
+        if (!response.ok) throw new Error(`refresh failed: ${response.status}`);
+        await loadFreshData();
+        chooseDefaultCard();
+        populatePhraseFilter();
+        renderStats();
+        renderTracking();
+        render();
+      } else {
+        window.location.reload();
+      }
+    } catch (error) {
+      if (els.status) {
+        els.status.textContent = `Refresh failed. ${error.message || error}`;
+      }
+    } finally {
+      state.refreshing = false;
+      setRefreshButton("Refresh");
+    }
+  }
+
+  function setRefreshButton(label) {
+    if (!els.refreshButton) return;
+    els.refreshButton.textContent = label;
+    els.refreshButton.disabled = state.refreshing;
+  }
+
+  function loadFreshData() {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = `data.js?v=${Date.now()}`;
+      script.onload = () => {
+        data = window.UFC_MENTION_DASHBOARD_DATA;
+        script.remove();
+        resolve();
+      };
+      script.onerror = () => {
+        script.remove();
+        reject(new Error("could not load dashboard data"));
+      };
+      document.body.appendChild(script);
+    });
   }
 
   function populatePhraseFilter() {
+    const current = state.phrase;
+    els.phraseFilter.innerHTML = '<option value="">All phrases</option>';
     const phrases = new Map();
     getRows().forEach((row) => {
       if (!row.phrase) return;
@@ -76,14 +137,35 @@
         option.textContent = label;
         els.phraseFilter.appendChild(option);
       });
+    els.phraseFilter.value = current;
+    if (current && els.phraseFilter.value !== current) {
+      state.phrase = "";
+    }
+  }
+
+  function chooseDefaultCard() {
+    const cards = getCards();
+    if (!cards.length) {
+      state.selectedCard = "";
+      state.selectedEvent = "";
+      return;
+    }
+    if (!state.selectedCard || !cards.some((card) => card.card_id === state.selectedCard)) {
+      state.selectedCard = cards[0].card_id;
+      state.selectedEvent = "";
+    }
+    const card = getSelectedCard();
+    if (state.selectedEvent && (!card || !(card.fights || []).some((fight) => fight.event_ticker === state.selectedEvent))) {
+      state.selectedEvent = "";
+    }
   }
 
   function renderStats() {
     const summary = data.summary || {};
     const stats = [
+      [summary.kalshi_card_count || 0, "cards"],
       [summary.kalshi_event_count || 0, "listed fights"],
       [summary.kalshi_priced_count || 0, "Kalshi phrases"],
-      [summary.kalshi_fight_model_count || 0, "fight-level rows"],
       [summary.kalshi_watch_count || 0, "watch rows"],
     ];
 
@@ -97,21 +179,25 @@
     const age = summary.kalshi_snapshot_timestamp ? snapshotAge(summary.kalshi_snapshot_timestamp) : "";
     const stale = summary.kalshi_snapshot_timestamp ? isStale(summary.kalshi_snapshot_timestamp, summary.kalshi_poll_seconds) : false;
     const access = summary.kalshi_authenticated ? "authenticated read" : "public read";
+    const serverMode = window.location.protocol === "http:" || window.location.protocol === "https:"
+      ? "; refresh button runs Kalshi now"
+      : "; refresh button reloads saved data";
     const polling = summary.kalshi_poll_seconds > 0
       ? `; refreshes every ${formatInteger(summary.kalshi_poll_seconds)}s`
       : "";
     const paper = summary.paper_tracking_card
       ? `; paper: ${formatInteger(summary.paper_tracking_total_entries)} entries, ${formatInteger(summary.paper_tracking_pending)} pending`
       : "";
-    els.status.textContent = `${stale ? "STALE " : "Updated"} ${snapshot}${age ? ` (${age})` : ""}; ${access}; read-only${polling}${paper}`;
+    els.status.textContent = `${stale ? "STALE " : "Updated"} ${snapshot}${age ? ` (${age})` : ""}; ${access}; read-only${serverMode}${polling}${paper}`;
   }
 
   function render() {
+    chooseDefaultCard();
     let rows = getRows().map(deriveRow);
     rows = applyFilters(rows);
     rows = applySort(rows);
 
-    els.tableTitle.textContent = "Live fight prices";
+    els.tableTitle.textContent = selectedTableTitle();
     els.tableMeta.textContent = tableMeta(rows);
     renderFightCards();
     renderHeader();
@@ -119,6 +205,10 @@
   }
 
   function tableMeta(rows) {
+    const fight = getSelectedFight();
+    if (fight && fight.odds_status === "tbd") {
+      return "Kalshi lists this fight event, but mention odds are not posted yet.";
+    }
     const summary = data.summary || {};
     const backtestGroups = Number(summary.kalshi_backtest_measured_groups || 0);
     const backtestWins = Number(summary.kalshi_backtest_groups_beating_base || 0);
@@ -127,33 +217,91 @@
     return `${base} Old-fight test: ${formatInteger(backtestWins)}/${formatInteger(backtestGroups)} phrase groups beat the simple average.`;
   }
 
+  function selectedTableTitle() {
+    const fight = getSelectedFight();
+    if (fight) return fight.matchup || fight.event_title || "Selected fight";
+    const card = getSelectedCard();
+    if (card) return card.card_title || "Selected card";
+    return "Live fight prices";
+  }
+
   function renderFightCards() {
-    const events = data.kalshi_events || [];
-    if (!events.length) {
-      els.kalshiCards.innerHTML = '<article class="fight-card empty-card"><strong>No listed fight markets yet</strong><span>Run the Kalshi refresher and open fight markets will appear here.</span></article>';
+    const cards = getCards();
+    if (!cards.length) {
+      els.kalshiCards.innerHTML = '<article class="card-folder empty-card"><strong>No Kalshi UFC cards yet</strong><span>Run the Kalshi refresher and open fight events will appear here.</span></article>';
       return;
     }
 
-    els.kalshiCards.innerHTML = events.map((event) => {
-      const matchup = event.fighter_1 && event.fighter_2
-        ? `${event.fighter_1} vs ${event.fighter_2}`
-        : event.event_title || event.event_ticker || "Upcoming fight";
-      const watchCount = Number(event.watch_count || 0);
-      const bestEdge = parseNumber(event.best_edge);
+    els.kalshiCards.innerHTML = cards.map((card) => {
+      const selected = card.card_id === state.selectedCard;
+      const bestEdge = parseNumber(card.best_edge);
       const edgeText = bestEdge === null ? "no edge yet" : `best edge ${formatPlainPercent(bestEdge, true)}`;
-      const call = watchCount > 0 ? `${formatInteger(watchCount)} watch` : edgeText;
-      return `<article class="fight-card ${watchCount > 0 ? "is-live" : ""}">
-        <div>
-          <p class="eyebrow">${escapeHtml(formatDate(event.event_date) || "Upcoming")}</p>
-          <h2>${escapeHtml(matchup)}</h2>
-        </div>
-        <div class="fight-card-meta">
-          <span>${formatInteger(event.priced_count)} phrases</span>
-          <span>${formatInteger(event.model_ready_count)} modeled</span>
-          <strong>${escapeHtml(call)}</strong>
-        </div>
+      const call = Number(card.watch_count || 0) > 0 ? `${formatInteger(card.watch_count)} watch` : edgeText;
+      const fights = selected ? renderFightList(card) : "";
+      return `<article class="card-folder ${selected ? "is-open" : ""} ${Number(card.watch_count || 0) > 0 ? "is-live" : ""}">
+        <button class="card-folder-head" type="button" data-card-select="${escapeHtml(card.card_id)}">
+          <div>
+            <p class="eyebrow">${escapeHtml(formatDate(card.event_date) || "Upcoming")}</p>
+            <h2>${escapeHtml(card.card_title || "UFC card")}</h2>
+            <span>${escapeHtml(card.source_note || "From Kalshi")}</span>
+          </div>
+          <div class="fight-card-meta">
+            <span>${formatInteger(card.tradable_fight_count)} tradable fights</span>
+            <span>${formatInteger(card.phrase_count)} phrases</span>
+            <strong>${escapeHtml(call)}</strong>
+          </div>
+        </button>
+        ${fights}
       </article>`;
     }).join("");
+
+    els.kalshiCards.querySelectorAll("[data-card-select]").forEach((button) => {
+      button.addEventListener("click", () => {
+        state.selectedCard = button.dataset.cardSelect || "";
+        state.selectedEvent = "";
+        render();
+      });
+    });
+    els.kalshiCards.querySelectorAll("[data-fight-select]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        state.selectedCard = button.dataset.cardId || state.selectedCard;
+        state.selectedEvent = button.dataset.fightSelect || "";
+        render();
+      });
+    });
+  }
+
+  function renderFightList(card) {
+    const fights = card.fights || [];
+    if (!fights.length) {
+      return '<div class="fight-list"><div class="fight-option is-tbd"><strong>TBD fights</strong><span>Kalshi has not listed fight-level mention events yet.</span></div></div>';
+    }
+
+    const allSelected = !state.selectedEvent;
+    const allButton = `<button class="fight-option ${allSelected ? "is-selected" : ""}" type="button" data-card-id="${escapeHtml(card.card_id)}" data-fight-select="">
+      <strong>All tradable fights</strong>
+      <span>${formatInteger(card.phrase_count)} phrase markets on this card</span>
+      <em>${formatInteger(card.watch_count)} watch rows</em>
+    </button>`;
+
+    const fightButtons = fights.map((fight) => {
+      const selected = state.selectedEvent === fight.event_ticker;
+      const tbd = fight.odds_status === "tbd";
+      const bestEdge = parseNumber(fight.best_edge);
+      const right = tbd
+        ? "TBD odds"
+        : Number(fight.watch_count || 0) > 0
+          ? `${formatInteger(fight.watch_count)} watch`
+          : bestEdge === null ? "no edge yet" : formatPlainPercent(bestEdge, true);
+      return `<button class="fight-option ${selected ? "is-selected" : ""} ${tbd ? "is-tbd" : ""}" type="button" data-card-id="${escapeHtml(card.card_id)}" data-fight-select="${escapeHtml(fight.event_ticker)}">
+        <strong>${escapeHtml(fight.matchup || fight.event_title || "TBD fight")}</strong>
+        <span>${tbd ? "Mention markets not posted yet" : `${formatInteger(fight.priced_count)} live phrases · ${formatInteger(fight.model_ready_count)} modeled`}</span>
+        <em>${escapeHtml(right)}</em>
+      </button>`;
+    }).join("");
+
+    return `<div class="fight-list">${allButton}${fightButtons}</div>`;
   }
 
   function renderTracking() {
@@ -238,6 +386,20 @@
     return data.kalshi || [];
   }
 
+  function getCards() {
+    return data.kalshi_cards || [];
+  }
+
+  function getSelectedCard() {
+    return getCards().find((card) => card.card_id === state.selectedCard) || null;
+  }
+
+  function getSelectedFight() {
+    const card = getSelectedCard();
+    if (!card || !state.selectedEvent) return null;
+    return (card.fights || []).find((fight) => fight.event_ticker === state.selectedEvent) || null;
+  }
+
   function deriveRow(row) {
     const out = { ...row };
     const fighter1 = row.fighter_1 || "";
@@ -302,6 +464,13 @@
 
   function applyFilters(rows) {
     return rows.filter((row) => {
+      if (state.selectedEvent) {
+        if (row.event_ticker !== state.selectedEvent) return false;
+      } else if (state.selectedCard) {
+        const card = getSelectedCard();
+        const tickers = new Set((card ? card.fights || [] : []).map((fight) => fight.event_ticker));
+        if (tickers.size && !tickers.has(row.event_ticker)) return false;
+      }
       const rowPhrase = String(row.phrase || "").toLowerCase();
       if (state.phrase && rowPhrase !== state.phrase) return false;
       if (state.search && !row.search_blob.includes(state.search)) return false;
@@ -361,7 +530,11 @@
 
   function renderBody(rows) {
     if (!rows.length) {
-      els.tableBody.innerHTML = `<tr><td class="empty" colspan="${columns.length}">No rows match those filters.</td></tr>`;
+      const fight = getSelectedFight();
+      const message = fight && fight.odds_status === "tbd"
+        ? "Kalshi has listed this fight event, but the mention market odds are not posted yet."
+        : "No rows match those filters.";
+      els.tableBody.innerHTML = `<tr><td class="empty" colspan="${columns.length}">${escapeHtml(message)}</td></tr>`;
       return;
     }
 

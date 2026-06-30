@@ -22,16 +22,15 @@ else
 fi
 echo
 echo "First refresh can take a couple minutes while the fight models load..."
-"$PYTHON_BIN" -u scripts/live/refresh_dashboard.py --poll-seconds "$POLL_SECONDS" --iterations 1 "${PAPER_ARGS[@]}"
-
-open dashboard/index.html
-
 echo
-echo "Dashboard is open. Leave this window open to keep updating every ${POLL_SECONDS}s."
+echo "Dashboard will open in your browser. Leave this window open to keep the Refresh button working."
 if [[ ${#PAPER_ARGS[@]} -gt 0 ]]; then
   echo "New WATCH rows will be recorded as one paper contract at the live buy price."
 fi
 echo "Press Control-C to stop."
 echo
 
-exec "$PYTHON_BIN" -u scripts/live/refresh_dashboard.py --poll-seconds "$POLL_SECONDS" "${PAPER_ARGS[@]}"
+exec "$PYTHON_BIN" -u scripts/live/dashboard_server.py \
+  --poll-seconds "$POLL_SECONDS" \
+  --open-browser \
+  "${PAPER_ARGS[@]}"

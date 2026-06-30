@@ -150,6 +150,34 @@ h2 {
   text-align: right;
 }
 
+.refresh-button {
+  flex: none;
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--panel-2);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: border-color .12s ease, background .12s ease, transform .12s ease;
+}
+
+.refresh-button:hover {
+  border-color: #354152;
+  background: var(--panel-3);
+}
+
+.refresh-button:active {
+  transform: translateY(1px);
+}
+
+.refresh-button:disabled {
+  cursor: wait;
+  color: var(--faint);
+}
+
 /* numbers */
 .stats {
   display: grid;
@@ -240,9 +268,108 @@ input:focus {
 /* fight cards */
 .kalshi-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: 1fr;
   gap: 10px;
   margin: 14px 0 12px;
+}
+
+.card-folder {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--panel);
+}
+
+.card-folder.is-open {
+  border-color: #303a47;
+}
+
+.card-folder.is-live {
+  border-color: var(--warn-line);
+  background: linear-gradient(180deg, var(--warn-bg), transparent 70%), var(--panel);
+}
+
+.card-folder-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  width: 100%;
+  padding: 14px 16px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.card-folder-head h2 {
+  margin-top: 4px;
+  font-size: 16px;
+}
+
+.card-folder-head span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.fight-list {
+  display: grid;
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+
+.fight-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  width: 100%;
+  min-height: 58px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-sm);
+  background: rgba(255, 255, 255, 0.02);
+  text-align: left;
+  cursor: pointer;
+}
+
+.fight-option:hover,
+.fight-option.is-selected {
+  border-color: var(--accent);
+  background: rgba(121, 162, 255, 0.09);
+}
+
+.fight-option.is-tbd {
+  border-style: dashed;
+}
+
+.fight-option strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fight-option span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fight-option em {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  align-self: center;
+  color: var(--warn);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 650;
+  white-space: nowrap;
 }
 
 .fight-card {
