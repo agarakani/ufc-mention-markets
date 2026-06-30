@@ -23,7 +23,8 @@ fi
 echo
 echo "First refresh can take a couple minutes while the fight models load..."
 echo
-echo "Dashboard will open in your browser. Leave this window open to keep the Refresh button working."
+echo "Dashboard will open in your browser and auto-update every ${POLL_SECONDS}s."
+echo "Leave this window open while using it."
 if [[ ${#PAPER_ARGS[@]} -gt 0 ]]; then
   echo "New WATCH rows will be recorded as one paper contract at the live buy price."
 fi
