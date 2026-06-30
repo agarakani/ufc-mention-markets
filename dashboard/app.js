@@ -8,6 +8,7 @@
     sortKey: "",
     sortDir: "desc",
     refreshing: false,
+    loadingData: false,
   };
 
   const columns = [
@@ -47,11 +48,26 @@
 
     populatePhraseFilter();
     chooseDefaultCard();
+    setupRefreshButton();
     bindEvents();
     renderStats();
     renderTracking();
     render();
-    scheduleReload();
+    scheduleAutoUpdate();
+  }
+
+  function isServerMode() {
+    return window.location.protocol === "http:" || window.location.protocol === "https:";
+  }
+
+  function setupRefreshButton() {
+    if (!els.refreshButton) return;
+    if (!isServerMode()) {
+      els.refreshButton.hidden = true;
+      return;
+    }
+    els.refreshButton.hidden = false;
+    setRefreshButton("Update now");
   }
 
   function bindEvents() {
@@ -71,29 +87,21 @@
   }
 
   async function manualRefresh() {
-    if (state.refreshing) return;
+    if (!isServerMode() || state.refreshing) return;
     state.refreshing = true;
-    setRefreshButton("Refreshing...");
+    setRefreshButton("Updating...");
     try {
-      if (window.location.protocol === "http:" || window.location.protocol === "https:") {
-        const response = await fetch(`/api/refresh?ts=${Date.now()}`, { cache: "no-store" });
-        if (!response.ok) throw new Error(`refresh failed: ${response.status}`);
-        await loadFreshData();
-        chooseDefaultCard();
-        populatePhraseFilter();
-        renderStats();
-        renderTracking();
-        render();
-      } else {
-        window.location.reload();
-      }
+      const response = await fetch(`/api/refresh?ts=${Date.now()}`, { cache: "no-store" });
+      if (!response.ok) throw new Error(`refresh failed: ${response.status}`);
+      await loadFreshData();
+      renderFromData();
     } catch (error) {
       if (els.status) {
         els.status.textContent = `Refresh failed. ${error.message || error}`;
       }
     } finally {
       state.refreshing = false;
-      setRefreshButton("Refresh");
+      setRefreshButton("Update now");
     }
   }
 
@@ -105,19 +113,34 @@
 
   function loadFreshData() {
     return new Promise((resolve, reject) => {
+      if (state.loadingData) {
+        resolve();
+        return;
+      }
+      state.loadingData = true;
       const script = document.createElement("script");
       script.src = `data.js?v=${Date.now()}`;
       script.onload = () => {
         data = window.UFC_MENTION_DASHBOARD_DATA;
+        state.loadingData = false;
         script.remove();
         resolve();
       };
       script.onerror = () => {
+        state.loadingData = false;
         script.remove();
         reject(new Error("could not load dashboard data"));
       };
       document.body.appendChild(script);
     });
+  }
+
+  function renderFromData() {
+    chooseDefaultCard();
+    populatePhraseFilter();
+    renderStats();
+    renderTracking();
+    render();
   }
 
   function populatePhraseFilter() {
@@ -179,16 +202,13 @@
     const age = summary.kalshi_snapshot_timestamp ? snapshotAge(summary.kalshi_snapshot_timestamp) : "";
     const stale = summary.kalshi_snapshot_timestamp ? isStale(summary.kalshi_snapshot_timestamp, summary.kalshi_poll_seconds) : false;
     const access = summary.kalshi_authenticated ? "authenticated read" : "public read";
-    const serverMode = window.location.protocol === "http:" || window.location.protocol === "https:"
-      ? "; refresh button runs Kalshi now"
-      : "; refresh button reloads saved data";
     const polling = summary.kalshi_poll_seconds > 0
-      ? `; refreshes every ${formatInteger(summary.kalshi_poll_seconds)}s`
+      ? `; auto-updates every ${formatInteger(summary.kalshi_poll_seconds)}s`
       : "";
     const paper = summary.paper_tracking_card
       ? `; paper: ${formatInteger(summary.paper_tracking_total_entries)} entries, ${formatInteger(summary.paper_tracking_pending)} pending`
       : "";
-    els.status.textContent = `${stale ? "STALE " : "Updated"} ${snapshot}${age ? ` (${age})` : ""}; ${access}; read-only${serverMode}${polling}${paper}`;
+    els.status.textContent = `${stale ? "STALE " : "Updated"} ${snapshot}${age ? ` (${age})` : ""}; ${access}; read-only${polling}${paper}`;
   }
 
   function render() {
@@ -591,11 +611,20 @@
     return `<span class="pill ${tone || ""}">${escapeHtml(String(value))}</span>`;
   }
 
-  function scheduleReload() {
+  function scheduleAutoUpdate() {
     const seconds = Number((data.summary || {}).kalshi_poll_seconds || 0);
-    if (seconds > 0) {
-      window.setTimeout(() => window.location.reload(), Math.max(5, seconds) * 1000);
-    }
+    if (!isServerMode() || seconds <= 0) return;
+    window.setInterval(async () => {
+      if (state.refreshing || state.loadingData) return;
+      try {
+        await loadFreshData();
+        renderFromData();
+      } catch (error) {
+        if (els.status) {
+          els.status.textContent = `Auto-update failed. ${error.message || error}`;
+        }
+      }
+    }, Math.max(5, seconds) * 1000);
   }
 
   function parseNumber(value) {

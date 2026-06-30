@@ -36,8 +36,8 @@ Easiest live mode on this Mac:
 
 That starts a local read-only dashboard server, opens the browser, refreshes
 once, then keeps checking Kalshi every 30 seconds. Leave that terminal window
-open while using the dashboard. The dashboard's `Refresh` button asks that
-local server to fetch fresh Kalshi prices immediately.
+open while using the dashboard. The page updates itself, and `Update now`
+forces an immediate refresh.
 
 To let it paper-track entries while it refreshes:
 
@@ -151,7 +151,7 @@ claiming a trade-ready edge.
 The main commands live in `scripts/`:
 
 - `scripts/live/refresh_dashboard.py`: refreshes all open Kalshi UFC fight markets.
-- `scripts/live/dashboard_server.py`: serves the dashboard and powers the refresh button.
+- `scripts/live/dashboard_server.py`: serves the dashboard and keeps it auto-updating.
 - `scripts/live/price_fight.py`: prices one fight.
 - `scripts/model/backtest_context_model.py`: checks the fight-level model on old fights.
 - `scripts/model/audit_grouped_rules.py`: checks grouped Kalshi phrases against transcripts.

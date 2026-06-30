@@ -134,7 +134,7 @@ def start_polling(runtime: DashboardRuntime, seconds: float) -> threading.Event:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Serve the UFC mention dashboard with a manual refresh endpoint.")
+    parser = argparse.ArgumentParser(description="Serve the UFC mention dashboard with live auto-updates.")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--series", default="KXFIGHTMENTION")
@@ -163,7 +163,8 @@ def main() -> None:
     stop_polling = start_polling(runtime, args.poll_seconds)
     url = f"http://{args.host}:{args.port}/"
     print(f"Dashboard server running at {url}", flush=True)
-    print("Click Refresh in the dashboard to fetch fresh Kalshi prices immediately.", flush=True)
+    print("The dashboard auto-updates while this server is running.", flush=True)
+    print("Use Update now only when you want an immediate extra refresh.", flush=True)
     if args.poll_seconds > 0:
         print(f"Background refresh: every {args.poll_seconds:g}s", flush=True)
     if args.open_browser:
