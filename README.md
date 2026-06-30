@@ -34,8 +34,10 @@ Easiest live mode on this Mac:
 ./start_live_dashboard.command
 ```
 
-That refreshes once, opens `dashboard/index.html`, then keeps checking Kalshi
-every 30 seconds. Leave that terminal window open while using the dashboard.
+That starts a local read-only dashboard server, opens the browser, refreshes
+once, then keeps checking Kalshi every 30 seconds. Leave that terminal window
+open while using the dashboard. The dashboard's `Refresh` button asks that
+local server to fetch fresh Kalshi prices immediately.
 
 To let it paper-track entries while it refreshes:
 
@@ -57,7 +59,7 @@ python3 scripts/live/refresh_dashboard.py
 Open:
 
 ```text
-dashboard/index.html
+http://127.0.0.1:8765/
 ```
 
 Keep it updating:
@@ -94,6 +96,12 @@ python3 scripts/live/price_fight.py \
 
 ## How To Read The Dashboard
 
+- Cards are grouped by the fight-event date Kalshi publishes. If Kalshi has not
+  published a card name, the dashboard does not guess one.
+- Click a card folder to see the fights Kalshi has listed for that date.
+- Click a fight to see only that fight's mention-market prices.
+- `TBD odds` means Kalshi has listed the fight event, but no tradable mention
+  odds are available yet.
 - `Our %`: the fight-level model's YES probability for that phrase.
 - `YES price`: what buying YES currently costs.
 - `NO price`: what buying NO currently costs.
@@ -143,6 +151,7 @@ claiming a trade-ready edge.
 The main commands live in `scripts/`:
 
 - `scripts/live/refresh_dashboard.py`: refreshes all open Kalshi UFC fight markets.
+- `scripts/live/dashboard_server.py`: serves the dashboard and powers the refresh button.
 - `scripts/live/price_fight.py`: prices one fight.
 - `scripts/model/backtest_context_model.py`: checks the fight-level model on old fights.
 - `scripts/model/audit_grouped_rules.py`: checks grouped Kalshi phrases against transcripts.

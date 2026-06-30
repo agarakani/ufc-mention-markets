@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 import sys
 import time
 from datetime import datetime, timezone
@@ -102,6 +103,41 @@ def value(value) -> str:
 
 def bool_text(value: bool) -> str:
     return "yes" if value else "no"
+
+
+def event_fighters(event: dict) -> tuple[str, str]:
+    title = event.get("sub_title") or event.get("title") or ""
+    try:
+        return fighters_from_market_title(title)
+    except Exception:
+        match = re.search(r"^(.+?)\s+vs\.?\s+(.+?)\s+(?:UFC\s+)?Fight\b", title, re.IGNORECASE)
+        if match:
+            return match.group(1).strip(), match.group(2).strip()
+        return "", ""
+
+
+def event_metadata(event: dict, rows: list[dict], *, error: str = "") -> dict:
+    event_ticker = event.get("event_ticker", "")
+    fighter_1, fighter_2 = event_fighters(event)
+    if rows:
+        fighter_1 = rows[0].get("fighter_1") or fighter_1
+        fighter_2 = rows[0].get("fighter_2") or fighter_2
+    return {
+        "event_ticker": event_ticker,
+        "series_ticker": event.get("series_ticker", "KXFIGHTMENTION"),
+        "event_date": event_date_from_ticker(event_ticker) or "",
+        "title": event.get("title", ""),
+        "sub_title": event.get("sub_title", ""),
+        "fighter_1": fighter_1,
+        "fighter_2": fighter_2,
+        "category": event.get("category", ""),
+        "available_on_brokers": bool_text(bool(event.get("available_on_brokers"))),
+        "last_updated_ts": event.get("last_updated_ts", ""),
+        "market_rows": len(rows),
+        "priced_rows": sum(bool(row.get("yes_ask")) for row in rows),
+        "watch_rows": sum(row.get("watch") == "yes" for row in rows),
+        "error": error,
+    }
 
 
 def event_snapshot(
@@ -295,12 +331,13 @@ def refresh_once(
 
     rows = []
     errors = []
+    event_rows_for_meta = []
     for index, event in enumerate(events, start=1):
         event_name = event.get("title") or event.get("event_ticker") or "fight"
         if verbose:
             print(f"  {index}/{len(events)} {event_name}", flush=True)
         try:
-            rows.extend(event_snapshot(
+            event_rows = event_snapshot(
                 client,
                 corpus,
                 event,
@@ -310,9 +347,12 @@ def refresh_once(
                 min_fighter_fights=min_fighter_fights,
                 low_data_buffer=low_data_buffer,
                 snapshot_timestamp=snapshot_timestamp,
-            ))
+            )
+            rows.extend(event_rows)
+            event_rows_for_meta.append(event_metadata(event, event_rows))
         except Exception as exc:
             errors.append(f"{event.get('event_ticker', '')}: {exc}")
+            event_rows_for_meta.append(event_metadata(event, [], error=str(exc)))
             if verbose:
                 print(f"    skipped: {exc}", flush=True)
 
@@ -350,6 +390,7 @@ def refresh_once(
         "series_ticker": series_ticker,
         "poll_seconds": poll_seconds,
         "events_discovered": len(events),
+        "events": event_rows_for_meta,
         "excluded_event_tickers": sorted(exclude_event_tickers or []),
         "markets_priced": len(rows),
         "watch_rows": sum(row.get("watch") == "yes" for row in rows),
