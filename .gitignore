@@ -33,3 +33,9 @@ __pycache__/
 .env
 .venv/
 venv/
+
+# R session junk
+.Rhistory
+
+# Local scratch copies of backtest outputs
+Backtest items/

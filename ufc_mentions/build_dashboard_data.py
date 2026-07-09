@@ -25,6 +25,8 @@ KALSHI_LIVE = ROOT / "market_data" / "kalshi_live_edges.csv"
 KALSHI_META = ROOT / "market_data" / "kalshi_live_meta.json"
 KALSHI_AUDIT_SUMMARY = ROOT / "model_outputs" / "kalshi_grouped_rule_audit_summary.json"
 KALSHI_CONTEXT_BACKTEST_SUMMARY = ROOT / "model_outputs" / "kalshi_context_model_backtest_summary.json"
+KALSHI_CONTEXT_BACKTEST_GROUPS = ROOT / "model_outputs" / "kalshi_context_model_backtest.csv"
+PL_BACKTEST_SUMMARY = ROOT / "model_outputs" / "pl_backtest_summary.json"
 TRACKING_ROOT = ROOT / "data" / "tracking"
 TRACKING_WEEKLY_SUMMARY = TRACKING_ROOT / "weekly_summary.csv"
 TRACKING_HIDDEN_MARKERS = {".dashboard_hidden", ".practice_card"}
@@ -337,6 +339,80 @@ def summarize_tracking(cards: list[dict], positions: list[dict]) -> dict:
     }
 
 
+def build_backtest_groups(rows: list[dict]) -> list[dict]:
+    """One row per phrase group from the fight-level prediction backtest.
+
+    Shows a single model number per group; internal diagnostics such as the
+    "safe" clipped probability stay out of the dashboard feed on purpose.
+    """
+    groups = []
+    for row in rows:
+        phrase = str(row.get("phrase", "")).strip()
+        if not phrase:
+            continue
+        groups.append({
+            "phrase": phrase,
+            "scored_fights": as_int(row.get("scored_fights")),
+            "positives": as_int(row.get("positives")),
+            "actual_rate": number(row.get("actual_rate")),
+            "log_loss_improvement": number(row.get("log_loss_improvement")),
+            "auc": number(row.get("auc")),
+            "beats_base": str(row.get("status", "")).strip() == "beats_base",
+        })
+    groups.sort(key=lambda item: item.get("log_loss_improvement") or -999, reverse=True)
+    return groups
+
+
+def build_model_health(
+    context_summary: dict,
+    groups: list[dict],
+    pl_summary: dict,
+) -> dict:
+    weakest = None
+    measured = [g for g in groups if g.get("log_loss_improvement") is not None]
+    if measured:
+        weakest = min(measured, key=lambda item: item["log_loss_improvement"])
+
+    official = pl_summary.get("official") or {}
+    lean = pl_summary.get("lean") or {}
+    return {
+        "prediction": {
+            "status": context_summary.get("status", ""),
+            "claim": context_summary.get("claim", ""),
+            "prediction_rows": as_int(context_summary.get("prediction_rows")),
+            "groups": as_int(context_summary.get("groups")),
+            "measured_groups": as_int(context_summary.get("measured_groups")),
+            "groups_beating_base": as_int(context_summary.get("groups_beating_base_log_loss")),
+            "folds": as_int(context_summary.get("folds")),
+            "weakest_phrase": (weakest or {}).get("phrase", ""),
+            "weakest_improvement": (weakest or {}).get("log_loss_improvement"),
+            "generated_at": context_summary.get("generated_at", ""),
+        },
+        "groups": groups,
+        "pl": {
+            "available": bool(pl_summary),
+            "is_money_backtest": bool(pl_summary.get("is_money_backtest")),
+            "entry_rule": pl_summary.get("entry_rule", ""),
+            "markets_with_results": as_int(pl_summary.get("markets_with_results")),
+            "resolved_event_count": as_int(pl_summary.get("resolved_event_count")),
+            "official_trades": as_int(official.get("trades")),
+            "official_wins": as_int(official.get("wins")),
+            "official_staked": number(official.get("total_staked")),
+            "official_pnl": number(official.get("total_pnl")),
+            "official_return": number(official.get("return_on_stake")),
+            "lean_trades": as_int(lean.get("trades")),
+            "lean_wins": as_int(lean.get("wins")),
+            "lean_staked": number(lean.get("total_staked")),
+            "lean_pnl": number(lean.get("total_pnl")),
+            "lean_return": number(lean.get("return_on_stake")),
+            "minimum_trades_for_claim": as_int(pl_summary.get("minimum_trades_for_claim")),
+            "claim_status": pl_summary.get("claim_status", ""),
+            "note": pl_summary.get("note", ""),
+            "generated_at": pl_summary.get("generated_at", ""),
+        },
+    }
+
+
 def keep_best(item: dict, field: str, value) -> None:
     if value is None:
         return
@@ -583,6 +659,12 @@ def build_payload() -> dict:
     kalshi_meta = read_json(KALSHI_META)
     kalshi_audit_summary = read_json(KALSHI_AUDIT_SUMMARY)
     kalshi_context_backtest_summary = read_json(KALSHI_CONTEXT_BACKTEST_SUMMARY)
+    backtest_groups = build_backtest_groups(read_csv(KALSHI_CONTEXT_BACKTEST_GROUPS))
+    model_health = build_model_health(
+        kalshi_context_backtest_summary,
+        backtest_groups,
+        read_json(PL_BACKTEST_SUMMARY),
+    )
     hidden_events = hidden_event_tickers()
     kalshi_source_rows = [
         row for row in read_csv(KALSHI_LIVE)
@@ -619,6 +701,7 @@ def build_payload() -> dict:
         "kalshi_meta": kalshi_meta,
         "kalshi_audit_summary": kalshi_audit_summary,
         "kalshi_context_backtest_summary": kalshi_context_backtest_summary,
+        "model_health": model_health,
         "tracking_cards": tracking_cards,
         "tracking_positions": tracking_positions,
     }

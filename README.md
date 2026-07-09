@@ -42,7 +42,7 @@ forces an immediate refresh.
 To let it paper-track entries while it refreshes:
 
 ```bash
-PAPER_CARD="UFC Vegas 119 Kape vs Horiguchi main card" ./start_live_dashboard.command
+PAPER_CARD="UFC July 11 card" ./start_live_dashboard.command
 ```
 
 That still cannot spend real money. It records one fake contract the first time
@@ -73,7 +73,7 @@ Keep it updating and paper-track live entries:
 ```bash
 python3 scripts/live/refresh_dashboard.py \
   --poll-seconds 30 \
-  --paper-card "UFC Vegas 119 Kape vs Horiguchi main card"
+  --paper-card "UFC July 11 card"
 ```
 
 Price one listed fight by event ticker:
@@ -94,6 +94,35 @@ python3 scripts/live/price_fight.py \
   --show-all
 ```
 
+## Testing The Model On A Fight Card
+
+The point of a live card is to find out whether the model's numbers hold up.
+The steps, using the July 11 card as the example:
+
+1. Sometime before the fights, start the dashboard with paper tracking on:
+
+```bash
+PAPER_CARD="UFC July 11 card" ./start_live_dashboard.command
+```
+
+2. Leave it running through the card. Every watch row gets logged as one
+   pretend contract at the live price. Leans are logged separately. Nothing
+   is bought for real.
+
+3. Look around while it runs. Click fights in the left list, click any row to
+   see exactly how its number was made, and check that the reasons make sense.
+
+4. After Kalshi posts results (usually within a day), the tracker fills in
+   yes/no outcomes and paper P/L by itself. Then fold the settled card into
+   the money backtest:
+
+```bash
+python3 scripts/model/backtest_pl.py
+```
+
+The Model health section updates with the new settled trades. Judge the model
+on that growing sample, not on any single fight.
+
 ## How To Read The Dashboard
 
 - Cards are grouped by the fight-event date Kalshi publishes. If Kalshi has not
@@ -111,24 +140,43 @@ python3 scripts/live/price_fight.py \
 - `WATCH YES DATA` / `WATCH NO DATA`: same idea, but fighter history was thin, so the row had to clear a higher bar.
 - `LOW DATA`: the model ran, but there is not enough matching fighter history to trust it as a watch row.
 - `PASS`: no edge worth flagging right now.
+- Click any price row to expand "How this number was made": which model produced
+  the number, what it trained on, the fighter history behind it, the prices it
+  compared against, and the exact entry bar it had to clear.
+- The "Model health" section shows the old-fight prediction backtest (rows
+  tested, phrase groups that beat the simple baseline, weakest phrase) and the
+  money-backtest status. It says clearly when there are not enough settled
+  trades to claim anything about profit.
 
 ## Backtesting
 
-Run the exact fight-level model backtest:
+There are two checks, and they answer different questions.
+
+1. Prediction quality — does the model guess better than a simple average?
 
 ```bash
 python3 scripts/model/backtest_context_model.py --initial-train-frac 0.30
 ```
 
-Latest checked result:
+Latest result: 13 current Kalshi phrase groups, 43,784 old fight predictions,
+12 of 13 groups beat the simple baseline. This says nothing about profit.
 
-- 15 current Kalshi phrase groups tested
-- 50,520 old fight predictions
-- 14 of 15 phrase groups scored better than the simple old average
+2. Money backtest — would the watch rule have made paper money?
 
-That checks whether the model makes better guesses than a simple baseline. It
-is not a profit backtest yet; we still need more resolved Kalshi markets before
-claiming a trade-ready edge.
+```bash
+python3 scripts/model/backtest_pl.py
+```
+
+This replays the price snapshots the live refresher already saved, enters one
+paper contract at the first snapshot where the live rule said WATCH, then
+settles against the final Kalshi results (fetched read-only and cached).
+No hindsight prices, no fabricated fills.
+
+Latest result: from the one resolved card so far, the watch rule went 2 for 22
+and lost $2.25 of paper money; the looser leans went 27 for 51 and made $2.89.
+That is far below the 30 settled trades needed before the number means
+anything, and it is not evidence of an edge either way. Both results show up
+in the dashboard's Model health section.
 
 ## Project Layout
 
@@ -154,6 +202,7 @@ The main commands live in `scripts/`:
 - `scripts/live/dashboard_server.py`: serves the dashboard and keeps it auto-updating.
 - `scripts/live/price_fight.py`: prices one fight.
 - `scripts/model/backtest_context_model.py`: checks the fight-level model on old fights.
+- `scripts/model/backtest_pl.py`: replays saved snapshots against final results for paper P/L.
 - `scripts/model/audit_grouped_rules.py`: checks grouped Kalshi phrases against transcripts.
 - `scripts/data/build_match_csv.py`: rebuilds `fight_mentions.csv` from transcripts.
 - `scripts/data/join_kaggle_outcomes.py`: joins transcript rows with UFC stats.
@@ -167,7 +216,7 @@ Before a card starts:
 
 ```bash
 python3 scripts/live/refresh_dashboard.py
-python3 scripts/tracking/snapshot_card.py --card "UFC Vegas 119 Kape vs Horiguchi main card"
+python3 scripts/tracking/snapshot_card.py --card "UFC July 11 card"
 ```
 
 For live paper entries instead, leave this running before the fights:
@@ -175,7 +224,7 @@ For live paper entries instead, leave this running before the fights:
 ```bash
 python3 scripts/live/refresh_dashboard.py \
   --poll-seconds 30 \
-  --paper-card "UFC Vegas 119 Kape vs Horiguchi main card"
+  --paper-card "UFC July 11 card"
 ```
 
 The live tracker buys nothing for real. It logs one paper contract when a row
@@ -188,7 +237,7 @@ the final result yet.
 The settlement command is still available if you need to recalculate manually:
 
 ```bash
-python3 scripts/tracking/settle_card.py --card "UFC Vegas 119 Kape vs Horiguchi main card"
+python3 scripts/tracking/settle_card.py --card "UFC July 11 card"
 ```
 
 This tracks two numbers:

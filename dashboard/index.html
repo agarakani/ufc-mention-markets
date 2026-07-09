@@ -17,77 +17,77 @@
             </svg>
           </span>
           <div>
-            <p class="eyebrow">UFC mention markets</p>
-            <h1>Fight phrase board</h1>
-            <p class="lede">Fight-by-fight prices for the exact phrases Kalshi lists.</p>
+            <h1>UFC mention markets</h1>
+            <p class="lede" id="countsLine">Loading…</p>
           </div>
         </div>
         <div class="status-wrap">
-          <span class="live-dot" aria-hidden="true"></span>
           <div class="status" id="dataStatus">Loading local data</div>
           <button class="refresh-button" id="refreshButton" type="button">Update now</button>
         </div>
       </header>
 
-      <section class="stats" id="stats"></section>
+      <div class="layout">
+        <aside class="sidebar" aria-label="Cards and fights">
+          <p class="side-title">Upcoming cards</p>
+          <nav id="cardNav"></nav>
+        </aside>
 
-      <section class="controls" aria-label="Dashboard controls">
-        <label class="field">
-          <span>Phrase</span>
-          <select id="phraseFilter">
-            <option value="">All phrases</option>
-          </select>
-        </label>
-        <label class="field search">
-          <span>Search</span>
-          <input id="searchInput" type="search" placeholder="fighter, phrase, market">
-        </label>
-      </section>
+        <section class="content">
+          <div class="fight-header" id="fightHeader"></div>
 
-      <section class="kalshi-cards" id="kalshiCards" aria-label="Upcoming Kalshi fights"></section>
-
-      <section class="panel tracking-panel">
-        <div class="panel-head">
-          <div>
-            <h2>Paper tracking</h2>
-            <p id="trackingMeta">Weekly model tracking will appear here after you save a card.</p>
+          <div class="toolbar">
+            <select id="phraseFilter" aria-label="Filter by phrase">
+              <option value="">All phrases</option>
+            </select>
+            <input id="searchInput" type="search" placeholder="Search fighter, phrase, market" aria-label="Search">
+            <span class="toolbar-meta" id="tableMeta"></span>
           </div>
-        </div>
-        <div class="tracking-grid" id="trackingCards"></div>
-        <div class="table-wrap tracking-table-wrap">
-          <table id="trackingTable">
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Card</th>
-                <th>Fight</th>
-                <th>Phrase</th>
-                <th>Entry</th>
-                <th>Side</th>
-                <th class="num">Price</th>
-                <th class="num">Edge</th>
-                <th>Outcome</th>
-              </tr>
-            </thead>
-            <tbody id="trackingBody"></tbody>
-          </table>
-        </div>
-      </section>
 
-      <section class="panel">
-        <div class="panel-head">
-          <div>
-            <h2 id="tableTitle">Live fight prices</h2>
-            <p id="tableMeta"></p>
+          <div class="panel">
+            <div class="table-wrap">
+              <table id="dataTable">
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
           </div>
-        </div>
-        <div class="table-wrap">
-          <table id="dataTable">
-            <thead id="tableHead"></thead>
-            <tbody id="tableBody"></tbody>
-          </table>
-        </div>
-      </section>
+
+          <details class="fold" id="healthFold">
+            <summary>
+              <span class="fold-label">Model health</span>
+              <span class="fold-summary" id="healthSummary"></span>
+            </summary>
+            <div class="health-grid" id="healthGrid"></div>
+          </details>
+
+          <details class="fold" id="trackingFold">
+            <summary>
+              <span class="fold-label">Paper tracking</span>
+              <span class="fold-summary" id="trackingSummary"></span>
+            </summary>
+            <div class="fold-body">
+              <div class="tracking-grid" id="trackingCards"></div>
+              <div class="table-wrap">
+                <table class="tracking-table" id="trackingTable">
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Fight</th>
+                      <th>Phrase</th>
+                      <th>Side</th>
+                      <th class="num">Price</th>
+                      <th class="num">Edge</th>
+                      <th>Outcome</th>
+                    </tr>
+                  </thead>
+                  <tbody id="trackingBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </details>
+        </section>
+      </div>
     </main>
 
     <script>
