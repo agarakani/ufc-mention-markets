@@ -346,7 +346,7 @@
     let rows = getRows().map(deriveRow);
     rows = applyFilters(rows);
     rows = applySort(rows);
-    els.tableMeta.textContent = `${formatInteger(rows.length)} market${plural(rows.length)} · click a row to see how the number was made`;
+    els.tableMeta.textContent = `${formatInteger(rows.length)} market${plural(rows.length)} · WATCH clears the entry bar, LEAN is positive but under it · click a row for the why`;
     renderHeader(columns);
     renderBody(columns, rows);
   }
@@ -363,24 +363,36 @@
     return out;
   }
 
+  function missingPrices(row) {
+    return parseNumber(row.yes_ask) === null || parseNumber(row.no_ask) === null;
+  }
+
   function callLabel(row) {
-    const side = String(row.side || "").toUpperCase();
-    if (row.watch) return side ? `WATCH ${side}${row.data_risk ? " DATA" : ""}` : "WATCH";
     if (row.status === "error") return "ERROR";
-    if (row.probability_source !== "fight_context_model") return "HISTORY ONLY";
-    if (row.data_risk && parseNumber(row.edge) > 0 && side) return `DATA LEAN ${side}`;
-    if (row.data_risk) return "LOW DATA";
+    if (missingPrices(row)) return "NO PRICES";
+    if (row.probability_source !== "fight_context_model") return "NO MODEL";
+    const side = String(row.side || "").toUpperCase();
+    if (row.watch) return side ? `WATCH ${side}` : "WATCH";
     if (parseNumber(row.edge) > 0 && side) return `LEAN ${side}`;
     return "PASS";
   }
 
+  function bigGapNote(row) {
+    const edge = parseNumber(row.edge);
+    if (edge === null || edge < 0.25) return "";
+    if (row.data_risk) {
+      return " A gap this big with thin fighter history usually means the model is missing something, not that the market is wrong. Treat it as a research flag.";
+    }
+    return " A gap this big means the model and the market strongly disagree — one of them is wrong. Open the row details before trusting it.";
+  }
+
   function reasonForRow(row) {
     if (row.status === "error") return row.error || "This market could not be priced.";
-    if (row.yes_ask === null || row.yes_ask === undefined || row.yes_ask === "" || row.no_ask === null || row.no_ask === undefined || row.no_ask === "") {
+    if (missingPrices(row)) {
       return "No live YES/NO buy price is posted yet, so there is nothing to compare against.";
     }
     if (row.probability_source !== "fight_context_model") {
-      return "No fight-level model number was available here, so this row is history only and can never be a watch.";
+      return "No fight-level model number was available here, so there is only a rough history average. Rows like this never become watches.";
     }
 
     const model = formatPlainPercent(row.model_probability);
@@ -388,14 +400,15 @@
     const sidePrice = formatPlainPercent(row.side_price);
     const edge = formatPlainPercent(row.edge, true);
     const hurdle = formatPlainPercent(row.hurdle);
+    const thin = row.data_risk ? " Fighter history is thin here, so the bar was raised — it cleared anyway, but trust it less." : "";
 
     if (row.watch) {
-      return `Our model puts YES at ${model}. The better side is ${side} at ${sidePrice}, and its edge of ${edge} clears the ${hurdle} entry bar${row.data_risk ? " (including the extra thin-data buffer)" : ""}. Worth watching.`;
+      return `Our model puts YES at ${model}. ${side} at ${sidePrice} has ${edge} of edge, which clears the ${hurdle} entry bar.${thin}${bigGapNote(row)}`;
     }
     if (parseNumber(row.edge) <= 0) {
       return `Our model puts YES at ${model}. Neither side is cheap compared to that, so there is nothing to do here.`;
     }
-    return `Our model puts YES at ${model}. The better side is ${side} at ${sidePrice} with ${edge} of edge, but the entry bar is ${hurdle}${row.data_risk ? " (raised because fighter history is thin)" : ""}, so it stays a pass.`;
+    return `Our model puts YES at ${model}. ${side} at ${sidePrice} has ${edge} of edge — positive, but under the ${hurdle} entry bar${row.data_risk ? " (raised because fighter history is thin)" : ""}, so it is only a lean.`;
   }
 
   function applyFilters(rows) {
@@ -476,7 +489,7 @@
       const key = String(row.ticker || "");
       const open = key && state.expanded.has(key);
       const rowClass = [
-        row.watch ? "is-watch" : row.call === "LOW DATA" ? "is-low-data" : "",
+        row.watch ? "is-watch" : (row.call === "NO PRICES" || row.call === "NO MODEL") ? "is-quiet" : "",
         "is-expandable",
         open ? "is-open" : "",
       ].filter(Boolean).join(" ");
@@ -575,7 +588,12 @@
     }
     if (column.type === "pct") return formatPercent(value, column);
     if (column.type === "phrase") return pill(value);
-    if (column.type === "signal") return signalPill(value);
+    if (column.type === "signal") {
+      const chip = row.data_risk && !missingPrices(row) && row.status !== "error"
+        ? ' <span class="chip-thin" title="Fighter history is small; this row needs extra edge">thin data</span>'
+        : "";
+      return signalPill(value) + chip;
+    }
     if (column.type === "side") return sidePill(value);
     if (column.type === "fight") return fightCell(row);
     if (value === null || value === undefined || value === "") return '<span class="muted">--</span>';
@@ -586,7 +604,7 @@
     const label = String(value || "");
     const tone = label.startsWith("WATCH") ? "warn"
       : label === "ERROR" ? "bad"
-        : label === "LOW DATA" || label.startsWith("DATA LEAN") || label.startsWith("LEAN") ? "quiet-warn"
+        : label.startsWith("LEAN") ? "quiet-warn"
           : "";
     return pill(label, tone);
   }
@@ -620,8 +638,9 @@
       return;
     }
 
+    const settledThrough = pl.latest_settled_event_date ? formatDate(pl.latest_settled_event_date) : "";
     const plBit = pl.available
-      ? `paper P/L <span class="${toneClass(pl.official_pnl)}">${formatMoney(pl.official_pnl)}</span> on ${formatInteger(pl.official_trades)} trades (too few to judge)`
+      ? `paper P/L <span class="${toneClass(pl.official_pnl)}">${formatMoney(pl.official_pnl)}</span> on ${formatInteger(pl.official_trades)} trades from past cards${settledThrough ? ` (through ${settledThrough})` : ""} — too few to judge`
       : "money backtest not run yet";
     els.healthSummary.innerHTML = `${formatInteger(prediction.groups_beating_base)} of ${formatInteger(prediction.measured_groups)} phrase groups beat a simple baseline · ${plBit}`;
 
@@ -647,9 +666,9 @@
       ? `
         <p class="health-big ${toneClass(pl.official_pnl)}">${formatMoney(pl.official_pnl)}<span>watch-rule paper P/L: ${formatInteger(officialTrades)} trades, ${formatInteger(pl.official_wins)} wins, $${formatDecimal2(pl.official_staked)} staked</span></p>
         <p class="health-note">Looser leans (positive edge, below the bar): ${formatInteger(pl.lean_trades)} trades, ${formatInteger(pl.lean_wins)} wins, <span class="${toneClass(pl.lean_pnl)}">${formatMoney(pl.lean_pnl)}</span>.</p>
-        <p class="health-note">Replayed from recorded live snapshots against final Kalshi results — ${formatInteger(pl.markets_with_results)} settled markets from ${formatInteger(pl.resolved_event_count)} past fights. ${formatInteger(officialTrades)} of the ${formatInteger(needed)} trades needed before this means anything.</p>
-        <p class="health-note">${escapeHtml(pl.note || "")}</p>`
-      : '<p class="health-note">No settled markets replayed yet.</p>';
+        <p class="health-note">Everything here is from cards that already happened${settledThrough ? ` (latest: ${settledThrough})` : ""} — ${formatInteger(pl.markets_with_results)} settled markets from ${formatInteger(pl.resolved_event_count)} past fights, replayed from recorded live snapshots against final Kalshi results. Upcoming cards settle in here on their own after they finish.</p>
+        <p class="health-note">${formatInteger(officialTrades)} of the ${formatInteger(needed)} settled trades needed before this means anything. ${escapeHtml(pl.note || "")}</p>`
+      : '<p class="health-note">No settled markets replayed yet. This fills in by itself after a tracked card finishes.</p>';
 
     els.healthGrid.innerHTML = `
       <article class="health-block">

@@ -25,6 +25,13 @@ from ufc_mentions.kalshi_mentions import (
     fighters_from_market_title,
 )
 from scripts.live.price_fight import price_market
+from scripts.model.backtest_pl import (
+    PRICE_HISTORY,
+    load_results_cache,
+    pending_result_events,
+    read_csv as read_history_csv,
+    run_backtest,
+)
 from scripts.tracking.live_paper import OUT_ROOT_DEFAULT as PAPER_ROOT_DEFAULT
 from scripts.tracking.live_paper import record_live_entries
 
@@ -33,6 +40,38 @@ DATA_DEFAULT = ROOT / "ufc_cleaned_export"
 LIVE_DEFAULT = ROOT / "market_data" / "kalshi_live_edges.csv"
 HISTORY_DEFAULT = ROOT / "market_data" / "kalshi_price_history.csv"
 META_DEFAULT = ROOT / "market_data" / "kalshi_live_meta.json"
+SETTLE_ATTEMPT_MARKER = ROOT / "model_outputs" / ".pl_settle_attempt"
+SETTLE_MIN_INTERVAL_SECONDS = 30 * 60
+
+
+def maybe_settle_money_backtest(*, now: float | None = None) -> str:
+    """Fold finished cards into the money backtest without being asked.
+
+    Runs only when a past-dated event still has markets with no known result,
+    and at most once every SETTLE_MIN_INTERVAL_SECONDS so the poll loop stays
+    cheap. Read-only, like everything else here.
+    """
+    now = time.time() if now is None else now
+    history = read_history_csv(PRICE_HISTORY)
+    if not history:
+        return "no price history yet"
+    today = datetime.now(timezone.utc).date().isoformat()
+    pending = pending_result_events(history, load_results_cache(), today)
+    if not pending:
+        return "nothing new to settle"
+    if SETTLE_ATTEMPT_MARKER.exists():
+        age = now - SETTLE_ATTEMPT_MARKER.stat().st_mtime
+        if age < SETTLE_MIN_INTERVAL_SECONDS:
+            return f"waiting to retry ({int((SETTLE_MIN_INTERVAL_SECONDS - age) // 60)}m)"
+    SETTLE_ATTEMPT_MARKER.parent.mkdir(parents=True, exist_ok=True)
+    SETTLE_ATTEMPT_MARKER.touch()
+    summary = run_backtest(offline=False, quiet=True)
+    official = summary.get("official") or {}
+    return (
+        f"settled {summary.get('markets_with_results', 0)} markets "
+        f"through {summary.get('latest_settled_event_date') or '?'}; "
+        f"paper trades now {official.get('trades', 0)}"
+    )
 
 FIELDS = [
     "snapshot_timestamp", "series_ticker", "event_ticker", "event_date",
@@ -445,6 +484,12 @@ def main() -> None:
     iteration = 0
     while True:
         iteration += 1
+        try:
+            settle_note = maybe_settle_money_backtest()
+            if settle_note not in ("nothing new to settle",):
+                print(f"Money backtest: {settle_note}")
+        except Exception as exc:
+            print(f"Money backtest settle skipped: {exc}")
         try:
             rows = refresh_once(
                 client,

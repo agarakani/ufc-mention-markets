@@ -347,7 +347,20 @@ tbody tr.is-watch {
   background: var(--warn-bg);
   box-shadow: inset 2px 0 0 var(--warn);
 }
-tbody tr.is-low-data td { color: var(--muted); }
+tbody tr.is-quiet td { color: var(--muted); }
+
+.chip-thin {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border: 1px dashed var(--line);
+  border-radius: var(--r-xs);
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 10px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
 
 .num {
   text-align: right;

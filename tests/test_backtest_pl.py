@@ -4,6 +4,7 @@ from scripts.model.backtest_pl import (
     build_summary,
     cohort_stats,
     first_entries,
+    pending_result_events,
     settle,
 )
 
@@ -99,6 +100,27 @@ class SettleTests(unittest.TestCase):
         self.assertEqual(summary["claim_status"], "insufficient_sample")
         self.assertEqual(summary["official"]["trades"], 1)
         self.assertFalse(summary["fees_included"])
+        self.assertEqual(summary["latest_settled_event_date"], "2026-06-20")
+
+
+class PendingResultTests(unittest.TestCase):
+    def test_past_event_with_unknown_result_is_pending(self):
+        history = [
+            snap("2026-06-20T01:00:00+00:00", "T-A", event="KXFIGHTMENTION-26JUN20AAA"),
+            snap("2026-07-11T01:00:00+00:00", "T-B", event="KXFIGHTMENTION-26JUL11BBB"),
+        ]
+        pending = pending_result_events(history, {}, today="2026-07-08")
+        self.assertEqual(pending, {"KXFIGHTMENTION-26JUN20AAA"})
+
+    def test_fully_cached_past_event_is_not_pending(self):
+        history = [snap("2026-06-20T01:00:00+00:00", "T-A", event="KXFIGHTMENTION-26JUN20AAA")]
+        pending = pending_result_events(history, {"T-A": "no"}, today="2026-07-08")
+        self.assertEqual(pending, set())
+
+    def test_upcoming_event_never_pending_even_without_results(self):
+        history = [snap("2026-07-11T01:00:00+00:00", "T-B", event="KXFIGHTMENTION-26JUL11BBB")]
+        pending = pending_result_events(history, {}, today="2026-07-08")
+        self.assertEqual(pending, set())
 
 
 if __name__ == "__main__":

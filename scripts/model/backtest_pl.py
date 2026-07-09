@@ -107,6 +107,22 @@ def past_event_tickers(history: list[dict], today: str) -> set[str]:
     return out
 
 
+def pending_result_events(history: list[dict], results: dict[str, str], today: str) -> set[str]:
+    """Past-dated events that still have markets without a known final result.
+
+    This is what tells the live refresher it is worth asking Kalshi for
+    results again. Upcoming events are never pending: they have not happened.
+    """
+    past = past_event_tickers(history, today)
+    pending = set()
+    for row in history:
+        event_ticker = str(row.get("event_ticker", "")).strip()
+        ticker = str(row.get("ticker", "")).strip()
+        if event_ticker in past and ticker and ticker not in results:
+            pending.add(event_ticker)
+    return pending
+
+
 def fetch_results(event_tickers: set[str], cached: dict[str, str]) -> dict[str, str]:
     """Read-only fetch of finalized results for events not fully cached."""
     from ufc_mentions.kalshi_client import KalshiClient
@@ -209,6 +225,7 @@ def build_summary(trades: list[dict], history_rows: int, snapshots: int,
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "is_money_backtest": True,
+        "latest_settled_event_date": max((t.get("event_date", "") for t in trades), default=""),
         "entry_rule": (
             "1 contract at the live buy price, at the first snapshot where the "
             "live rule said WATCH. Leans use the first positive-edge snapshot "
@@ -232,12 +249,8 @@ def build_summary(trades: list[dict], history_rows: int, snapshots: int,
     }
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--offline", action="store_true",
-                        help="use cached results only; no network")
-    args = parser.parse_args()
-
+def run_backtest(*, offline: bool = False, quiet: bool = False) -> dict:
+    """Replay history, settle against results, write outputs. Returns the summary."""
     history = read_csv(PRICE_HISTORY)
     if not history:
         raise SystemExit(f"No price history at {PRICE_HISTORY}. Run the live refresher first.")
@@ -245,7 +258,7 @@ def main() -> None:
     today = datetime.now(timezone.utc).date().isoformat()
     resolved_events = past_event_tickers(history, today)
     cached = load_results_cache()
-    if args.offline:
+    if offline:
         results = cached
     else:
         results = fetch_results(resolved_events, cached)
@@ -265,20 +278,32 @@ def main() -> None:
         writer.writeheader()
         writer.writerows(trades)
 
-    official = summary["official"]
-    lean = summary["lean"]
-    print(f"History: {summary['history_rows']} rows over {summary['snapshots']} snapshots.")
-    print(f"Final results known for {summary['markets_with_results']} markets "
-          f"across {summary['resolved_event_count']} past fight events.")
-    print(f"Official trades: {official['trades']} "
-          f"({official['wins']} wins, P/L ${official['total_pnl']:+.2f} "
-          f"on ${official['total_staked']:.2f} staked)")
-    print(f"Leans:           {lean['trades']} "
-          f"({lean['wins']} wins, P/L ${lean['total_pnl']:+.2f} "
-          f"on ${lean['total_staked']:.2f} staked)")
-    print(f"Claim status: {summary['claim_status']} "
-          f"(needs {MIN_TRADES_FOR_CLAIM} official trades)")
-    print(f"Wrote {OUT_SUMMARY.relative_to(ROOT)} and {OUT_TRADES.relative_to(ROOT)}")
+    if not quiet:
+        official = summary["official"]
+        lean = summary["lean"]
+        settled_through = summary.get("latest_settled_event_date", "")
+        through = f" (through {settled_through})" if settled_through else ""
+        print(f"History: {summary['history_rows']} rows over {summary['snapshots']} snapshots.")
+        print(f"Final results known for {summary['markets_with_results']} markets "
+              f"across {summary['resolved_event_count']} past fight events{through}.")
+        print(f"Official trades: {official['trades']} "
+              f"({official['wins']} wins, P/L ${official['total_pnl']:+.2f} "
+              f"on ${official['total_staked']:.2f} staked)")
+        print(f"Leans:           {lean['trades']} "
+              f"({lean['wins']} wins, P/L ${lean['total_pnl']:+.2f} "
+              f"on ${lean['total_staked']:.2f} staked)")
+        print(f"Claim status: {summary['claim_status']} "
+              f"(needs {MIN_TRADES_FOR_CLAIM} official trades)")
+        print(f"Wrote {OUT_SUMMARY.relative_to(ROOT)} and {OUT_TRADES.relative_to(ROOT)}")
+    return summary
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--offline", action="store_true",
+                        help="use cached results only; no network")
+    args = parser.parse_args()
+    run_backtest(offline=args.offline)
 
 
 if __name__ == "__main__":

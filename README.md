@@ -112,16 +112,13 @@ PAPER_CARD="UFC July 11 card" ./start_live_dashboard.command
 3. Look around while it runs. Click fights in the left list, click any row to
    see exactly how its number was made, and check that the reasons make sense.
 
-4. After Kalshi posts results (usually within a day), the tracker fills in
-   yes/no outcomes and paper P/L by itself. Then fold the settled card into
-   the money backtest:
+4. After Kalshi posts results (usually within a day), everything settles by
+   itself while the dashboard is running: the tracker fills in yes/no outcomes
+   and paper P/L, and the money backtest folds the finished card in and
+   updates Model health. There is nothing to run by hand.
+   (`python3 scripts/model/backtest_pl.py` still works if you want to force it.)
 
-```bash
-python3 scripts/model/backtest_pl.py
-```
-
-The Model health section updates with the new settled trades. Judge the model
-on that growing sample, not on any single fight.
+Judge the model on that growing settled sample, not on any single fight.
 
 ## How To Read The Dashboard
 
@@ -136,10 +133,16 @@ on that growing sample, not on any single fight.
 - `NO price`: what buying NO currently costs.
 - `Side`: the cheaper side according to our model.
 - `Edge`: model chance for that side minus that side's buy price.
-- `WATCH YES` / `WATCH NO`: research flag only. It means that side cleared the current checks.
-- `WATCH YES DATA` / `WATCH NO DATA`: same idea, but fighter history was thin, so the row had to clear a higher bar.
-- `LOW DATA`: the model ran, but there is not enough matching fighter history to trust it as a watch row.
-- `PASS`: no edge worth flagging right now.
+- `WATCH YES` / `WATCH NO`: research flag only. That side's edge cleared the
+  entry bar (spread + fee buffer, plus an extra buffer when data is thin).
+- `LEAN YES` / `LEAN NO`: positive edge, but under the entry bar.
+- `PASS`: no positive edge on either side.
+- `NO PRICES`: Kalshi has not posted a live YES/NO book yet.
+- `NO MODEL`: no fight-level model number; the row shows a rough history
+  average and can never become a watch.
+- A dashed `thin data` tag next to the call means fighter history is small.
+  Those rows must clear a higher bar, and a very large edge on a thin-data row
+  is more likely a model gap than free money.
 - Click any price row to expand "How this number was made": which model produced
   the number, what it trained on, the fighter history behind it, the prices it
   compared against, and the exact entry bar it had to clear.

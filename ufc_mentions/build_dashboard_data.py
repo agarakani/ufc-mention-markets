@@ -392,6 +392,7 @@ def build_model_health(
         "pl": {
             "available": bool(pl_summary),
             "is_money_backtest": bool(pl_summary.get("is_money_backtest")),
+            "latest_settled_event_date": pl_summary.get("latest_settled_event_date", ""),
             "entry_rule": pl_summary.get("entry_rule", ""),
             "markets_with_results": as_int(pl_summary.get("markets_with_results")),
             "resolved_event_count": as_int(pl_summary.get("resolved_event_count")),
