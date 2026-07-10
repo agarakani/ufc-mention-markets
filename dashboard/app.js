@@ -108,6 +108,11 @@
     try {
       const response = await fetch(`/api/refresh?ts=${Date.now()}`, { cache: "no-store" });
       if (!response.ok) throw new Error(`refresh failed: ${response.status}`);
+      const payload = await response.json().catch(() => null);
+      if (payload && payload.ok === false) {
+        els.status.textContent = payload.error || "Not ready yet; try again in a minute.";
+        return;
+      }
       await loadFreshData();
       chooseDefaultCard();
       populatePhraseFilter();

@@ -81,7 +81,7 @@ class DashboardRuntime:
             }
 
 
-def make_handler(runtime: DashboardRuntime):
+def make_handler(get_runtime):
     class DashboardHandler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, directory=str(DASHBOARD_DIR), **kwargs)
@@ -93,6 +93,14 @@ def make_handler(runtime: DashboardRuntime):
         def do_GET(self):
             parsed = urlparse(self.path)
             if parsed.path == "/api/refresh":
+                runtime = get_runtime()
+                if runtime is None:
+                    self.send_json({
+                        "ok": False,
+                        "error": "Still starting up: the fight models are loading. "
+                                 "The page updates by itself once they are ready.",
+                    })
+                    return
                 self.send_json(runtime.refresh())
                 return
             if parsed.path == "/api/status":
@@ -116,13 +124,16 @@ def make_handler(runtime: DashboardRuntime):
     return DashboardHandler
 
 
-def start_polling(runtime: DashboardRuntime, seconds: float) -> threading.Event:
+def start_polling(get_runtime, seconds: float) -> threading.Event:
     stop = threading.Event()
     if seconds <= 0:
         return stop
 
     def loop():
         while not stop.wait(seconds):
+            runtime = get_runtime()
+            if runtime is None:
+                continue
             try:
                 runtime.refresh()
             except Exception as exc:
@@ -153,16 +164,25 @@ def main() -> None:
     parser.add_argument("--open-browser", action="store_true")
     args = parser.parse_args()
 
-    runtime = DashboardRuntime(args)
-    try:
-        runtime.refresh()
-    except Exception as exc:
-        print(f"Initial refresh failed; serving the last saved dashboard data if it exists: {exc}", flush=True)
-
-    server = ThreadingHTTPServer((args.host, args.port), make_handler(runtime))
-    stop_polling = start_polling(runtime, args.poll_seconds)
+    # Serve the page right away with the last saved data; load the heavy
+    # models and run the first refresh in the background. The site should
+    # never be a dead link just because the Mac restarted.
+    state: dict = {"runtime": None}
+    server = ThreadingHTTPServer((args.host, args.port), make_handler(lambda: state["runtime"]))
     url = f"http://{args.host}:{args.port}/"
     print(f"Dashboard server running at {url}", flush=True)
+    print("Serving the last saved data while the fight models load...", flush=True)
+
+    def start_runtime():
+        try:
+            runtime = DashboardRuntime(args)
+            state["runtime"] = runtime
+            runtime.refresh()
+        except Exception as exc:
+            print(f"Startup refresh failed; serving the last saved dashboard data: {exc}", flush=True)
+
+    threading.Thread(target=start_runtime, name="dashboard-startup", daemon=True).start()
+    stop_polling = start_polling(lambda: state["runtime"], args.poll_seconds)
     print("The dashboard auto-updates while this server is running.", flush=True)
     print("Use Update now only when you want an immediate extra refresh.", flush=True)
     if args.poll_seconds > 0:
