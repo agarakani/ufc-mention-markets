@@ -13,9 +13,10 @@ fi
 
 echo "Starting UFC mention dashboard."
 echo "This is read-only. It updates prices but cannot place trades."
-PAPER_ARGS=()
+
+set -- --poll-seconds "$POLL_SECONDS" --open-browser
 if [[ -n "$PAPER_CARD" && "$PAPER_CARD" != "off" ]]; then
-  PAPER_ARGS=(--paper-card "$PAPER_CARD")
+  set -- "$@" --paper-card "$PAPER_CARD"
   echo "Paper tracking: on for ${PAPER_CARD}"
 else
   echo "Paper tracking: off. Set PAPER_CARD=\"Card name\" to turn it on."
@@ -25,13 +26,10 @@ echo "First refresh can take a couple minutes while the fight models load..."
 echo
 echo "Dashboard will open in your browser and auto-update every ${POLL_SECONDS}s."
 echo "Leave this window open while using it."
-if [[ ${#PAPER_ARGS[@]} -gt 0 ]]; then
+if [[ -n "$PAPER_CARD" && "$PAPER_CARD" != "off" ]]; then
   echo "New WATCH rows will be recorded as one paper contract at the live buy price."
 fi
 echo "Press Control-C to stop."
 echo
 
-exec "$PYTHON_BIN" -u scripts/live/dashboard_server.py \
-  --poll-seconds "$POLL_SECONDS" \
-  --open-browser \
-  "${PAPER_ARGS[@]}"
+exec "$PYTHON_BIN" -u scripts/live/dashboard_server.py "$@"

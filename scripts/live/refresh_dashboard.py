@@ -44,6 +44,38 @@ SETTLE_ATTEMPT_MARKER = ROOT / "model_outputs" / ".pl_settle_attempt"
 SETTLE_MIN_INTERVAL_SECONDS = 30 * 60
 
 
+def paper_card_groups(paper_card: str, rows: list[dict]) -> list[tuple[str, list[dict]]]:
+    """Split rows into (card name, rows) groups for the paper tracker.
+
+    With an explicit card name, everything goes into that one card. With
+    "auto", each fight-event date becomes its own card (ufc_card_YYYY-MM-DD),
+    so an always-on server tracks every card without anyone naming it.
+    """
+    if paper_card.strip().lower() != "auto":
+        return [(paper_card, rows)] if rows else []
+    by_date: dict[str, list[dict]] = {}
+    for row in rows:
+        event_date = str(row.get("event_date", "")).strip()
+        if not event_date:
+            continue
+        by_date.setdefault(event_date, []).append(row)
+    return [(f"ufc_card_{event_date}", group) for event_date, group in sorted(by_date.items())]
+
+
+def combine_paper_results(paper_card: str, results: list[dict]) -> dict | None:
+    """Merge per-card tracker results into the single summary the meta expects."""
+    if not results:
+        return None
+    if len(results) == 1 and paper_card.strip().lower() != "auto":
+        return results[0]
+    combined = dict(results[0])
+    for key in ("new_entries", "total_entries", "resolved", "pending", "open"):
+        combined[key] = sum(int(result.get(key) or 0) for result in results)
+    combined["card"] = ", ".join(str(result.get("card", "")) for result in results)
+    combined["path"] = "; ".join(str(result.get("path", "")) for result in results)
+    return combined
+
+
 def maybe_settle_money_backtest(*, now: float | None = None) -> str:
     """Fold finished cards into the money backtest without being asked.
 
@@ -407,15 +439,19 @@ def refresh_once(
     append_csv(history_path, rows, HISTORY_FIELDS)
     paper_tracking = None
     if paper_card:
-        paper_tracking = record_live_entries(
-            rows,
-            card=paper_card,
-            out_root=paper_out_root,
-            contracts=paper_contracts,
-            client=client,
-            allow_entries=not paper_settle_only,
-        )
-        if verbose:
+        card_groups = paper_card_groups(paper_card, rows)
+        results = []
+        for card_name, card_rows in card_groups:
+            results.append(record_live_entries(
+                card_rows,
+                card=card_name,
+                out_root=paper_out_root,
+                contracts=paper_contracts,
+                client=client,
+                allow_entries=not paper_settle_only,
+            ))
+        paper_tracking = combine_paper_results(paper_card, results)
+        if verbose and paper_tracking:
             print(
                 "  paper tracker: "
                 f"{paper_tracking['new_entries']} new, "

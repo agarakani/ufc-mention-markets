@@ -22,33 +22,36 @@ made its number.
 
 ## How To Use It
 
-Install dependencies:
+The dashboard runs as a background service on this Mac — nothing to start,
+no terminal. Open it like a website:
+
+- Double-click **UFC Dashboard** on the Desktop, or
+- go to **http://127.0.0.1:8765** in any browser.
+
+It refreshes Kalshi prices every 30 seconds on its own, paper-tracks every
+card automatically (one pretend contract per new WATCH row — it cannot spend
+real money), fills in outcomes when Kalshi posts results, and folds finished
+cards into the money backtest. It starts by itself when the Mac starts.
+
+Set it up once (already done on this machine), or after moving to a new Mac:
 
 ```bash
 pip install -r requirements.txt
+./install_autostart.command
 ```
 
-Easiest live mode on this Mac:
+To turn the background service off:
+
+```bash
+./uninstall_autostart.command
+```
+
+If you prefer running it by hand in a terminal instead, the old way still
+works (with optional PAPER_CARD="auto" or a custom card name):
 
 ```bash
 ./start_live_dashboard.command
 ```
-
-That starts a local read-only dashboard server, opens the browser, refreshes
-once, then keeps checking Kalshi every 30 seconds. Leave that terminal window
-open while using the dashboard. The page updates itself, and `Update now`
-forces an immediate refresh.
-
-To let it paper-track entries while it refreshes:
-
-```bash
-PAPER_CARD="UFC July 11 card" ./start_live_dashboard.command
-```
-
-That still cannot spend real money. It records one fake contract the first time
-a market becomes `WATCH YES` or `WATCH NO`, using the live buy price at that
-moment. It also keeps checking Kalshi for final results, fills outcomes when
-Kalshi resolves a market, and recalculates paper P/L.
 
 Refresh the live dashboard once:
 
@@ -97,26 +100,21 @@ python3 scripts/live/price_fight.py \
 ## Testing The Model On A Fight Card
 
 The point of a live card is to find out whether the model's numbers hold up.
-The steps, using the July 11 card as the example:
+Since the dashboard runs by itself and paper tracking is automatic, there is
+nothing to start. On fight weekend:
 
-1. Sometime before the fights, start the dashboard with paper tracking on:
-
-```bash
-PAPER_CARD="UFC July 11 card" ./start_live_dashboard.command
-```
-
-2. Leave it running through the card. Every watch row gets logged as one
-   pretend contract at the live price. Leans are logged separately. Nothing
+1. Open the dashboard (Desktop shortcut or http://127.0.0.1:8765) any time
+   before or during the card. Every watch row is already being logged as one
+   pretend contract at the live price; leans are logged separately. Nothing
    is bought for real.
 
-3. Look around while it runs. Click fights in the left list, click any row to
-   see exactly how its number was made, and check that the reasons make sense.
+2. Look around. Click fights in the left list, click any row to see exactly
+   how its number was made, and check that the reasons make sense.
 
-4. After Kalshi posts results (usually within a day), everything settles by
-   itself while the dashboard is running: the tracker fills in yes/no outcomes
-   and paper P/L, and the money backtest folds the finished card in and
-   updates Model health. There is nothing to run by hand.
-   (`python3 scripts/model/backtest_pl.py` still works if you want to force it.)
+3. After Kalshi posts results (usually within a day), everything settles by
+   itself: the tracker fills in yes/no outcomes and paper P/L, and the money
+   backtest folds the finished card in and updates Model health. There is
+   nothing to run by hand.
 
 Judge the model on that growing settled sample, not on any single fight.
 
