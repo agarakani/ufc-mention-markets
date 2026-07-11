@@ -331,7 +331,7 @@
       const fights = current ? navFights(card) : "";
       return `<div class="nav-card ${current ? "is-current" : ""}">
         <button class="nav-card-head" type="button" data-nav-card="${escapeHtml(card.card_id)}">
-          <span class="nav-date">${escapeHtml(formatDate(card.event_date) || "Date TBD")}</span>
+          <span class="nav-date">${escapeHtml(formatDate(card.event_date) || "Date TBD")}${tonightBadge(card.event_date)}</span>
           <h2>${escapeHtml(card.card_title || "UFC card")}</h2>
           <span class="nav-sub">${escapeHtml(sub)}</span>
         </button>
@@ -405,17 +405,33 @@
           watch ? `<span class="watch-note">${formatInteger(watch)} watch row${plural(watch)}</span>` : "no watch rows right now",
         ];
       els.fightHeader.innerHTML = `
-        <p class="crumb">${escapeHtml(card.card_title || "UFC card")} · ${escapeHtml(formatDate(fight.event_date) || "date TBD")}</p>
-        <h2>${escapeHtml(fight.matchup || "TBD fight")}</h2>
+        <p class="crumb">${escapeHtml(card.card_title || "UFC card")} · ${escapeHtml(formatDate(fight.event_date) || "date TBD")}${tonightBadge(fight.event_date)}</p>
+        <h2 class="matchup-hero">${matchupHtml(fight.fighter_1, fight.fighter_2, fight.matchup)}</h2>
         <p class="fight-sub">${bits.join(" · ")}</p>`;
       return;
     }
 
     const watch = Number(card.watch_count || 0);
     els.fightHeader.innerHTML = `
-      <p class="crumb">${escapeHtml(formatDate(card.event_date) || "Date TBD")}</p>
-      <h2>${escapeHtml(card.card_title || "UFC card")}</h2>
+      <p class="crumb">${escapeHtml(formatDate(card.event_date) || "Date TBD")}${tonightBadge(card.event_date)}</p>
+      <h2 class="matchup-hero solo">${escapeHtml(card.card_title || "UFC card")}</h2>
       <p class="fight-sub">${formatInteger(card.fight_count)} fight${plural(card.fight_count)} listed · ${formatInteger(card.phrase_count)} phrase markets · ${watch ? `<span class="watch-note">${formatInteger(watch)} watch row${plural(watch)}</span>` : "no watch rows right now"}</p>`;
+  }
+
+  function todayLocal() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  function tonightBadge(dateStr) {
+    return dateStr && dateStr === todayLocal() ? ' <span class="tonight">Tonight</span>' : "";
+  }
+
+  function matchupHtml(f1, f2, fallback) {
+    if (f1 && f2) {
+      return `<span class="f-red">${escapeHtml(f1)}</span><span class="vs">vs</span><span class="f-blue">${escapeHtml(f2)}</span>`;
+    }
+    return escapeHtml(fallback || "TBD fight");
   }
 
   /* ---------- market table ---------- */
