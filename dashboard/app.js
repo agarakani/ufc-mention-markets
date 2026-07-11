@@ -666,8 +666,11 @@
 
     const settledThrough = pl.latest_settled_event_date ? formatDate(pl.latest_settled_event_date) : "";
     const enough = pl.claim_status === "sufficient_sample";
+    const ruleReplay = parseNumber(pl.current_rule_trades) !== null
+      ? ` · today's rule on the same data: <span class="${toneClass(pl.current_rule_pnl)}">${formatMoney(pl.current_rule_pnl)}</span> on ${formatInteger(pl.current_rule_trades)}`
+      : "";
     const plBit = pl.available
-      ? `Money test: <span class="${toneClass(pl.official_pnl)}">${formatMoney(pl.official_pnl)}</span> on ${formatInteger(pl.official_trades)} settled trades${settledThrough ? ` (through ${settledThrough})` : ""} — ${enough ? "enough sample to review" : "still too small to trust"}`
+      ? `Money test: <span class="${toneClass(pl.official_pnl)}">${formatMoney(pl.official_pnl)}</span> on ${formatInteger(pl.official_trades)} old-rule trades${settledThrough ? ` (through ${settledThrough})` : ""}${ruleReplay} — ${enough ? "enough sample to review" : "still too small to trust"}`
       : "Money test: no settled markets yet";
     els.healthSummary.innerHTML = `Prediction test: ${formatInteger(prediction.groups_beating_base)} of ${formatInteger(prediction.measured_groups)} phrase groups pass · ${plBit}`;
 
