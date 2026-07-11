@@ -25,6 +25,7 @@ from ufc_mentions.kalshi_mentions import (
     fighters_from_market_title,
 )
 from scripts.live.price_fight import price_market
+from ufc_mentions.entry_rules import EDGE_CAP_DEFAULT, load_phrase_trust
 from scripts.model.backtest_pl import (
     PRICE_HISTORY,
     load_results_cache,
@@ -118,7 +119,9 @@ FIELDS = [
     "league_fights", "fighter_rate", "fighter_hits", "fighter_fights",
     "word_type", "prior_strength", "confidence_ok", "confidence_note",
     "yes_bid", "yes_ask", "no_bid", "no_ask", "spread", "fee_buffer",
-    "data_risk", "data_buffer", "hurdle", "yes_edge", "no_edge", "side", "side_price", "edge", "watch", "validation_status",
+    "data_risk", "data_buffer", "hurdle", "yes_edge", "no_edge", "side", "side_price", "edge",
+    "edge_cap", "gap_blocked", "trust_ok", "trust_note", "block_reason",
+    "watch", "validation_status",
     "previous_yes_ask", "ask_change", "status", "error",
 ]
 
@@ -127,7 +130,9 @@ HISTORY_FIELDS = [
     "yes_ask", "no_bid", "no_ask", "spread", "model_probability",
     "history_probability", "probability_source",
     "context_status", "market_status", "market_result", "market_expiration_value",
-    "yes_edge", "no_edge", "side", "side_price", "edge", "data_risk", "data_buffer", "hurdle", "watch",
+    "yes_edge", "no_edge", "side", "side_price", "edge",
+    "edge_cap", "gap_blocked", "trust_ok",
+    "data_risk", "data_buffer", "hurdle", "watch",
 ]
 
 
@@ -222,6 +227,8 @@ def event_snapshot(
     snapshot_timestamp: str,
     context_model=None,
     require_context_model: bool = False,
+    edge_cap: float = EDGE_CAP_DEFAULT,
+    phrase_trust_map: dict | None = None,
 ) -> list[dict]:
     event_ticker = event.get("event_ticker", "")
     markets = client.get_markets(event_ticker=event_ticker)
@@ -247,6 +254,8 @@ def event_snapshot(
                 low_data_buffer=low_data_buffer,
                 context_model=context_model,
                 require_context_model=require_context_model,
+                edge_cap=edge_cap,
+                phrase_trust_map=phrase_trust_map,
             )
         except Exception as exc:
             rows.append({
@@ -339,6 +348,11 @@ def event_snapshot(
             "side": priced.side,
             "side_price": value(priced.side_price),
             "edge": value(priced.edge),
+            "edge_cap": value(priced.edge_cap),
+            "gap_blocked": bool_text(priced.gap_blocked),
+            "trust_ok": bool_text(priced.trust_ok),
+            "trust_note": priced.trust_note,
+            "block_reason": priced.block_reason,
             "watch": bool_text(priced.watch),
             "validation_status": priced.validation_status,
             "status": "ok",
@@ -403,6 +417,7 @@ def refresh_once(
     rows = []
     errors = []
     event_rows_for_meta = []
+    phrase_trust_map = load_phrase_trust()
     for index, event in enumerate(events, start=1):
         event_name = event.get("title") or event.get("event_ticker") or "fight"
         if verbose:
@@ -418,6 +433,7 @@ def refresh_once(
                 min_fighter_fights=min_fighter_fights,
                 low_data_buffer=low_data_buffer,
                 snapshot_timestamp=snapshot_timestamp,
+                phrase_trust_map=phrase_trust_map,
             )
             rows.extend(event_rows)
             event_rows_for_meta.append(event_metadata(event, event_rows))

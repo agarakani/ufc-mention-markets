@@ -16,6 +16,11 @@ This repo does not place trades.
 4. Compares the model's YES chance with the live YES buy price, and the model's NO chance with the live NO buy price.
 5. Marks a row `WATCH YES` or `WATCH NO` when that side clears the required edge.
 6. If fighter history is thin, the row can still be a watch, but it has to clear a bigger edge bar and is flagged as data-risk.
+7. Refuses to watch when the edge is too big. On settled cards, disagreements
+   with the market over 15 points were almost always the model's mistake, so
+   those rows are flagged `BIG GAP` and never paper-traded.
+8. Refuses to watch phrase groups that show no real skill in the old-fight
+   prediction test. Those can lean, nothing more.
 
 Kalshi prices are not fed into the model. They are only used after the model has
 made its number.
@@ -133,7 +138,11 @@ Judge the model on that growing settled sample, not on any single fight.
 - `Edge`: model chance for that side minus that side's buy price.
 - `WATCH YES` / `WATCH NO`: research flag only. That side's edge cleared the
   entry bar (spread + fee buffer, plus an extra buffer when data is thin).
-- `LEAN YES` / `LEAN NO`: positive edge, but under the entry bar.
+- `LEAN YES` / `LEAN NO`: positive edge, but under the entry bar — or a phrase
+  group the prediction test does not trust enough to watch.
+- `BIG GAP`: the edge is over the 15% cap. A disagreement that large was
+  almost always the model's mistake on settled cards, so it is flagged, not
+  traded.
 - `PASS`: no positive edge on either side.
 - `NO PRICES`: Kalshi has not posted a live YES/NO book yet.
 - `NO MODEL`: no fight-level model number; the row shows a rough history
@@ -161,6 +170,8 @@ python3 scripts/model/backtest_context_model.py --initial-train-frac 0.30
 
 Latest result: 13 current Kalshi phrase groups, 43,784 old fight predictions,
 12 of 13 groups beat the simple baseline. This says nothing about profit.
+The same run grades each phrase group; groups that fail it, or show almost no
+ranking skill (AUC under 0.55), are barred from producing watch rows.
 
 2. Money backtest — would the watch rule have made paper money?
 
@@ -173,11 +184,15 @@ paper contract at the first snapshot where the live rule said WATCH, then
 settles against the final Kalshi results (fetched read-only and cached).
 No hindsight prices, no fabricated fills.
 
-Latest result: from the one resolved card so far, the watch rule went 2 for 22
-and lost $2.25 of paper money; the looser leans went 27 for 51 and made $2.89.
-That is far below the 30 settled trades needed before the number means
-anything, and it is not evidence of an edge either way. Both results show up
-in the dashboard's Model health section.
+Latest result: from the one resolved card so far, the old watch rule went
+2 for 22 and lost $2.25 of paper money, while the small-edge leans went 27 for
+51 and made $2.89. That pattern — big claimed edges losing, small ones
+holding up — is why the entry rule now has an edge cap and phrase-trust tiers.
+Replayed on the same snapshots, today's rule takes 3 trades, 2 wins, +$0.79.
+The cap was chosen after seeing that card, so treat that as in-sample; the
+next cards are the real test. Everything is far below the 30 settled trades
+needed before any claim, and none of this is evidence of profitability yet.
+Both results show up in the dashboard's Model health section.
 
 ## Project Layout
 

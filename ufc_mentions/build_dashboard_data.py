@@ -121,6 +121,8 @@ def build_kalshi_rows(rows: list[dict]) -> list[dict]:
             "context_best_c",
             "context_calibrated",
             "context_row_source",
+            "trust_note",
+            "block_reason",
         ])
         for field in [
             "model_probability",
@@ -144,6 +146,7 @@ def build_kalshi_rows(rows: list[dict]) -> list[dict]:
             "no_edge",
             "side_price",
             "edge",
+            "edge_cap",
             "previous_yes_ask",
             "ask_change",
         ]:
@@ -160,6 +163,8 @@ def build_kalshi_rows(rows: list[dict]) -> list[dict]:
 
         item["confidence_ok"] = as_bool(row.get("confidence_ok"))
         item["data_risk"] = as_bool(row.get("data_risk"))
+        item["gap_blocked"] = as_bool(row.get("gap_blocked"))
+        item["trust_ok"] = str(row.get("trust_ok", "")).strip() == "" or as_bool(row.get("trust_ok"))
         item["side"] = str(row.get("side", "")).strip().lower()
         item["watch"] = as_bool(row.get("watch")) or legacy_watch(row, item)
         if item["watch"] and not item.get("validation_status"):
@@ -375,6 +380,13 @@ def build_model_health(
 
     official = pl_summary.get("official") or {}
     lean = pl_summary.get("lean") or {}
+    measured_sorted = sorted(
+        (g for g in groups if g.get("log_loss_improvement") is not None),
+        key=lambda item: item["log_loss_improvement"],
+        reverse=True,
+    )
+    rule_comparison = pl_summary.get("rule_comparison") or {}
+    current_rule = rule_comparison.get("current_rule_official") or {}
     return {
         "prediction": {
             "status": context_summary.get("status", ""),
@@ -386,6 +398,9 @@ def build_model_health(
             "folds": as_int(context_summary.get("folds")),
             "weakest_phrase": (weakest or {}).get("phrase", ""),
             "weakest_improvement": (weakest or {}).get("log_loss_improvement"),
+            "strongest": [g["phrase"] for g in measured_sorted[:3]],
+            "weakest": [g["phrase"] for g in measured_sorted[-3:]][::-1],
+            "trusted_groups": sum(1 for g in groups if g.get("beats_base")),
             "generated_at": context_summary.get("generated_at", ""),
         },
         "groups": groups,
@@ -409,6 +424,10 @@ def build_model_health(
             "minimum_trades_for_claim": as_int(pl_summary.get("minimum_trades_for_claim")),
             "claim_status": pl_summary.get("claim_status", ""),
             "note": pl_summary.get("note", ""),
+            "current_rule_trades": as_int(current_rule.get("trades")),
+            "current_rule_wins": as_int(current_rule.get("wins")),
+            "current_rule_pnl": number(current_rule.get("total_pnl")),
+            "rule_note": rule_comparison.get("note", ""),
             "generated_at": pl_summary.get("generated_at", ""),
         },
     }
@@ -629,6 +648,13 @@ def summarize(
         ),
         "kalshi_low_confidence_count": sum(
             row.get("status") == "ok" and not bool(row.get("confidence_ok")) for row in kalshi_rows
+        ),
+        "kalshi_gap_blocked_count": sum(bool(row.get("gap_blocked")) for row in kalshi_rows),
+        "kalshi_low_trust_count": sum(
+            row.get("status") == "ok" and not bool(row.get("trust_ok", True)) for row in kalshi_rows
+        ),
+        "kalshi_data_risk_count": sum(
+            row.get("status") == "ok" and bool(row.get("data_risk")) for row in kalshi_rows
         ),
         "kalshi_model_error_count": sum(row.get("status") == "error" for row in kalshi_rows),
         "kalshi_snapshot_timestamp": kalshi_meta.get("snapshot_timestamp", ""),

@@ -39,6 +39,11 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.tracking.settle_card import contract_pnl  # noqa: E402
+from ufc_mentions.entry_rules import (  # noqa: E402
+    EDGE_CAP_DEFAULT,
+    load_phrase_trust,
+    phrase_trust,
+)
 from ufc_mentions.kalshi_mentions import event_date_from_ticker  # noqa: E402
 
 PRICE_HISTORY = ROOT / "market_data" / "kalshi_price_history.csv"
@@ -143,13 +148,33 @@ def fetch_results(event_tickers: set[str], cached: dict[str, str]) -> dict[str, 
     return results
 
 
-def first_entries(history: list[dict]) -> dict[str, dict]:
-    """First WATCH snapshot per ticker (official) or first positive-edge one (lean).
+def current_rule_entry(row: dict, trust_map: dict, edge_cap: float = EDGE_CAP_DEFAULT) -> bool:
+    """Would today's entry rule call this recorded snapshot an official WATCH?
+
+    Uses the recorded model number, prices, and hurdle from the snapshot —
+    only the rule is today's (edge cap + phrase trust). No hindsight prices.
+    """
+    edge = number(row.get("edge"))
+    hurdle = number(row.get("hurdle"))
+    if edge is None or hurdle is None:
+        return False
+    if not (hurdle < edge <= edge_cap):
+        return False
+    trusted, _note = phrase_trust(str(row.get("phrase", "")), trust_map)
+    return trusted
+
+
+def first_entries(history: list[dict], *, rule: str = "recorded",
+                  trust_map: dict | None = None,
+                  edge_cap: float = EDGE_CAP_DEFAULT) -> dict[str, dict]:
+    """First official-entry snapshot per ticker, or first positive-edge one (lean).
 
     History is replayed in snapshot order, exactly as the live tracker would
-    have seen it. A market that reaches WATCH at any point counts as official,
-    entered at its first WATCH snapshot.
+    have seen it. rule="recorded" uses the watch flag saved at the time;
+    rule="current" re-applies today's entry rule to the same recorded numbers.
     """
+    if rule == "current" and trust_map is None:
+        trust_map = load_phrase_trust()
     ordered = sorted(history, key=lambda row: str(row.get("snapshot_timestamp", "")))
     entries: dict[str, dict] = {}
     for row in ordered:
@@ -160,10 +185,13 @@ def first_entries(history: list[dict]) -> dict[str, dict]:
         side = str(row.get("side", "")).strip().lower()
         if price is None or side not in ("yes", "no"):
             continue
-        is_watch = truthy(row.get("watch"))
+        if rule == "current":
+            is_official = current_rule_entry(row, trust_map or {}, edge_cap)
+        else:
+            is_official = truthy(row.get("watch"))
         edge = number(row.get("edge"))
         current = entries.get(ticker)
-        if is_watch and (current is None or current["cohort"] != "official"):
+        if is_official and (current is None or current["cohort"] != "official"):
             entries[ticker] = make_entry(row, "official", side, price)
         elif current is None and edge is not None and edge > 0:
             entries[ticker] = make_entry(row, "lean", side, price)
@@ -271,6 +299,22 @@ def run_backtest(*, offline: bool = False, quiet: bool = False) -> dict:
     snapshots = len({row.get("snapshot_timestamp", "") for row in history})
     summary = build_summary(trades, len(history), snapshots, len(results), resolved_events)
 
+    # Counterfactual: same recorded snapshots and prices, today's entry rule
+    # (edge cap + phrase trust). This is how a rule change gets evaluated
+    # without hindsight prices or fabricated fills.
+    current_trades = settle(first_entries(history, rule="current"), results)
+    summary["rule_comparison"] = {
+        "recorded_rule_official": summary["official"],
+        "current_rule_official": cohort_stats(current_trades, "official"),
+        "note": (
+            "recorded = what the live rule at the time actually signaled; "
+            "current = today's rule (edge cap + phrase trust) replayed on the "
+            "same recorded snapshots. The cap and trust tiers were chosen "
+            "after the first settled card, so treat its current-rule number "
+            "as in-sample; later cards are the real test."
+        ),
+    }
+
     OUT_SUMMARY.parent.mkdir(parents=True, exist_ok=True)
     OUT_SUMMARY.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     with OUT_TRADES.open("w", newline="", encoding="utf-8") as fh:
@@ -294,6 +338,10 @@ def run_backtest(*, offline: bool = False, quiet: bool = False) -> dict:
               f"on ${lean['total_staked']:.2f} staked)")
         print(f"Claim status: {summary['claim_status']} "
               f"(needs {MIN_TRADES_FOR_CLAIM} official trades)")
+        current = summary["rule_comparison"]["current_rule_official"]
+        print(f"Under today's rule (edge cap + phrase trust), the same snapshots "
+              f"give {current['trades']} official trades, "
+              f"{current['wins']} wins, P/L ${current['total_pnl']:+.2f}.")
         print(f"Wrote {OUT_SUMMARY.relative_to(ROOT)} and {OUT_TRADES.relative_to(ROOT)}")
     return summary
 

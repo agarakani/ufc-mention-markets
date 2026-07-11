@@ -413,6 +413,7 @@ tbody tr.is-quiet td { color: var(--muted); }
 .pill.warn { color: var(--warn); background: var(--warn-bg); border-color: var(--warn-line); font-weight: 650; }
 .pill.quiet-warn { color: var(--warn); background: transparent; border-color: var(--warn-line); }
 .pill.bad { color: var(--neg); background: var(--neg-bg); border-color: var(--neg-line); }
+.pill.gap { color: var(--neg); background: transparent; border-color: var(--neg-line); border-style: dashed; }
 
 /* row expansion */
 tbody tr.is-expandable { cursor: pointer; }

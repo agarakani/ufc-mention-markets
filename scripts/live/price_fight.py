@@ -15,6 +15,12 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from ufc_mentions.entry_rules import (
+    EDGE_CAP_DEFAULT,
+    load_phrase_trust,
+    phrase_trust,
+    watch_decision,
+)
 from ufc_mentions.kalshi_client import KalshiClient, KalshiError, TopOfBook
 from ufc_mentions.kalshi_context_model import KalshiFightContextModel
 from ufc_mentions.kalshi_mentions import (
@@ -46,6 +52,11 @@ class PricedMarket:
     data_risk: bool
     data_buffer: float
     hurdle: float | None
+    edge_cap: float
+    gap_blocked: bool
+    trust_ok: bool
+    trust_note: str
+    block_reason: str
     watch: bool
     validation_status: str
     note: str
@@ -108,6 +119,8 @@ def price_market(
     low_data_buffer: float = 0.10,
     context_model: Any | None = None,
     require_context_model: bool = False,
+    edge_cap: float = EDGE_CAP_DEFAULT,
+    phrase_trust_map: dict | None = None,
 ) -> PricedMarket | None:
     try:
         forms = phrase_forms_from_rules(market)
@@ -139,22 +152,33 @@ def price_market(
     data_buffer = low_data_buffer if data_risk else 0.0
     hurdle = None if book.spread is None else book.spread + fee_buffer + data_buffer
     fight_model_ready = estimate.probability_source == "fight_context_model"
-    watch = bool(
-        (fight_model_ready or not require_context_model)
-        and side in {"yes", "no"}
-        and edge is not None
-        and hurdle is not None
-        and edge > hurdle
+    trust_ok, trust_note = phrase_trust(forms, phrase_trust_map)
+    watch, block_reason = watch_decision(
+        edge=edge,
+        hurdle=hurdle,
+        side=side,
+        model_ready=fight_model_ready,
+        require_model=require_context_model,
+        trusted=trust_ok,
+        edge_cap=edge_cap,
     )
+    gap_blocked = block_reason == "big_gap"
     if book.yes_ask is None or book.no_ask is None:
         note = "missing executable two-sided order book"
-    elif require_context_model and not fight_model_ready:
+    elif block_reason == "no_model":
         note = f"fight-specific model unavailable; {estimate.context_note or estimate.context_status or 'simple history only'}"
-    elif edge is not None and hurdle is not None and edge <= hurdle:
+    elif block_reason == "below_bar":
         if data_risk:
             note = f"low data; needs bigger edge: {estimate.confidence_note}"
         else:
             note = "model edge does not clear spread + fee buffer"
+    elif block_reason == "big_gap":
+        note = (
+            f"edge above the {edge_cap:.0%} cap; gaps this large were usually "
+            "the model's mistake on settled cards, so this is never a watch"
+        )
+    elif block_reason == "low_trust":
+        note = trust_note
     elif data_risk:
         note = f"data-risk watch; {estimate.confidence_note}"
     else:
@@ -174,6 +198,11 @@ def price_market(
         data_risk=data_risk,
         data_buffer=data_buffer,
         hurdle=hurdle,
+        edge_cap=edge_cap,
+        gap_blocked=gap_blocked,
+        trust_ok=trust_ok,
+        trust_note=trust_note,
+        block_reason=block_reason,
         watch=watch,
         validation_status="unvalidated",
         note=note,
@@ -192,12 +221,15 @@ def analyze_event(
     fee_buffer: float = 0.02,
     min_fighter_fights: int = 15,
     low_data_buffer: float = 0.10,
+    phrase_trust_map: dict | None = None,
 ) -> tuple[str, str, list[PricedMarket]]:
     markets = client.get_markets(event_ticker=event_ticker)
     if not markets:
         raise KalshiError(f"No markets found for {event_ticker}.")
     if not fighter_1 or not fighter_2:
         fighter_1, fighter_2 = fighters_from_market_title(markets[0].get("title", ""))
+    if phrase_trust_map is None:
+        phrase_trust_map = load_phrase_trust()
     cutoff_date = event_date_from_ticker(event_ticker)
     rows = []
     for market in markets:
@@ -214,6 +246,7 @@ def analyze_event(
             low_data_buffer=low_data_buffer,
             context_model=context_model,
             require_context_model=require_context_model,
+            phrase_trust_map=phrase_trust_map,
         )
         if priced is not None:
             rows.append(priced)

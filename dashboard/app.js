@@ -205,12 +205,14 @@
 
   function renderTopline() {
     const summary = data.summary || {};
+    const gapCount = parseNumber(summary.kalshi_gap_blocked_count) || 0;
     els.countsLine.textContent = [
       `${formatInteger(summary.kalshi_card_count)} card${plural(summary.kalshi_card_count)}`,
       `${formatInteger(summary.kalshi_event_count)} fights`,
       `${formatInteger(summary.kalshi_priced_count)} phrase books`,
       `${formatInteger(summary.kalshi_watch_count)} watch row${plural(summary.kalshi_watch_count)}`,
-    ].join(" · ");
+      gapCount ? `${formatInteger(gapCount)} big gap${plural(gapCount)}` : "",
+    ].filter(Boolean).join(" · ");
 
     const ts = summary.kalshi_snapshot_timestamp;
     const stale = ts ? isStale(ts, summary.kalshi_poll_seconds) : false;
@@ -378,17 +380,9 @@
     if (row.probability_source !== "fight_context_model") return "NO MODEL";
     const side = String(row.side || "").toUpperCase();
     if (row.watch) return side ? `WATCH ${side}` : "WATCH";
+    if (row.block_reason === "big_gap") return "BIG GAP";
     if (parseNumber(row.edge) > 0 && side) return `LEAN ${side}`;
     return "PASS";
-  }
-
-  function bigGapNote(row) {
-    const edge = parseNumber(row.edge);
-    if (edge === null || edge < 0.25) return "";
-    if (row.data_risk) {
-      return " A gap this big with thin fighter history usually means the model is missing something, not that the market is wrong. Treat it as a research flag.";
-    }
-    return " A gap this big means the model and the market strongly disagree — one of them is wrong. Open the row details before trusting it.";
   }
 
   function reasonForRow(row) {
@@ -405,15 +399,22 @@
     const sidePrice = formatPlainPercent(row.side_price);
     const edge = formatPlainPercent(row.edge, true);
     const hurdle = formatPlainPercent(row.hurdle);
+    const cap = formatPlainPercent(row.edge_cap);
     const thin = row.data_risk ? " Fighter history is thin here, so the bar was raised — it cleared anyway, but trust it less." : "";
 
     if (row.watch) {
-      return `Our model puts YES at ${model}. ${side} at ${sidePrice} has ${edge} of edge, which clears the ${hurdle} entry bar.${thin}${bigGapNote(row)}`;
+      return `Our model thinks YES is ${model}. Buying ${side} costs ${sidePrice}, so ${side} has ${edge} of edge. The entry bar is ${hurdle} and the cap is ${cap}, so this clears and becomes WATCH ${side}.${thin}`;
+    }
+    if (row.block_reason === "big_gap") {
+      return `Our model thinks YES is ${model} — a ${edge} disagreement with the market. On settled cards, gaps over ${cap} were almost always the model's mistake, not the market's, so this is flagged instead of traded.`;
+    }
+    if (row.block_reason === "low_trust") {
+      return `Our model thinks YES is ${model} and ${side} has ${edge} of edge, but ${row.trust_note || "this phrase group has not shown real skill on old fights"}.`;
     }
     if (parseNumber(row.edge) <= 0) {
-      return `Our model puts YES at ${model}. Neither side is cheap compared to that, so there is nothing to do here.`;
+      return `Our model thinks YES is ${model}. Neither side is cheap compared to that, so there is nothing to do here.`;
     }
-    return `Our model puts YES at ${model}. ${side} at ${sidePrice} has ${edge} of edge — positive, but under the ${hurdle} entry bar${row.data_risk ? " (raised because fighter history is thin)" : ""}, so it is only a lean.`;
+    return `Our model thinks YES is ${model}. ${side} at ${sidePrice} has ${edge} of edge — positive, but under the ${hurdle} entry bar${row.data_risk ? " (raised because fighter history is thin)" : ""}, so it is only a lean.`;
   }
 
   function applyFilters(rows) {
@@ -554,6 +555,12 @@
       lines.push(["Thin data", `Yes. Fighter history is small, so this row must clear an extra ${formatPlainPercent(row.data_buffer)} of edge before it can be a watch.`]);
     }
 
+    if (row.trust_ok === false) {
+      lines.push(["Phrase trust", `Low. ${row.trust_note || "This phrase group has not shown real skill in the old-fight prediction test."} It can lean but never watch.`]);
+    } else if (row.trust_note) {
+      lines.push(["Phrase trust", row.trust_note]);
+    }
+
     if (parseNumber(row.yes_ask) !== null || parseNumber(row.no_ask) !== null) {
       lines.push(["Prices", `Model says YES ${model} / NO ${noChance}. Buying YES costs ${formatPlainPercent(row.yes_ask)}, buying NO costs ${formatPlainPercent(row.no_ask)}.`]);
       const side = String(row.side || "").toUpperCase();
@@ -568,10 +575,17 @@
           parseNumber(row.fee_buffer) !== null ? `fee buffer ${formatPlainPercent(row.fee_buffer)}` : "",
           parseNumber(row.data_buffer) ? `thin-data buffer ${formatPlainPercent(row.data_buffer)}` : "",
         ].filter(Boolean).join(" + ");
+        const cap = parseNumber(row.edge_cap) !== null
+          ? ` Edge must also stay at or under the ${formatPlainPercent(row.edge_cap)} cap — bigger gaps were usually model mistakes on settled cards.`
+          : "";
         const verdict = row.watch
-          ? "The edge clears it, so this is a watch row."
-          : "The edge does not clear it, so this is not a watch row.";
-        lines.push(["Entry bar", `${parts ? `${parts} → ` : ""}needs more than ${formatPlainPercent(row.hurdle)} of edge. Current edge is ${formatPlainPercent(row.edge, true)}. ${verdict}`]);
+          ? "This one clears, so it is a watch row."
+          : row.block_reason === "big_gap"
+            ? "This edge is over the cap, so it is flagged BIG GAP instead."
+            : row.block_reason === "low_trust"
+              ? "The edge clears the bar, but the phrase group is low-trust, so it stays a lean."
+              : "The edge does not clear it, so this is not a watch row.";
+        lines.push(["Entry bar", `${parts ? `${parts} → ` : ""}needs more than ${formatPlainPercent(row.hurdle)} of edge.${cap} Current edge is ${formatPlainPercent(row.edge, true)}. ${verdict}`]);
       }
     }
 
@@ -594,10 +608,16 @@
     if (column.type === "pct") return formatPercent(value, column);
     if (column.type === "phrase") return pill(value);
     if (column.type === "signal") {
-      const chip = row.data_risk && !missingPrices(row) && row.status !== "error"
-        ? ' <span class="chip-thin" title="Fighter history is small; this row needs extra edge">thin data</span>'
-        : "";
-      return signalPill(value) + chip;
+      let chips = "";
+      if (row.status !== "error" && !missingPrices(row)) {
+        if (row.data_risk) {
+          chips += ' <span class="chip-thin" title="Fighter history is small; this row needs extra edge">thin data</span>';
+        }
+        if (row.trust_ok === false) {
+          chips += ' <span class="chip-thin" title="This phrase group has not shown real skill in the prediction test">low trust</span>';
+        }
+      }
+      return signalPill(value) + chips;
     }
     if (column.type === "side") return sidePill(value);
     if (column.type === "fight") return fightCell(row);
@@ -609,8 +629,9 @@
     const label = String(value || "");
     const tone = label.startsWith("WATCH") ? "warn"
       : label === "ERROR" ? "bad"
-        : label.startsWith("LEAN") ? "quiet-warn"
-          : "";
+        : label === "BIG GAP" ? "gap"
+          : label.startsWith("LEAN") ? "quiet-warn"
+            : "";
     return pill(label, tone);
   }
 
@@ -644,13 +665,17 @@
     }
 
     const settledThrough = pl.latest_settled_event_date ? formatDate(pl.latest_settled_event_date) : "";
+    const enough = pl.claim_status === "sufficient_sample";
     const plBit = pl.available
-      ? `paper P/L <span class="${toneClass(pl.official_pnl)}">${formatMoney(pl.official_pnl)}</span> on ${formatInteger(pl.official_trades)} trades from past cards${settledThrough ? ` (through ${settledThrough})` : ""} — too few to judge`
-      : "money backtest not run yet";
-    els.healthSummary.innerHTML = `${formatInteger(prediction.groups_beating_base)} of ${formatInteger(prediction.measured_groups)} phrase groups beat a simple baseline · ${plBit}`;
+      ? `Money test: <span class="${toneClass(pl.official_pnl)}">${formatMoney(pl.official_pnl)}</span> on ${formatInteger(pl.official_trades)} settled trades${settledThrough ? ` (through ${settledThrough})` : ""} — ${enough ? "enough sample to review" : "still too small to trust"}`
+      : "Money test: no settled markets yet";
+    els.healthSummary.innerHTML = `Prediction test: ${formatInteger(prediction.groups_beating_base)} of ${formatInteger(prediction.measured_groups)} phrase groups pass · ${plBit}`;
 
+    const strongBit = (prediction.strongest || []).length
+      ? `<p class="health-note">Strongest: ${escapeHtml((prediction.strongest || []).join(", "))}. Weakest: ${escapeHtml((prediction.weakest || []).join(", "))} — the weakest groups can lean but never watch.</p>`
+      : "";
     const weakest = prediction.weakest_phrase
-      ? `<p class="health-note">Weakest phrase: <strong>${escapeHtml(prediction.weakest_phrase)}</strong> (${formatSignedDecimal(prediction.weakest_improvement)} vs baseline${parseNumber(prediction.weakest_improvement) <= 0 ? " — does not beat it" : ""}).</p>`
+      ? `<p class="health-note">Bottom of the table: <strong>${escapeHtml(prediction.weakest_phrase)}</strong> (${formatSignedDecimal(prediction.weakest_improvement)} vs baseline${parseNumber(prediction.weakest_improvement) <= 0 ? " — fails it" : ""}).</p>`
       : "";
 
     const max = Math.max(...groups.map((g) => Math.abs(parseNumber(g.log_loss_improvement) || 0)), 0.0001);
@@ -667,28 +692,32 @@
 
     const officialTrades = parseNumber(pl.official_trades) || 0;
     const needed = parseNumber(pl.minimum_trades_for_claim) || 30;
+    const ruleBit = parseNumber(pl.current_rule_trades) !== null
+      ? `<p class="health-note">The entry rule was tightened after this card (edge cap + phrase trust). Replayed on the same snapshots, today's rule takes ${formatInteger(pl.current_rule_trades)} trades, ${formatInteger(pl.current_rule_wins)} wins, <span class="${toneClass(pl.current_rule_pnl)}">${formatMoney(pl.current_rule_pnl)}</span>. That number is in-sample — the next cards are the real test.</p>`
+      : "";
     const plBlock = pl.available
       ? `
         <p class="health-big ${toneClass(pl.official_pnl)}">${formatMoney(pl.official_pnl)}<span>watch-rule paper P/L: ${formatInteger(officialTrades)} trades, ${formatInteger(pl.official_wins)} wins, $${formatDecimal2(pl.official_staked)} staked</span></p>
         <p class="health-note">Looser leans (positive edge, below the bar): ${formatInteger(pl.lean_trades)} trades, ${formatInteger(pl.lean_wins)} wins, <span class="${toneClass(pl.lean_pnl)}">${formatMoney(pl.lean_pnl)}</span>.</p>
-        <p class="health-note">Everything here is from cards that already happened${settledThrough ? ` (latest: ${settledThrough})` : ""} — ${formatInteger(pl.markets_with_results)} settled markets from ${formatInteger(pl.resolved_event_count)} past fights, replayed from recorded live snapshots against final Kalshi results. Upcoming cards settle in here on their own after they finish.</p>
-        <p class="health-note">${formatInteger(officialTrades)} of the ${formatInteger(needed)} settled trades needed before this means anything. ${escapeHtml(pl.note || "")}</p>`
+        ${ruleBit}
+        <p class="health-note">Everything here is from cards that already happened${settledThrough ? ` (latest: ${settledThrough})` : ""} — ${formatInteger(pl.markets_with_results)} settled markets, replayed from recorded live snapshots against final Kalshi results. Upcoming cards settle in on their own.</p>
+        <p class="health-note">${formatInteger(officialTrades)} of the ${formatInteger(needed)} settled trades needed before this means anything.</p>`
       : '<p class="health-note">No settled markets replayed yet. This fills in by itself after a tracked card finishes.</p>';
 
     els.healthGrid.innerHTML = `
       <article class="health-block">
-        <p class="health-kicker">Prediction check (old fights)</p>
+        <p class="health-kicker">Prediction test (old fights)</p>
         <p class="health-big">${formatInteger(prediction.groups_beating_base)}<span> of ${formatInteger(prediction.measured_groups)} phrase groups beat the simple average</span></p>
         <p class="health-note">${formatInteger(prediction.prediction_rows)} old fight predictions scored across ${formatInteger(prediction.folds)} time-ordered folds. This checks guessing quality only, not profit.</p>
-        ${weakest}
+        ${strongBit}
       </article>
       <article class="health-block">
         <p class="health-kicker">By phrase group (higher is better)</p>
         <div class="bar-chart">${groupBars}</div>
       </article>
       <article class="health-block">
-        <p class="health-kicker">Money backtest</p>
-        <p class="health-warn">Sample too small to judge</p>
+        <p class="health-kicker">Money test</p>
+        <p class="health-warn">${enough ? "Enough sample to review" : "Still too small to trust"}</p>
         ${plBlock}
       </article>`;
   }

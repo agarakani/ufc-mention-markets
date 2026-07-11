@@ -276,6 +276,7 @@ class GateTests(unittest.TestCase):
             min_fighter_fights=15,
             context_model=LowFightModel(),
             require_context_model=True,
+            edge_cap=0.95,
         )
         self.assertEqual(row.side, "no")
         self.assertAlmostEqual(row.no_edge, row.edge)
@@ -315,6 +316,7 @@ class GateTests(unittest.TestCase):
             fee_buffer=0.02,
             min_fighter_fights=30,
             low_data_buffer=0.10,
+            edge_cap=0.95,
         )
         self.assertTrue(row.data_risk)
         self.assertAlmostEqual(row.data_buffer, 0.10)
@@ -386,6 +388,7 @@ class GateTests(unittest.TestCase):
             min_fighter_fights=15,
             context_model=FakeFightModel(),
             require_context_model=True,
+            edge_cap=0.95,
         )
         self.assertEqual(row.estimate.probability_source, "fight_context_model")
         self.assertAlmostEqual(row.estimate.probability, 0.9)
@@ -424,9 +427,13 @@ class DashboardFeedTests(unittest.TestCase):
             fee_buffer=0.02,
             min_fighter_fights=15,
             snapshot_timestamp="2026-06-18T12:00:00+00:00",
+            edge_cap=0.95,
         )
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["watch"], "yes")
+        self.assertEqual(rows[0]["gap_blocked"], "no")
+        self.assertEqual(rows[0]["trust_ok"], "yes")
+        self.assertIn("block_reason", rows[0])
         self.assertEqual(rows[0]["probability_source"], "simple_history")
         self.assertIn("model_probability", rows[0])
         self.assertIn("yes_edge", rows[0])
