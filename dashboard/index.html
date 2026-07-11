@@ -22,72 +22,92 @@
           </div>
         </div>
         <div class="status-wrap">
+          <button class="portfolio-chip" id="portfolioChip" type="button" hidden></button>
           <div class="status" id="dataStatus">Loading local data</div>
           <button class="refresh-button" id="refreshButton" type="button">Update now</button>
         </div>
       </header>
 
-      <div class="layout">
-        <aside class="sidebar" aria-label="Cards and fights">
-          <p class="side-title">Upcoming cards</p>
-          <nav id="cardNav"></nav>
-        </aside>
+      <nav class="tabs" id="tabBar" aria-label="Sections">
+        <button class="tab is-active" data-tab="markets" type="button">Markets</button>
+        <button class="tab" data-tab="paper" type="button">Paper trades <span class="tab-badge" id="paperBadge" hidden></span></button>
+        <button class="tab" data-tab="model" type="button">Model</button>
+      </nav>
 
-        <section class="content">
-          <div class="fight-header" id="fightHeader"></div>
+      <section class="tab-page" id="page-markets">
+        <div class="layout">
+          <aside class="sidebar" aria-label="Cards and fights">
+            <p class="side-title">Upcoming cards</p>
+            <nav id="cardNav"></nav>
+          </aside>
 
-          <div class="toolbar">
-            <select id="phraseFilter" aria-label="Filter by phrase">
-              <option value="">All phrases</option>
-            </select>
-            <input id="searchInput" type="search" placeholder="Search fighter, phrase, market" aria-label="Search">
-            <span class="toolbar-meta" id="tableMeta"></span>
-          </div>
+          <section class="content">
+            <div class="fight-header" id="fightHeader"></div>
 
-          <div class="panel">
-            <div class="table-wrap">
-              <table id="dataTable">
-                <thead id="tableHead"></thead>
-                <tbody id="tableBody"></tbody>
-              </table>
+            <div class="toolbar">
+              <div class="segments" id="signalFilter">
+                <button class="segment is-active" data-signal="watch" type="button">Watch</button>
+                <button class="segment" data-signal="active" type="button">Active</button>
+                <button class="segment" data-signal="all" type="button">All</button>
+              </div>
+              <select id="phraseFilter" aria-label="Filter by phrase">
+                <option value="">All phrases</option>
+              </select>
+              <input id="searchInput" type="search" placeholder="Search" aria-label="Search">
+              <span class="toolbar-meta" id="tableMeta"></span>
             </div>
-          </div>
 
-          <details class="fold" id="healthFold">
-            <summary>
-              <span class="fold-label">Model health</span>
-              <span class="fold-summary" id="healthSummary"></span>
-            </summary>
-            <div class="health-grid" id="healthGrid"></div>
-          </details>
-
-          <details class="fold" id="trackingFold">
-            <summary>
-              <span class="fold-label">Paper tracking</span>
-              <span class="fold-summary" id="trackingSummary"></span>
-            </summary>
-            <div class="fold-body">
-              <div class="tracking-grid" id="trackingCards"></div>
+            <div class="panel">
               <div class="table-wrap">
-                <table class="tracking-table" id="trackingTable">
-                  <thead>
-                    <tr>
-                      <th>Type</th>
-                      <th>Fight</th>
-                      <th>Phrase</th>
-                      <th>Side</th>
-                      <th class="num">Price</th>
-                      <th class="num">Edge</th>
-                      <th>Outcome</th>
-                    </tr>
-                  </thead>
-                  <tbody id="trackingBody"></tbody>
+                <table id="dataTable">
+                  <thead id="tableHead"></thead>
+                  <tbody id="tableBody"></tbody>
                 </table>
               </div>
             </div>
-          </details>
-        </section>
-      </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="tab-page" id="page-paper" hidden>
+        <div class="page-head">
+          <div>
+            <h2>Paper trades</h2>
+            <p class="page-sub" id="trackingSummary"></p>
+          </div>
+        </div>
+        <div class="tracking-grid" id="trackingCards"></div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table class="tracking-table" id="trackingTable">
+              <thead>
+                <tr>
+                  <th>Entered</th>
+                  <th>Fight</th>
+                  <th>Phrase</th>
+                  <th>Side</th>
+                  <th class="num">Entry</th>
+                  <th class="num">Now</th>
+                  <th class="num">Move</th>
+                  <th>Result</th>
+                </tr>
+              </thead>
+              <tbody id="trackingBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <p class="page-note">One pretend contract per new watch row, entered at the live buy price at that moment. Nothing here uses real money, and entries are never edited after the fact. "Now" is the current bid for the side held.</p>
+      </section>
+
+      <section class="tab-page" id="page-model" hidden>
+        <div class="page-head">
+          <div>
+            <h2>Model</h2>
+            <p class="page-sub" id="healthSummary"></p>
+          </div>
+        </div>
+        <div class="health-grid" id="healthGrid"></div>
+      </section>
     </main>
 
     <script>

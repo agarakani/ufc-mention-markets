@@ -1,6 +1,6 @@
-/* UFC mention board. One page, one job: compare live Kalshi phrase prices
-   with the fight-level model. Layout: cards/fights on the left, the selected
-   fight's markets on the right, checks tucked into folds below. */
+/* UFC mention board. Three pages: Markets (cards and fights on the left,
+   the selected fight's phrase markets on the right), Paper trades (the
+   pretend portfolio), and Model (the honesty checks). */
 
 :root {
   color-scheme: dark;
@@ -263,13 +263,115 @@ h1 {
 
 .fight-header .fight-sub .watch-note { color: var(--warn); font-weight: 650; }
 
+/* ---- tabs ---- */
+.tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 16px;
+  padding: 3px;
+  width: fit-content;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--panel);
+}
+
+.tab {
+  min-height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--r-xs);
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease;
+}
+.tab:hover { color: var(--ink); background: var(--panel-2); }
+.tab.is-active {
+  background: var(--panel-3);
+  color: var(--ink);
+  font-weight: 650;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.tab-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 650;
+}
+
+.tab-page[hidden] { display: none; }
+
+.portfolio-chip {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--panel);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color .12s ease, color .12s ease;
+}
+.portfolio-chip:hover { border-color: #354152; color: var(--ink); }
+
+.page-head { margin: 2px 2px 14px; }
+.page-head h2 { font-size: 20px; font-weight: 650; letter-spacing: -0.02em; }
+.page-sub { margin-top: 5px; color: var(--muted); font-size: 12.5px; }
+.page-note {
+  margin-top: 12px;
+  color: var(--faint);
+  font-size: 12px;
+  line-height: 1.55;
+  max-width: 720px;
+}
+
+.pos { color: var(--pos); }
+.neg { color: var(--neg); }
+
 /* ---- toolbar ---- */
 .toolbar {
   display: grid;
-  grid-template-columns: 200px minmax(160px, 320px) 1fr;
+  grid-template-columns: auto 190px minmax(140px, 260px) 1fr;
   gap: 8px;
   align-items: center;
   margin-bottom: 10px;
+}
+
+.segments {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--panel-2);
+}
+.segment {
+  min-height: 28px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--r-xs);
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 550;
+  cursor: pointer;
+}
+.segment:hover { color: var(--ink); }
+.segment.is-active {
+  background: var(--elevate, var(--panel-3));
+  color: var(--ink);
+  font-weight: 650;
+  box-shadow: inset 0 0 0 1px var(--line);
 }
 
 select, input[type="search"] {
@@ -473,57 +575,11 @@ tbody tr.detail-row > td { padding: 0 12px 12px; border-bottom: 1px solid var(--
 .audit-line > span { color: var(--faint); font-size: 11.5px; font-weight: 650; }
 .audit-line > p { color: var(--muted); font-size: 12.5px; line-height: 1.5; }
 
-/* ---- folds (model health, tracking) ---- */
-.fold {
-  margin-top: 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  background: var(--panel);
-}
-
-.fold > summary {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  padding: 12px 16px;
-  cursor: pointer;
-  list-style: none;
-  user-select: none;
-}
-.fold > summary::-webkit-details-marker { display: none; }
-.fold > summary::before {
-  content: "";
-  align-self: center;
-  flex: none;
-  width: 6px;
-  height: 6px;
-  border-right: 1.5px solid var(--faint);
-  border-bottom: 1.5px solid var(--faint);
-  transform: rotate(-45deg);
-  transition: transform .12s ease;
-}
-.fold[open] > summary::before { transform: rotate(45deg); }
-.fold > summary:hover .fold-label { color: var(--ink); }
-
-.fold-label { color: var(--muted); font-size: 13px; font-weight: 650; white-space: nowrap; }
-.fold-summary {
-  overflow: hidden;
-  color: var(--faint);
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.fold-summary .neg { color: var(--neg); }
-.fold-summary .pos { color: var(--pos); }
-
-.fold-body { padding: 4px 16px 16px; }
-
 /* model health blocks */
 .health-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
-  padding: 4px 16px 16px;
 }
 
 .health-block {
@@ -644,8 +700,11 @@ tbody tr.detail-row > td { padding: 0 12px 12px; border-bottom: 1px solid var(--
   .sidebar { position: static; max-height: none; }
   .topbar { flex-direction: column; align-items: flex-start; gap: 10px; }
   .status { text-align: left; }
+  .status-wrap { flex-wrap: wrap; }
   .toolbar { grid-template-columns: 1fr; }
   .toolbar-meta { text-align: left; }
+  .tabs { width: 100%; }
+  .tab { flex: 1; }
   .health-grid { grid-template-columns: 1fr; }
   .audit-line { grid-template-columns: 1fr; gap: 2px; }
 }

@@ -1,6 +1,9 @@
 (function () {
   let data = window.UFC_MENTION_DASHBOARD_DATA;
   const state = {
+    tab: "markets",
+    signal: "watch",
+    signalUserSet: false,
     selectedCard: "",
     selectedEvent: "",
     phrase: "",
@@ -16,6 +19,15 @@
     countsLine: document.getElementById("countsLine"),
     status: document.getElementById("dataStatus"),
     refreshButton: document.getElementById("refreshButton"),
+    tabBar: document.getElementById("tabBar"),
+    portfolioChip: document.getElementById("portfolioChip"),
+    paperBadge: document.getElementById("paperBadge"),
+    pages: {
+      markets: document.getElementById("page-markets"),
+      paper: document.getElementById("page-paper"),
+      model: document.getElementById("page-model"),
+    },
+    signalFilter: document.getElementById("signalFilter"),
     cardNav: document.getElementById("cardNav"),
     fightHeader: document.getElementById("fightHeader"),
     phraseFilter: document.getElementById("phraseFilter"),
@@ -45,12 +57,36 @@
   }
 
   function renderAll() {
+    autoPickSignal();
     renderTopline();
+    renderTabs();
     renderNav();
     renderFightHeader();
     renderTable();
     renderHealth();
     renderTracking();
+  }
+
+  function autoPickSignal() {
+    if (state.signalUserSet) return;
+    const rows = getRows();
+    if (rows.some((row) => row.watch)) state.signal = "watch";
+    else if (rows.some((row) => parseNumber(row.edge) > 0)) state.signal = "active";
+    else state.signal = "all";
+  }
+
+  function renderTabs() {
+    els.tabBar.querySelectorAll(".tab").forEach((tab) => {
+      tab.classList.toggle("is-active", tab.dataset.tab === state.tab);
+    });
+    Object.entries(els.pages).forEach(([name, page]) => {
+      page.hidden = name !== state.tab;
+    });
+    if (els.signalFilter) {
+      els.signalFilter.querySelectorAll(".segment").forEach((seg) => {
+        seg.classList.toggle("is-active", seg.dataset.signal === state.signal);
+      });
+    }
   }
 
   /* ---------- data access ---------- */
@@ -180,6 +216,28 @@
       renderTable();
     });
     if (els.refreshButton) els.refreshButton.addEventListener("click", manualRefresh);
+    els.tabBar.addEventListener("click", (event) => {
+      const tab = event.target.closest("[data-tab]");
+      if (!tab) return;
+      state.tab = tab.dataset.tab;
+      renderTabs();
+    });
+    if (els.portfolioChip) {
+      els.portfolioChip.addEventListener("click", () => {
+        state.tab = "paper";
+        renderTabs();
+      });
+    }
+    if (els.signalFilter) {
+      els.signalFilter.addEventListener("click", (event) => {
+        const seg = event.target.closest("[data-signal]");
+        if (!seg) return;
+        state.signal = seg.dataset.signal;
+        state.signalUserSet = true;
+        renderTabs();
+        renderTable();
+      });
+    }
   }
 
   function populatePhraseFilter() {
@@ -221,6 +279,36 @@
       ? ` · auto-updates every ${formatInteger(summary.kalshi_poll_seconds)}s`
       : "";
     els.status.innerHTML = `${stale ? '<span class="stale">Stale</span> · ' : ""}updated ${escapeHtml(when)} · read-only${polling}`;
+    renderPortfolioChip();
+  }
+
+  function renderPortfolioChip() {
+    if (!els.portfolioChip) return;
+    const positions = data.tracking_positions || [];
+    if (!positions.length) {
+      els.portfolioChip.hidden = true;
+      if (els.paperBadge) els.paperBadge.hidden = true;
+      return;
+    }
+    const settled = positions.filter((row) => row.outcome === "yes" || row.outcome === "no");
+    const open = positions.length - settled.length;
+    const pnl = settled.reduce((sum, row) => sum + settledPnl(row), 0);
+    const pnlBit = settled.length
+      ? ` · P/L <span class="${toneClass(pnl)}">${formatMoney(pnl)}</span>`
+      : "";
+    els.portfolioChip.hidden = false;
+    els.portfolioChip.innerHTML = `${formatInteger(positions.length)} paper position${plural(positions.length)} · ${formatInteger(open)} open${pnlBit}`;
+    if (els.paperBadge) {
+      els.paperBadge.hidden = false;
+      els.paperBadge.textContent = formatInteger(positions.length);
+    }
+  }
+
+  function settledPnl(row) {
+    const entry = parseNumber(row.paper_price);
+    const side = String(row.paper_side || row.side || "").toLowerCase();
+    if (entry === null || !side || (row.outcome !== "yes" && row.outcome !== "no")) return 0;
+    return side === row.outcome ? 1 - entry : -entry;
   }
 
   /* ---------- sidebar nav ---------- */
@@ -353,7 +441,8 @@
     let rows = getRows().map(deriveRow);
     rows = applyFilters(rows);
     rows = applySort(rows);
-    els.tableMeta.textContent = `${formatInteger(rows.length)} market${plural(rows.length)} · WATCH clears the entry bar, LEAN is positive but under it · click a row for the why`;
+    const scope = state.signal === "watch" ? "watch row" : state.signal === "active" ? "active market" : "market";
+    els.tableMeta.textContent = `${formatInteger(rows.length)} ${scope}${plural(rows.length)} · click a row for the why`;
     renderHeader(columns);
     renderBody(columns, rows);
   }
@@ -417,6 +506,13 @@
     return `Our model thinks YES is ${model}. ${side} at ${sidePrice} has ${edge} of edge — positive, but under the ${hurdle} entry bar${row.data_risk ? " (raised because fighter history is thin)" : ""}, so it is only a lean.`;
   }
 
+  function matchesSignal(row) {
+    if (state.signal === "all") return true;
+    if (state.signal === "watch") return Boolean(row.watch);
+    // "active": anything with a live positive-edge story worth a look
+    return Boolean(row.watch) || row.block_reason === "big_gap" || parseNumber(row.edge) > 0;
+  }
+
   function applyFilters(rows) {
     return rows.filter((row) => {
       if (state.selectedEvent) {
@@ -426,6 +522,7 @@
         const tickers = new Set((card ? card.fights || [] : []).map((f) => f.event_ticker));
         if (tickers.size && !tickers.has(row.event_ticker)) return false;
       }
+      if (!matchesSignal(row)) return false;
       const rowPhrase = String(row.phrase || "").toLowerCase();
       if (state.phrase && rowPhrase !== state.phrase) return false;
       if (state.search && !row.search_blob.includes(state.search)) return false;
@@ -609,7 +706,9 @@
     if (column.type === "phrase") return pill(value);
     if (column.type === "signal") {
       let chips = "";
-      if (row.status !== "error" && !missingPrices(row)) {
+      const call = String(value || "");
+      const showChips = call.startsWith("WATCH") || call.startsWith("LEAN");
+      if (showChips && row.status !== "error" && !missingPrices(row)) {
         if (row.data_risk) {
           chips += ' <span class="chip-thin" title="Fighter history is small; this row needs extra edge">thin data</span>';
         }
@@ -732,9 +831,9 @@
     const positions = data.tracking_positions || [];
 
     if (!cards.length) {
-      els.trackingSummary.textContent = "nothing tracked yet";
+      els.trackingSummary.textContent = "Nothing tracked yet. New watch rows get logged here on their own.";
       els.trackingCards.innerHTML = "";
-      els.trackingBody.innerHTML = '<tr><td class="tracking-empty" colspan="7">No paper tracking yet. Start the dashboard with PAPER_CARD="Card name" and watch rows get logged as pretend one-contract entries. No real money is ever used.</td></tr>';
+      els.trackingBody.innerHTML = '<tr><td class="tracking-empty" colspan="8">No paper entries logged yet. The tracker adds one pretend contract the first time a market becomes a watch.</td></tr>';
       return;
     }
 
@@ -762,44 +861,53 @@
       </article>`;
     }).join("");
 
-    const shown = positions.slice(0, 12);
+    const liveByTicker = new Map(getRows().map((row) => [row.ticker, row]));
+    const shown = positions
+      .slice()
+      .sort((a, b) => String(b.entered_at || b.tracked_at || "").localeCompare(String(a.entered_at || a.tracked_at || "")))
+      .slice(0, 100);
     if (!shown.length) {
-      els.trackingBody.innerHTML = '<tr><td class="tracking-empty" colspan="7">No paper entries logged yet.</td></tr>';
+      els.trackingBody.innerHTML = '<tr><td class="tracking-empty" colspan="8">No paper entries logged yet.</td></tr>';
       return;
     }
     els.trackingBody.innerHTML = shown.map((row) => {
-      const outcome = outcomeLabel(row);
+      const side = String(row.paper_side || row.side || "").toLowerCase();
+      const entry = parseNumber(row.paper_price);
+      const settled = row.outcome === "yes" || row.outcome === "no";
+      const live = liveByTicker.get(row.ticker);
+      const now = !settled && live ? parseNumber(side === "yes" ? live.yes_bid : live.no_bid) : null;
+      const move = now !== null && entry !== null ? now - entry : null;
+      let result;
+      if (settled) {
+        const pnl = settledPnl(row);
+        result = pill(`${side === row.outcome ? "WIN" : "LOSS"} ${formatMoney(pnl)}`, pnl > 0 ? "good" : "bad");
+      } else if (row.resolution_status === "pending") {
+        result = pill("PENDING", "quiet-warn");
+      } else {
+        result = pill("OPEN");
+      }
       return `<tr>
-        <td>${pill(trackingAction(row), row.paper_action === "trade" ? "warn" : "quiet-warn")}</td>
+        <td class="num muted">${escapeHtml(formatShortStamp(row.entered_at || row.tracked_at))}</td>
         <td><div class="fight-cell"><strong>${escapeHtml(row.matchup || "")}</strong><span>${escapeHtml(row.card || "")}</span></div></td>
         <td>${pill(row.phrase || "")}</td>
-        <td>${sidePill(row.paper_side || row.side)}</td>
-        <td class="num">${formatPlainPercent(row.paper_price)}</td>
-        <td class="num">${pill(formatPlainPercent(row.edge, true), parseNumber(row.edge) > 0 ? "good" : "bad")}</td>
-        <td>${pill(outcome, outcomeToneFor(row, outcome))}</td>
+        <td>${sidePill(side)}</td>
+        <td class="num">${formatPlainPercent(entry)}</td>
+        <td class="num">${now === null ? '<span class="muted">--</span>' : formatPlainPercent(now)}</td>
+        <td class="num">${move === null ? '<span class="muted">--</span>' : `<span class="${toneClass(move)}">${formatPlainPercent(move, true)}</span>`}</td>
+        <td>${result}</td>
       </tr>`;
     }).join("");
   }
 
-  function trackingAction(row) {
-    const action = String(row.paper_action || "").toUpperCase();
-    const side = String(row.paper_side || row.side || "").toUpperCase();
-    return side ? `${action} ${side}` : action;
+  function formatShortStamp(value) {
+    if (!value) return "--";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value).slice(0, 16);
+    return date.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   }
 
-  function outcomeLabel(row) {
-    if (row.outcome) return String(row.outcome).toUpperCase();
-    if (row.resolution_status === "pending") return "PENDING";
-    if (row.resolution_status === "resolved") return "RESOLVED";
-    return "OPEN";
-  }
 
-  function outcomeToneFor(row, label) {
-    if (row.outcome === "yes") return "good";
-    if (row.outcome === "no") return "bad";
-    if (label === "PENDING") return "quiet-warn";
-    return "";
-  }
+
 
   /* ---------- formatters ---------- */
 
