@@ -184,15 +184,13 @@ paper contract at the first snapshot where the live rule said WATCH, then
 settles against the final Kalshi results (fetched read-only and cached).
 No hindsight prices, no fabricated fills.
 
-Latest result: from the one resolved card so far, the old watch rule went
-2 for 22 and lost $2.25 of paper money, while the small-edge leans went 27 for
-51 and made $2.89. That pattern — big claimed edges losing, small ones
-holding up — is why the entry rule now has an edge cap and phrase-trust tiers.
-Replayed on the same snapshots, today's rule takes 3 trades, 2 wins, +$0.79.
-The cap was chosen after seeing that card, so treat that as in-sample; the
-next cards are the real test. Everything is far below the 30 settled trades
-needed before any claim, and none of this is evidence of profitability yet.
-Both results show up in the dashboard's Model health section.
+Latest result, two settled cards in: 97 recorded trades, 60 wins, +$10.99 on
+$49.01 staked. Today's tightened rule (edge cap + phrase trust) replayed on
+the same snapshots takes 54 trades, 39 wins, +$7.15. The 30-trade minimum is
+met, so the dashboard now says "enough sample to review" — but two cards is
+still a small number of independent events, and the first card lost money
+before the second one won more back. Judge it card by card as the sample
+grows. Both results show up in the dashboard's Model health section.
 
 ## Learning From Settled Cards
 
