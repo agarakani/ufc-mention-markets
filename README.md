@@ -102,6 +102,30 @@ python3 scripts/live/price_fight.py \
   --show-all
 ```
 
+## Sharing The Site
+
+The dashboard also publishes as a public website:
+
+  https://agarakani.github.io/ufc-mention-markets/
+
+That page is a read-only mirror anyone can open — no setup, no Mac required
+on their end. This machine's background service pushes a fresh snapshot every
+few minutes while it runs, and the page re-reads the data by itself. The
+public copy has no refresh button and, like everything else here, cannot
+place trades.
+
+Sharing is on by default. Turn it off (or back on) by reinstalling the
+service:
+
+```bash
+UFC_PUBLISH=0 ./install_autostart.command   # stop publishing
+UFC_PUBLISH=1 ./install_autostart.command   # start again
+```
+
+One honest limit: the public page is only as fresh as this Mac. If the Mac
+is asleep or offline, the site stays up but shows the last published
+snapshot, with its timestamp in the corner.
+
 ## Testing The Model On A Fight Card
 
 The point of a live card is to find out whether the model's numbers hold up.

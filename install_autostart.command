@@ -13,6 +13,9 @@ if [[ ! -x "$PYTHON_BIN" ]]; then
   PYTHON_BIN="$(command -v python3)"
 fi
 
+# UFC_PUBLISH=1 keeps the public GitHub Pages copy fresh; 0 turns sharing off.
+PUBLISH_FLAG="${UFC_PUBLISH:-1}"
+
 LABEL="com.ufc-mention-markets.dashboard"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 LOG="$HOME/Library/Logs/ufc-mention-dashboard.log"
@@ -33,6 +36,10 @@ cat > "$PLIST" <<PLIST_EOF
     <string>--poll-seconds</string><string>30</string>
     <string>--paper-card</string><string>auto</string>
   </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>UFC_PUBLISH</key><string>$PUBLISH_FLAG</string>
+  </dict>
   <key>WorkingDirectory</key><string>$REPO_DIR</string>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
@@ -65,4 +72,8 @@ echo "Open it any time: double-click 'UFC Dashboard' on your Desktop,"
 echo "or go to http://127.0.0.1:8765 in your browser."
 echo
 echo "Paper tracking is on automatically for every card (read-only, no real money)."
+if [[ "$PUBLISH_FLAG" == "1" ]]; then
+  echo "Public sharing: on — https://agarakani.github.io/ufc-mention-markets/ stays current."
+  echo "Turn it off with: UFC_PUBLISH=0 ./install_autostart.command"
+fi
 echo "Logs: $LOG"

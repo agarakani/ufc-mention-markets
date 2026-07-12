@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import os
 import json
 import re
 import sys
@@ -590,6 +591,18 @@ def refresh_once(
 
     payload = build_payload()
     write_data(DASHBOARD_DATA, payload)
+
+    # Push the public snapshot when sharing is turned on (UFC_PUBLISH=1).
+    if os.environ.get("UFC_PUBLISH") == "1":
+        try:
+            from scripts.live.publish_site import publish, publish_due
+            if publish_due():
+                note = publish(quiet=True)
+                if verbose:
+                    print(f"  site: {note}", flush=True)
+        except Exception as exc:
+            if verbose:
+                print(f"  site publish skipped: {exc}", flush=True)
     return rows
 
 

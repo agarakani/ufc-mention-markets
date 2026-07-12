@@ -40,6 +40,8 @@
     trackingSummary: document.getElementById("trackingSummary"),
     trackingCards: document.getElementById("trackingCards"),
     trackingBody: document.getElementById("trackingBody"),
+    paperStats: document.getElementById("paperStats"),
+    footerStamp: document.getElementById("footerStamp"),
   };
 
   function init() {
@@ -124,6 +126,7 @@
   /* ---------- server plumbing ---------- */
 
   function isServerMode() {
+    if (window.STATIC_SITE) return false;
     return window.location.protocol === "http:" || window.location.protocol === "https:";
   }
 
@@ -189,8 +192,10 @@
   }
 
   function scheduleAutoUpdate() {
-    const seconds = Number((data.summary || {}).kalshi_poll_seconds || 0);
-    if (!isServerMode() || seconds <= 0) return;
+    let seconds = Number((data.summary || {}).kalshi_poll_seconds || 0);
+    if (window.STATIC_SITE) seconds = Math.max(seconds, 60);
+    if (seconds <= 0) return;
+    if (!isServerMode() && !window.STATIC_SITE) return;
     window.setInterval(async () => {
       if (state.refreshing || state.loadingData) return;
       try {
@@ -279,6 +284,9 @@
       ? ` · auto-updates every ${formatInteger(summary.kalshi_poll_seconds)}s`
       : "";
     els.status.innerHTML = `${stale ? '<span class="stale">Stale</span> · ' : ""}updated ${escapeHtml(when)} · read-only${polling}`;
+    if (els.footerStamp) {
+      els.footerStamp.textContent = ts ? `Data updated ${formatTimestamp(ts)}` : "";
+    }
     renderPortfolioChip();
   }
 
@@ -896,6 +904,7 @@
     if (!cards.length) {
       els.trackingSummary.textContent = "Nothing tracked yet. New watch rows get logged here on their own.";
       els.trackingCards.innerHTML = "";
+      if (els.paperStats) els.paperStats.innerHTML = "";
       els.trackingBody.innerHTML = '<tr><td class="tracking-empty" colspan="8">No paper entries logged yet. The tracker adds one pretend contract the first time a market becomes a watch.</td></tr>';
       return;
     }
@@ -907,6 +916,19 @@
       `${formatInteger(summary.tracking_pending_count)} pending`,
       `P/L <span class="${toneClass(summary.tracking_official_pnl)}">${formatMoney(summary.tracking_official_pnl)}</span>`,
     ].join(" · ");
+
+    if (els.paperStats) {
+      const settled = positions.filter((row) => row.outcome === "yes" || row.outcome === "no");
+      const wins = settled.filter((row) => String(row.paper_side || row.side || "").toLowerCase() === row.outcome).length;
+      const realized = settled.reduce((sum, row) => sum + settledPnl(row), 0);
+      const open = positions.length - settled.length;
+      const winRate = settled.length ? `${Math.round(wins / settled.length * 100)}%` : "--";
+      els.paperStats.innerHTML = `
+        <div class="stat-tile"><strong class="${toneClass(realized)}">${formatMoney(realized)}</strong><span>realized P/L</span></div>
+        <div class="stat-tile"><strong>${winRate}</strong><span>win rate</span></div>
+        <div class="stat-tile"><strong>${formatInteger(settled.length)}</strong><span>settled</span></div>
+        <div class="stat-tile"><strong>${formatInteger(open)}</strong><span>open</span></div>`;
+    }
 
     els.trackingCards.innerHTML = cards.map((card) => {
       const officialPnl = parseNumber(card.official_pnl);
