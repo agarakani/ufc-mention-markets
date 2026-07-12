@@ -194,6 +194,21 @@ next cards are the real test. Everything is far below the 30 settled trades
 needed before any claim, and none of this is evidence of profitability yet.
 Both results show up in the dashboard's Model health section.
 
+## Learning From Settled Cards
+
+Every settled Kalshi mention market is a ground-truth answer to exactly what
+the model predicts: was this phrase group said during this fight. The
+refresher collects those answers automatically after each card and writes
+them to `data/processed/kalshi_results_labels.csv` (one row per settled
+market: date, fighters, phrase group, yes/no).
+
+This matters because the transcript corpus stops in the past, while these
+labels cover live cards and current broadcast teams. Retraining the model on
+them is the planned next step; today they are collected and reported but do
+not change live predictions yet. Broadcast transcripts themselves cannot be
+downloaded automatically (they are licensed recordings), so this is the
+honest automated path.
+
 ## Project Layout
 
 ```text

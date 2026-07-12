@@ -170,6 +170,11 @@ def maybe_settle_money_backtest(*, now: float | None = None) -> str:
     SETTLE_ATTEMPT_MARKER.parent.mkdir(parents=True, exist_ok=True)
     SETTLE_ATTEMPT_MARKER.touch()
     summary = run_backtest(offline=False, quiet=True)
+    try:
+        from scripts.model.build_results_labels import build as build_labels
+        build_labels(offline=False, quiet=True)
+    except Exception:
+        pass  # labels are a byproduct; never let them break the refresh
     official = summary.get("official") or {}
     return (
         f"settled {summary.get('markets_with_results', 0)} markets "
