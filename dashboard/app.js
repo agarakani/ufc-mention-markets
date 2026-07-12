@@ -376,6 +376,7 @@
       const watch = Number(fight.watch_count || 0);
       const tag = tbd ? "TBD" : watch ? `${formatInteger(watch)} watch` : formatInteger(fight.priced_count);
       items.push(`<button class="nav-fight ${selected ? "is-selected" : ""} ${tbd ? "is-tbd" : ""}" type="button" data-nav-fight="${escapeHtml(fight.event_ticker)}">
+        ${avatarPair(fight.fighter_1, fight.fighter_2, 20)}
         <strong>${escapeHtml(fight.matchup || "TBD fight")}</strong>
         <span class="nav-tag ${watch ? "watch" : ""}">${escapeHtml(tag)}</span>
       </button>`);
@@ -404,9 +405,12 @@
           `${formatInteger(fight.model_ready_count)} with a fight-level model number`,
           watch ? `<span class="watch-note">${formatInteger(watch)} watch row${plural(watch)}</span>` : "no watch rows right now",
         ];
+      const hero = fight.fighter_1 && fight.fighter_2
+        ? tapeHtml(fight.fighter_1, fight.fighter_2)
+        : `<h2 class="matchup-hero solo">${escapeHtml(fight.matchup || "TBD fight")}</h2>`;
       els.fightHeader.innerHTML = `
         <p class="crumb">${escapeHtml(card.card_title || "UFC card")} · ${escapeHtml(formatDate(fight.event_date) || "date TBD")}${tonightBadge(fight.event_date)}</p>
-        <h2 class="matchup-hero">${matchupHtml(fight.fighter_1, fight.fighter_2, fight.matchup)}</h2>
+        ${hero}
         <p class="fight-sub">${bits.join(" · ")}</p>`;
       return;
     }
@@ -427,11 +431,54 @@
     return dateStr && dateStr === todayLocal() ? ' <span class="tonight">Tonight</span>' : "";
   }
 
-  function matchupHtml(f1, f2, fallback) {
-    if (f1 && f2) {
-      return `<span class="f-red">${escapeHtml(f1)}</span><span class="vs">vs</span><span class="f-blue">${escapeHtml(f2)}</span>`;
+  /* Deterministic fighter identity art: every fighter gets a stable gradient
+     medallion with their initials, tinted to their side of the matchup.
+     Derived purely from the real name — nothing is a photo, nothing is fake. */
+
+  function nameHash(name) {
+    let hash = 0;
+    const text = String(name || "");
+    for (let i = 0; i < text.length; i += 1) {
+      hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
     }
-    return escapeHtml(fallback || "TBD fight");
+    return hash;
+  }
+
+  function initials(name) {
+    const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return "?";
+    const first = parts[0][0] || "";
+    const last = parts.length > 1 ? parts[parts.length - 1][0] || "" : "";
+    return (first + last).toUpperCase();
+  }
+
+  function avatarHtml(name, corner, size) {
+    const hash = nameHash(name);
+    const base = corner === "red" ? 352 : 210;      // corner hue family
+    const hue = (base + (hash % 26) - 13 + 360) % 360;
+    const angle = 100 + (hash % 140);
+    const style = `width:${size}px;height:${size}px;font-size:${Math.round(size * 0.36)}px;` +
+      `background:linear-gradient(${angle}deg, hsl(${hue} 68% 48%), hsl(${(hue + 24) % 360} 74% 30%))`;
+    return `<span class="avatar" style="${style}" aria-hidden="true">${escapeHtml(initials(name))}</span>`;
+  }
+
+  function avatarPair(f1, f2, size) {
+    if (!f1 || !f2) return "";
+    return `<span class="mini-avatars">${avatarHtml(f1, "red", size)}${avatarHtml(f2, "blue", size)}</span>`;
+  }
+
+  function tapeHtml(f1, f2) {
+    return `<div class="tape">
+      <div class="tape-side">
+        ${avatarHtml(f1, "red", 58)}
+        <span class="tape-name f-red">${escapeHtml(f1)}</span>
+      </div>
+      <span class="tape-vs">VS</span>
+      <div class="tape-side is-right">
+        ${avatarHtml(f2, "blue", 58)}
+        <span class="tape-name f-blue">${escapeHtml(f2)}</span>
+      </div>
+    </div>`;
   }
 
   /* ---------- market table ---------- */
@@ -756,7 +803,7 @@
   }
 
   function fightCell(row) {
-    return `<div class="fight-cell"><strong>${escapeHtml(row.matchup || "--")}</strong><span>${escapeHtml(formatDate(row.event_date) || "")}</span></div>`;
+    return `<div class="fight-cell with-avatars">${avatarPair(row.fighter_1, row.fighter_2, 22)}<div><strong>${escapeHtml(row.matchup || "--")}</strong><span>${escapeHtml(formatDate(row.event_date) || "")}</span></div></div>`;
   }
 
   function pill(value, tone) {

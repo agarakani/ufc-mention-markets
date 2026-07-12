@@ -45,6 +45,77 @@ SETTLE_ATTEMPT_MARKER = ROOT / "model_outputs" / ".pl_settle_attempt"
 SETTLE_MIN_INTERVAL_SECONDS = 30 * 60
 
 
+def cards_needing_settle(
+    out_root: Path,
+    active_cards: set[str],
+    *,
+    now: datetime | None = None,
+    min_recheck_minutes: float = 15.0,
+) -> list[str]:
+    """Tracking cards whose outcomes still need a result check.
+
+    A finished card drops out of the live Kalshi feed, so the normal entry
+    path never touches it again. This finds cards with unresolved outcomes
+    that have not been rechecked recently, so the refresher can keep asking
+    Kalshi for results until every entry is settled.
+    """
+    now = now or datetime.now(timezone.utc)
+    due: list[str] = []
+    root = Path(out_root)
+    if not root.exists():
+        return due
+    for card_dir in sorted(path for path in root.iterdir() if path.is_dir()):
+        card = card_dir.name
+        if card in active_cards:
+            continue
+        outcomes = read_csv(card_dir / "outcomes.csv")
+        if not outcomes:
+            continue
+        unresolved = [
+            row for row in outcomes
+            if str(row.get("outcome", "")).strip().lower() not in ("yes", "no")
+        ]
+        if not unresolved:
+            continue
+        last_checked = max((str(row.get("checked_at", "")) for row in outcomes), default="")
+        if last_checked:
+            try:
+                checked_at = datetime.fromisoformat(last_checked)
+                if (now - checked_at).total_seconds() < min_recheck_minutes * 60:
+                    continue
+            except ValueError:
+                pass
+        due.append(card)
+    return due
+
+
+def settle_finished_paper_cards(
+    client,
+    *,
+    out_root: Path = PAPER_ROOT_DEFAULT,
+    active_cards: set[str],
+    verbose: bool = False,
+) -> None:
+    for card in cards_needing_settle(Path(out_root), active_cards):
+        try:
+            result = record_live_entries(
+                [],
+                card=card,
+                out_root=Path(out_root),
+                client=client,
+                allow_entries=False,
+            )
+            if verbose:
+                print(
+                    f"  settled outcomes for {card}: "
+                    f"{result.get('resolved', 0)} resolved, {result.get('pending', 0)} pending",
+                    flush=True,
+                )
+        except Exception as exc:
+            if verbose:
+                print(f"  outcome check failed for {card}: {exc}", flush=True)
+
+
 def paper_card_groups(paper_card: str, rows: list[dict]) -> list[tuple[str, list[dict]]]:
     """Split rows into (card name, rows) groups for the paper tracker.
 
@@ -467,6 +538,14 @@ def refresh_once(
                 allow_entries=not paper_settle_only,
             ))
         paper_tracking = combine_paper_results(paper_card, results)
+        # Finished cards leave the live feed; keep checking their results
+        # until every entry has settled.
+        settle_finished_paper_cards(
+            client,
+            out_root=paper_out_root,
+            active_cards={name for name, _rows in card_groups},
+            verbose=verbose,
+        )
         if verbose and paper_tracking:
             print(
                 "  paper tracker: "
@@ -493,6 +572,16 @@ def refresh_once(
     }
     meta_path.parent.mkdir(parents=True, exist_ok=True)
     meta_path.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+
+    # Fold any newly finished cards into the money backtest. Throttled and
+    # read-only; runs here so the always-on server settles by itself too.
+    try:
+        settle_note = maybe_settle_money_backtest()
+        if verbose and settle_note != "nothing new to settle":
+            print(f"  money backtest: {settle_note}", flush=True)
+    except Exception as exc:
+        if verbose:
+            print(f"  money backtest settle skipped: {exc}", flush=True)
 
     payload = build_payload()
     write_data(DASHBOARD_DATA, payload)
@@ -536,12 +625,6 @@ def main() -> None:
     iteration = 0
     while True:
         iteration += 1
-        try:
-            settle_note = maybe_settle_money_backtest()
-            if settle_note not in ("nothing new to settle",):
-                print(f"Money backtest: {settle_note}")
-        except Exception as exc:
-            print(f"Money backtest settle skipped: {exc}")
         try:
             rows = refresh_once(
                 client,
