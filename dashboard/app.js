@@ -481,7 +481,7 @@
         ${avatarHtml(f1, "red", 76)}
         <span class="tape-name f-red">${escapeHtml(f1)}</span>
       </div>
-      <span class="tape-vs">VS</span>
+      <span class="tape-vs"><span>VS</span></span>
       <div class="tape-side is-right">
         ${avatarHtml(f2, "blue", 76)}
         <span class="tape-name f-blue">${escapeHtml(f2)}</span>
@@ -495,7 +495,7 @@
     const cols = [
       { key: "call", label: "Call", type: "signal" },
       { key: "phrase", label: "Phrase", type: "phrase" },
-      { key: "model_probability", label: "Our %", type: "pct", className: "num" },
+      { key: "model_probability", label: "Our %", type: "prob", className: "num prob-col" },
       { key: "yes_ask", label: "YES price", type: "pct", className: "num" },
       { key: "no_ask", label: "NO price", type: "pct", className: "num" },
       { key: "side", label: "Side", type: "side" },
@@ -774,6 +774,7 @@
       return pill(formatPercent(value, column), tone);
     }
     if (column.type === "pct") return formatPercent(value, column);
+    if (column.type === "prob") return probCell(row);
     if (column.type === "phrase") return pill(value);
     if (column.type === "signal") {
       let chips = "";
@@ -812,6 +813,21 @@
 
   function fightCell(row) {
     return `<div class="fight-cell with-avatars">${avatarPair(row.fighter_1, row.fighter_2, 22)}<div><strong>${escapeHtml(row.matchup || "--")}</strong><span>${escapeHtml(formatDate(row.event_date) || "")}</span></div></div>`;
+  }
+
+  function probCell(row) {
+    const p = parseNumber(row.model_probability);
+    if (p === null) return '<span class="muted">--</span>';
+    const yes = parseNumber(row.yes_ask);
+    const marker = yes !== null
+      ? `<span class="prob-marker" style="left:${Math.max(0, Math.min(100, yes * 100))}%" title="YES price ${formatPlainPercent(yes)}"></span>`
+      : "";
+    return `<div class="prob-cell">
+      <span class="prob-value">${formatPlainPercent(p)}</span>
+      <span class="prob-track" title="Model ${formatPlainPercent(p)}${yes !== null ? ` vs YES price ${formatPlainPercent(yes)}` : ""}">
+        <span class="prob-fill" style="width:${Math.max(0, Math.min(100, p * 100))}%"></span>${marker}
+      </span>
+    </div>`;
   }
 
   function pill(value, tone) {
