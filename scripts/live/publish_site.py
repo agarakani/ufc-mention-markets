@@ -76,8 +76,8 @@ def publish(quiet: bool = False) -> str:
         (site / ".nojekyll").write_text("", encoding="utf-8")
 
         run(["git", "init", "-q", "-b", "gh-pages"], site)
-        run(["git", "config", "user.name", "dashboard-publisher"], site)
-        run(["git", "config", "user.email", "publisher@localhost"], site)
+        run(["git", "config", "user.name", "agarakani"], site)
+        run(["git", "config", "user.email", "236674347+agarakani@users.noreply.github.com"], site)
         run(["git", "add", "-A"], site)
         run(["git", "commit", "-q", "-m", "Publish dashboard snapshot"], site)
         run(["git", "push", "--force", "-q", remote, "gh-pages"], site)
