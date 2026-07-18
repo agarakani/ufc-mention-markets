@@ -441,7 +441,7 @@
 
   /* Deterministic fighter identity art: every fighter gets a stable gradient
      medallion with their initials, tinted to their side of the matchup.
-     Derived purely from the real name — nothing is a photo, nothing is fake. */
+     Derived purely from the real name. Nothing is a photo, nothing is fake. */
 
   function nameHash(name) {
     let hash = 0;
@@ -478,12 +478,12 @@
   function tapeHtml(f1, f2) {
     return `<div class="tape">
       <div class="tape-side">
-        ${avatarHtml(f1, "red", 58)}
+        ${avatarHtml(f1, "red", 76)}
         <span class="tape-name f-red">${escapeHtml(f1)}</span>
       </div>
       <span class="tape-vs">VS</span>
       <div class="tape-side is-right">
-        ${avatarHtml(f2, "blue", 58)}
+        ${avatarHtml(f2, "blue", 76)}
         <span class="tape-name f-blue">${escapeHtml(f2)}</span>
       </div>
     </div>`;
@@ -560,13 +560,13 @@
     const edge = formatPlainPercent(row.edge, true);
     const hurdle = formatPlainPercent(row.hurdle);
     const cap = formatPlainPercent(row.edge_cap);
-    const thin = row.data_risk ? " Fighter history is thin here, so the bar was raised — it cleared anyway, but trust it less." : "";
+    const thin = row.data_risk ? " Fighter history is thin here, so the bar was raised. It cleared anyway, but trust it less." : "";
 
     if (row.watch) {
       return `Our model thinks YES is ${model}. Buying ${side} costs ${sidePrice}, so ${side} has ${edge} of edge. The entry bar is ${hurdle} and the cap is ${cap}, so this clears and becomes WATCH ${side}.${thin}`;
     }
     if (row.block_reason === "big_gap") {
-      return `Our model thinks YES is ${model} — a ${edge} disagreement with the market. On settled cards, gaps over ${cap} were almost always the model's mistake, not the market's, so this is flagged instead of traded.`;
+      return `Our model thinks YES is ${model}, a ${edge} disagreement with the market. On settled cards, gaps over ${cap} were almost always the model's mistake, not the market's, so this is flagged instead of traded.`;
     }
     if (row.block_reason === "low_trust") {
       return `Our model thinks YES is ${model} and ${side} has ${edge} of edge, but ${row.trust_note || "this phrase group has not shown real skill on old fights"}.`;
@@ -574,7 +574,7 @@
     if (parseNumber(row.edge) <= 0) {
       return `Our model thinks YES is ${model}. Neither side is cheap compared to that, so there is nothing to do here.`;
     }
-    return `Our model thinks YES is ${model}. ${side} at ${sidePrice} has ${edge} of edge — positive, but under the ${hurdle} entry bar${row.data_risk ? " (raised because fighter history is thin)" : ""}, so it is only a lean.`;
+    return `Our model thinks YES is ${model}. ${side} at ${sidePrice} has ${edge} of edge. That is positive but under the ${hurdle} entry bar${row.data_risk ? " (raised because fighter history is thin)" : ""}, so it is only a lean.`;
   }
 
   function matchesSignal(row) {
@@ -702,7 +702,7 @@
     }
     if (row.context_note) lines.push(["Model note", String(row.context_note)]);
 
-    const what = [row.phrase, row.forms && row.forms !== row.phrase ? `counts any of: ${row.forms}` : ""].filter(Boolean).join(" — ");
+    const what = [row.phrase, row.forms && row.forms !== row.phrase ? `counts any of: ${row.forms}` : ""].filter(Boolean).join(" · ");
     lines.push(["What it prices", `"${what}" said during ${row.matchup || "this fight"}${row.event_date ? ` on ${formatDate(row.event_date)}` : ""}.`]);
 
     if (fightModel && parseNumber(row.context_training_rows) !== null) {
@@ -744,7 +744,7 @@
           parseNumber(row.data_buffer) ? `thin-data buffer ${formatPlainPercent(row.data_buffer)}` : "",
         ].filter(Boolean).join(" + ");
         const cap = parseNumber(row.edge_cap) !== null
-          ? ` Edge must also stay at or under the ${formatPlainPercent(row.edge_cap)} cap — bigger gaps were usually model mistakes on settled cards.`
+          ? ` Edge must also stay at or under the ${formatPlainPercent(row.edge_cap)} cap. Bigger gaps were usually model mistakes on settled cards.`
           : "";
         const verdict = row.watch
           ? "This one clears, so it is a watch row."
@@ -840,15 +840,15 @@
       ? ` · today's rule on the same data: <span class="${toneClass(pl.current_rule_pnl)}">${formatMoney(pl.current_rule_pnl)}</span> on ${formatInteger(pl.current_rule_trades)}`
       : "";
     const plBit = pl.available
-      ? `Money test: <span class="${toneClass(pl.official_pnl)}">${formatMoney(pl.official_pnl)}</span> on ${formatInteger(pl.official_trades)} old-rule trades${settledThrough ? ` (through ${settledThrough})` : ""}${ruleReplay} — ${enough ? "enough sample to review" : "still too small to trust"}`
+      ? `Money test: <span class="${toneClass(pl.official_pnl)}">${formatMoney(pl.official_pnl)}</span> on ${formatInteger(pl.official_trades)} old-rule trades${settledThrough ? ` (through ${settledThrough})` : ""}${ruleReplay}. ${enough ? "enough sample to review" : "still too small to trust"}`
       : "Money test: no settled markets yet";
     els.healthSummary.innerHTML = `Prediction test: ${formatInteger(prediction.groups_beating_base)} of ${formatInteger(prediction.measured_groups)} phrase groups pass · ${plBit}`;
 
     const strongBit = (prediction.strongest || []).length
-      ? `<p class="health-note">Strongest: ${escapeHtml((prediction.strongest || []).join(", "))}. Weakest: ${escapeHtml((prediction.weakest || []).join(", "))} — the weakest groups can lean but never watch.</p>`
+      ? `<p class="health-note">Strongest: ${escapeHtml((prediction.strongest || []).join(", "))}. Weakest: ${escapeHtml((prediction.weakest || []).join(", "))}. The weakest groups can lean but never watch.</p>`
       : "";
     const weakest = prediction.weakest_phrase
-      ? `<p class="health-note">Bottom of the table: <strong>${escapeHtml(prediction.weakest_phrase)}</strong> (${formatSignedDecimal(prediction.weakest_improvement)} vs baseline${parseNumber(prediction.weakest_improvement) <= 0 ? " — fails it" : ""}).</p>`
+      ? `<p class="health-note">Bottom of the table: <strong>${escapeHtml(prediction.weakest_phrase)}</strong> (${formatSignedDecimal(prediction.weakest_improvement)} vs baseline${parseNumber(prediction.weakest_improvement) <= 0 ? ", fails it" : ""}).</p>`
       : "";
 
     const max = Math.max(...groups.map((g) => Math.abs(parseNumber(g.log_loss_improvement) || 0)), 0.0001);
@@ -866,14 +866,14 @@
     const officialTrades = parseNumber(pl.official_trades) || 0;
     const needed = parseNumber(pl.minimum_trades_for_claim) || 30;
     const ruleBit = parseNumber(pl.current_rule_trades) !== null
-      ? `<p class="health-note">The entry rule was tightened after this card (edge cap + phrase trust). Replayed on the same snapshots, today's rule takes ${formatInteger(pl.current_rule_trades)} trades, ${formatInteger(pl.current_rule_wins)} wins, <span class="${toneClass(pl.current_rule_pnl)}">${formatMoney(pl.current_rule_pnl)}</span>. That number is in-sample — the next cards are the real test.</p>`
+      ? `<p class="health-note">The entry rule was tightened after this card (edge cap + phrase trust). Replayed on the same snapshots, today's rule takes ${formatInteger(pl.current_rule_trades)} trades, ${formatInteger(pl.current_rule_wins)} wins, <span class="${toneClass(pl.current_rule_pnl)}">${formatMoney(pl.current_rule_pnl)}</span>. That number is in-sample. The next cards are the real test.</p>`
       : "";
     const plBlock = pl.available
       ? `
         <p class="health-big ${toneClass(pl.official_pnl)}">${formatMoney(pl.official_pnl)}<span>watch-rule paper P/L: ${formatInteger(officialTrades)} trades, ${formatInteger(pl.official_wins)} wins, $${formatDecimal2(pl.official_staked)} staked</span></p>
         <p class="health-note">Looser leans (positive edge, below the bar): ${formatInteger(pl.lean_trades)} trades, ${formatInteger(pl.lean_wins)} wins, <span class="${toneClass(pl.lean_pnl)}">${formatMoney(pl.lean_pnl)}</span>.</p>
         ${ruleBit}
-        <p class="health-note">Everything here is from cards that already happened${settledThrough ? ` (latest: ${settledThrough})` : ""} — ${formatInteger(pl.markets_with_results)} settled markets, replayed from recorded live snapshots against final Kalshi results. Upcoming cards settle in on their own.</p>
+        <p class="health-note">Everything here is from cards that already happened${settledThrough ? ` (latest: ${settledThrough})` : ""}: ${formatInteger(pl.markets_with_results)} settled markets, replayed from recorded live snapshots against final Kalshi results. Upcoming cards settle in on their own.</p>
         <p class="health-note">${formatInteger(officialTrades)} of the ${formatInteger(needed)} settled trades needed before this means anything.</p>`
       : '<p class="health-note">No settled markets replayed yet. This fills in by itself after a tracked card finishes.</p>';
 

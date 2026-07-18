@@ -31,9 +31,13 @@
   --sans: -apple-system, "SF Pro Text", system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
 
-  --r: 9px;
-  --r-sm: 6px;
-  --r-xs: 4px;
+  --r: 16px;
+  --r-sm: 10px;
+  --r-xs: 7px;
+  --hairline: rgba(255, 255, 255, 0.07);
+  --hairline-soft: rgba(255, 255, 255, 0.045);
+  --lift: 0 12px 34px rgba(0, 0, 0, 0.38);
+  --inner-glow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
   font-family: var(--sans);
   font-feature-settings: "tnum" 1;
@@ -71,13 +75,19 @@ h1, h2, h3, p { margin: 0; }
 
 /* ---- top bar ---- */
 .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 20px;
-  padding-bottom: 16px;
-  margin-bottom: 16px;
-  border-bottom: 1px solid var(--line-soft);
+  margin: 0 -12px 18px;
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--hairline-soft);
+  background: rgba(9, 12, 16, 0.72);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
 }
 
 .brand { display: flex; gap: 12px; align-items: center; }
@@ -267,12 +277,13 @@ h1 {
 .tabs {
   display: flex;
   gap: 2px;
-  margin-bottom: 16px;
-  padding: 3px;
+  margin-bottom: 20px;
+  padding: 4px;
   width: fit-content;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: var(--inner-glow);
 }
 
 .tab {
@@ -292,7 +303,7 @@ h1 {
   background: var(--panel-3);
   color: var(--ink);
   font-weight: 650;
-  box-shadow: inset 0 0 0 1px var(--line);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
 
 .tab-badge {
@@ -401,9 +412,10 @@ select:focus, input[type="search"]:focus {
 
 /* ---- market table ---- */
 .panel {
-  border: 1px solid var(--line);
+  border: 1px solid var(--hairline);
   border-radius: var(--r);
   background: var(--panel);
+  box-shadow: var(--lift), var(--inner-glow);
   overflow: hidden;
 }
 
@@ -415,7 +427,7 @@ table {
 }
 
 th, td {
-  padding: 9px 12px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--line-soft);
   text-align: left;
   vertical-align: middle;
@@ -821,17 +833,25 @@ tbody tr.is-watch {
 .mini-avatars .avatar + .avatar { margin-left: -7px; }
 
 .tape {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 20px;
-  margin-top: 8px;
-  padding: 16px 20px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
+  gap: 24px;
+  margin-top: 10px;
+  padding: 24px 28px;
+  border: 1px solid var(--hairline);
+  border-radius: 20px;
   background:
-    linear-gradient(105deg, rgba(255, 77, 77, 0.10), transparent 42%),
-    linear-gradient(255deg, rgba(93, 164, 255, 0.10), transparent 42%),
+    radial-gradient(420px 200px at 12% 50%, rgba(255, 77, 77, 0.14), transparent 70%),
+    radial-gradient(420px 200px at 88% 50%, rgba(93, 164, 255, 0.14), transparent 70%),
     var(--panel);
+  box-shadow: var(--lift), var(--inner-glow);
+  overflow: hidden;
+  animation: tape-in .5s cubic-bezier(.2, .7, .2, 1) both;
+}
+@keyframes tape-in {
+  from { opacity: 0; transform: translateY(10px) scale(.985); }
+  to { opacity: 1; transform: none; }
 }
 
 .tape-side {
@@ -846,7 +866,7 @@ tbody tr.is-watch {
 .tape-name {
   overflow: hidden;
   font-family: var(--display);
-  font-size: 30px;
+  font-size: 38px;
   font-weight: 400;
   letter-spacing: 0.025em;
   line-height: 1.02;
@@ -854,20 +874,33 @@ tbody tr.is-watch {
 }
 
 .tape-vs {
+  position: relative;
   flex: none;
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--warn-line);
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   background: var(--warn-bg);
   color: var(--warn);
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
   letter-spacing: 0.1em;
 }
+.tape-vs::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  padding: 1.5px;
+  background: conic-gradient(from 0deg, var(--red-corner), var(--warn), var(--blue-corner), var(--warn), var(--red-corner));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: vs-spin 9s linear infinite;
+}
+@keyframes vs-spin { to { transform: rotate(360deg); } }
 
 .fight-cell.with-avatars {
   display: flex;
@@ -894,11 +927,14 @@ tbody tr.is-watch {
   margin-bottom: 12px;
 }
 .stat-tile {
-  padding: 14px 16px;
-  border: 1px solid var(--line);
+  padding: 18px 20px;
+  border: 1px solid var(--hairline);
   border-radius: var(--r);
   background: var(--panel);
+  box-shadow: var(--lift), var(--inner-glow);
+  transition: transform .18s ease, border-color .18s ease;
 }
+.stat-tile:hover { transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.12); }
 .stat-tile strong {
   display: block;
   margin-bottom: 4px;
@@ -925,4 +961,55 @@ tbody tr.is-watch {
   border-top: 1px solid var(--line-soft);
   color: var(--faint);
   font-size: 11.5px;
+}
+
+
+/* ---- fighter aura + motion polish ---- */
+.tape .avatar {
+  position: relative;
+  z-index: 1;
+  box-shadow: inset 0 -10px 20px rgba(0, 0, 0, 0.35), 0 0 0 2px rgba(255, 255, 255, 0.14), 0 10px 30px rgba(0, 0, 0, 0.45);
+  transition: transform .25s cubic-bezier(.2, .7, .2, 1);
+}
+.tape-side:hover .avatar { transform: scale(1.06) rotate(-2deg); }
+.tape-side.is-right:hover .avatar { transform: scale(1.06) rotate(2deg); }
+
+.tape-side { position: relative; }
+.tape-side::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background: radial-gradient(circle, rgba(255, 93, 93, 0.22), transparent 68%);
+  filter: blur(6px);
+  pointer-events: none;
+}
+.tape-side.is-right::before {
+  left: auto;
+  right: -6px;
+  background: radial-gradient(circle, rgba(93, 164, 255, 0.22), transparent 68%);
+}
+
+.nav-card-head,
+.tracking-card,
+.health-block {
+  transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+.nav-card-head:hover,
+.tracking-card:hover { transform: translateY(-2px); }
+
+.tab-page { animation: page-in .35s ease both; }
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+select, input[type="search"], .refresh-button, .portfolio-chip { border-radius: 10px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }
