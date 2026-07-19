@@ -893,12 +893,23 @@
         <p class="health-note">${formatInteger(officialTrades)} of the ${formatInteger(needed)} settled trades needed before this means anything.</p>`
       : '<p class="health-note">No settled markets replayed yet. This fills in by itself after a tracked card finishes.</p>';
 
+    const wf = health.walkforward || {};
+    let wfBit = "";
+    if (wf.available) {
+      const chosen = parseNumber(wf.chosen_weight);
+      const better = parseNumber(wf.chosen_log_loss) !== null && parseNumber(wf.baseline_log_loss) !== null
+        && wf.chosen_log_loss < wf.baseline_log_loss;
+      wfBit = chosen > 0
+        ? `<p class="health-note">Weekly retrain: the model now trains on ${formatInteger(wf.labels_count)} settled-card results (weight ${chosen}). On held-out cards this scored ${formatDecimal3(wf.chosen_log_loss)} log loss vs ${formatDecimal3(wf.baseline_log_loss)} without them${better ? ", an improvement" : ""}.</p>`
+        : `<p class="health-note">Weekly retrain: ${formatInteger(wf.labels_count)} settled-card results were front-tested, but plain transcripts still scored better on held-out cards, so they are not used yet. This recheck runs after every card.</p>`;
+    }
     els.healthGrid.innerHTML = `
       <article class="health-block">
         <p class="health-kicker">Prediction test (old fights)</p>
         <p class="health-big">${formatInteger(prediction.groups_beating_base)}<span> of ${formatInteger(prediction.measured_groups)} phrase groups beat the simple average</span></p>
         <p class="health-note">${formatInteger(prediction.prediction_rows)} old fight predictions scored across ${formatInteger(prediction.folds)} time-ordered folds. This checks guessing quality only, not profit.</p>
         ${strongBit}
+        ${wfBit}
       </article>
       <article class="health-block">
         <p class="health-kicker">By phrase group (higher is better)</p>
@@ -1067,6 +1078,11 @@
     const number = parseNumber(value);
     if (number === null) return "0.00";
     return number.toFixed(2);
+  }
+
+  function formatDecimal3(value) {
+    const number = parseNumber(value);
+    return number === null ? "--" : number.toFixed(3);
   }
 
   function formatSignedDecimal(value) {

@@ -22,7 +22,7 @@ from scripts.live.refresh_dashboard import DATA_DEFAULT, refresh_once
 from scripts.tracking.live_paper import OUT_ROOT_DEFAULT as PAPER_ROOT_DEFAULT
 from ufc_mentions.build_dashboard_data import build_payload
 from ufc_mentions.kalshi_client import KalshiClient
-from ufc_mentions.kalshi_context_model import KalshiFightContextModel
+from ufc_mentions.kalshi_context_model import UPDATE_CONFIG_DEFAULT, KalshiFightContextModel
 from ufc_mentions.kalshi_mentions import TranscriptCorpus
 
 
@@ -46,9 +46,34 @@ class DashboardRuntime:
             print("Loading fight-level phrase model ...", flush=True)
             self.context_model = KalshiFightContextModel.load(self.corpus)
             print("Live rows will use fight-specific model probabilities when available.", flush=True)
+        self._model_config_mtime = self._config_mtime()
         print("READ-ONLY: this server cannot place trades.\n", flush=True)
 
+    @staticmethod
+    def _config_mtime() -> float:
+        try:
+            return UPDATE_CONFIG_DEFAULT.stat().st_mtime
+        except OSError:
+            return 0.0
+
+    def maybe_reload_model(self) -> None:
+        """Pick up a new walk-forward config by retraining the live model."""
+        if self.args.no_fight_model:
+            return
+        current = self._config_mtime()
+        if current <= self._model_config_mtime:
+            return
+        print("Walk-forward config changed; retraining the live model ...", flush=True)
+        try:
+            with self.lock:
+                self.context_model = KalshiFightContextModel.load(self.corpus)
+                self._model_config_mtime = current
+            print("Live model retrained with the latest settled-card labels.", flush=True)
+        except Exception as exc:
+            print(f"Model reload failed; keeping the previous model: {exc}", flush=True)
+
     def refresh(self) -> dict:
+        self.maybe_reload_model()
         with self.lock:
             rows = refresh_once(
                 self.client,

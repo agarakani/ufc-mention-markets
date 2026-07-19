@@ -27,6 +27,7 @@ KALSHI_AUDIT_SUMMARY = ROOT / "model_outputs" / "kalshi_grouped_rule_audit_summa
 KALSHI_CONTEXT_BACKTEST_SUMMARY = ROOT / "model_outputs" / "kalshi_context_model_backtest_summary.json"
 KALSHI_CONTEXT_BACKTEST_GROUPS = ROOT / "model_outputs" / "kalshi_context_model_backtest.csv"
 PL_BACKTEST_SUMMARY = ROOT / "model_outputs" / "pl_backtest_summary.json"
+WALKFORWARD_REPORT = ROOT / "model_outputs" / "walkforward_report.json"
 TRACKING_ROOT = ROOT / "data" / "tracking"
 TRACKING_WEEKLY_SUMMARY = TRACKING_ROOT / "weekly_summary.csv"
 TRACKING_HIDDEN_MARKERS = {".dashboard_hidden", ".practice_card"}
@@ -368,10 +369,25 @@ def build_backtest_groups(rows: list[dict]) -> list[dict]:
     return groups
 
 
+def build_walkforward(report: dict) -> dict:
+    if not report:
+        return {"available": False}
+    return {
+        "available": True,
+        "labels_count": as_int(report.get("labels_count")),
+        "cards": report.get("cards") or [],
+        "chosen_weight": number(report.get("chosen_weight")),
+        "baseline_log_loss": number(report.get("baseline_log_loss")),
+        "chosen_log_loss": number(report.get("chosen_log_loss")),
+        "generated_at": report.get("generated_at", ""),
+    }
+
+
 def build_model_health(
     context_summary: dict,
     groups: list[dict],
     pl_summary: dict,
+    walkforward: dict | None = None,
 ) -> dict:
     weakest = None
     measured = [g for g in groups if g.get("log_loss_improvement") is not None]
@@ -430,6 +446,7 @@ def build_model_health(
             "rule_note": rule_comparison.get("note", ""),
             "generated_at": pl_summary.get("generated_at", ""),
         },
+        "walkforward": walkforward or {"available": False},
     }
 
 
@@ -691,6 +708,7 @@ def build_payload() -> dict:
         kalshi_context_backtest_summary,
         backtest_groups,
         read_json(PL_BACKTEST_SUMMARY),
+        build_walkforward(read_json(WALKFORWARD_REPORT)),
     )
     hidden_events = hidden_event_tickers()
     kalshi_source_rows = [

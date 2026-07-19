@@ -174,8 +174,15 @@ def maybe_settle_money_backtest(*, now: float | None = None) -> str:
     try:
         from scripts.model.build_results_labels import build as build_labels
         build_labels(offline=False, quiet=True)
+        import subprocess
+        subprocess.Popen(
+            [sys.executable, str(ROOT / "scripts" / "model" / "walkforward_update.py")],
+            stdout=open(ROOT / "model_outputs" / "walkforward.log", "a"),
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
     except Exception:
-        pass  # labels are a byproduct; never let them break the refresh
+        pass  # labels and retraining are byproducts; never break the refresh
     official = summary.get("official") or {}
     return (
         f"settled {summary.get('markets_with_results', 0)} markets "

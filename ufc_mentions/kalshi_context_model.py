@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import math
 import re
 from dataclasses import dataclass
@@ -12,6 +13,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import log_loss
 
+from .entry_rules import normalize_forms
 from .fighter_history_features import add_prior_fighter_features
 from .kalshi_mentions import TranscriptCorpus, grouped_matcher, name_tokens, normalized_name
 from .mention_counts import last_name
@@ -33,6 +35,8 @@ ROOT = Path(__file__).resolve().parents[1]
 HISTORY_DEFAULT = ROOT / "data" / "processed" / "joined_fights.csv"
 UPCOMING_DEFAULT = ROOT / "kaggle_data" / "ultimate_ufc_dataset" / "upcoming.csv"
 MASTER_DEFAULT = ROOT / "kaggle_data" / "ultimate_ufc_dataset" / "ufc-master.csv"
+LABELS_DEFAULT = ROOT / "data" / "processed" / "kalshi_results_labels.csv"
+UPDATE_CONFIG_DEFAULT = ROOT / "data" / "processed" / "model_update_config.json"
 TARGET = "mention_kalshi_dynamic"
 
 ODDS_FIELDS = {
@@ -154,6 +158,19 @@ def _prepare_with_types(
     return out
 
 
+def load_label_weight(config_path: str | Path = UPDATE_CONFIG_DEFAULT) -> float:
+    """Weight for settled-result labels in training, chosen by the weekly
+    walk-forward check. 0 means labels are not used in training."""
+    path = Path(config_path)
+    if not path.exists():
+        return 0.0
+    try:
+        value = float(json.loads(path.read_text()).get("label_weight", 0.0))
+        return value if math.isfinite(value) and value >= 0 else 0.0
+    except (ValueError, TypeError, json.JSONDecodeError):
+        return 0.0
+
+
 class KalshiFightContextModel:
     """Train exact phrase models and predict one listed fight at a time."""
 
@@ -164,6 +181,8 @@ class KalshiFightContextModel:
         *,
         upcoming: pd.DataFrame | None = None,
         master: pd.DataFrame | None = None,
+        labels: pd.DataFrame | None = None,
+        label_weight: float = 0.0,
         profile: str = "stats_only_history",
         min_training_rows: int = 500,
     ):
@@ -173,10 +192,16 @@ class KalshiFightContextModel:
         self.text_by_id = {fight.transcript_id: fight.text for fight in corpus.fights}
         self.upcoming = upcoming.copy() if upcoming is not None else pd.DataFrame()
         self.master = master.copy() if master is not None else pd.DataFrame()
+        self.labels = labels.copy() if labels is not None else pd.DataFrame()
+        self.label_weight = float(label_weight)
         self.profile = profile
         self.min_training_rows = min_training_rows
         self._target_cache: dict[tuple[str, ...], _TargetModel] = {}
         self._prediction_cache: dict[tuple[tuple[str, ...], str, str, str], ContextPrediction] = {}
+        self._label_frame_cache: dict[tuple[str, str, str], pd.DataFrame | None] = {}
+        # Walk-forward evaluation sets this to hold out a card; labels dated
+        # on or after the cutoff are excluded from training and validation.
+        self.label_cutoff_date: str | None = None
 
     @classmethod
     def load(
@@ -186,6 +211,8 @@ class KalshiFightContextModel:
         history_path: str | Path = HISTORY_DEFAULT,
         upcoming_path: str | Path = UPCOMING_DEFAULT,
         master_path: str | Path = MASTER_DEFAULT,
+        labels_path: str | Path = LABELS_DEFAULT,
+        config_path: str | Path = UPDATE_CONFIG_DEFAULT,
         profile: str = "stats_only_history",
         min_training_rows: int = 500,
     ) -> "KalshiFightContextModel":
@@ -194,11 +221,16 @@ class KalshiFightContextModel:
         master_path = Path(master_path)
         upcoming = pd.read_csv(upcoming_path) if upcoming_path.exists() else pd.DataFrame()
         master = pd.read_csv(master_path) if master_path.exists() else pd.DataFrame()
+        labels_path = Path(labels_path)
+        labels = pd.read_csv(labels_path) if labels_path.exists() else pd.DataFrame()
+        label_weight = load_label_weight(config_path)
         return cls(
             history,
             corpus,
             upcoming=upcoming,
             master=master,
+            labels=labels,
+            label_weight=label_weight,
             profile=profile,
             min_training_rows=min_training_rows,
         )
@@ -268,6 +300,51 @@ class KalshiFightContextModel:
         self._prediction_cache[key] = prediction
         return prediction
 
+    def _label_feature_frame(self, fighter_1: str, fighter_2: str, event_date: str) -> pd.DataFrame | None:
+        cache_key = (normalized_name(fighter_1), normalized_name(fighter_2), event_date)
+        if cache_key in self._label_frame_cache:
+            return self._label_frame_cache[cache_key]
+        try:
+            frame, _source, _note = self._future_frame(fighter_1, fighter_2, event_date)
+        except Exception:
+            frame = None
+        self._label_frame_cache[cache_key] = frame
+        return frame
+
+    def _label_rows_for(self, forms: tuple[str, ...]) -> pd.DataFrame:
+        """Settled Kalshi results for this phrase group as training rows.
+
+        Each label fight gets the same feature row the live pricer would have
+        built for it, using only fighter data from before that fight, and the
+        settled yes/no as the target."""
+        if self.labels.empty or self.label_weight <= 0:
+            return pd.DataFrame()
+        key = normalize_forms(list(forms))
+        rows = []
+        for _, label in self.labels.iterrows():
+            if normalize_forms(str(label.get("phrase", ""))) != key:
+                continue
+            outcome = str(label.get("outcome", "")).strip().lower()
+            fighter_1 = str(label.get("fighter_1", "")).strip()
+            fighter_2 = str(label.get("fighter_2", "")).strip()
+            event_date = str(label.get("event_date", "")).strip()
+            if outcome not in ("yes", "no") or not fighter_1 or not fighter_2 or not event_date:
+                continue
+            if self.label_cutoff_date and event_date >= self.label_cutoff_date:
+                continue
+            frame = self._label_feature_frame(fighter_1, fighter_2, event_date)
+            if frame is None or frame.empty:
+                continue
+            row = frame.iloc[0].to_dict()
+            row[TARGET] = outcome == "yes"
+            row["transcript_id"] = f"label_{label.get('ticker', '')}"
+            rows.append(row)
+        if not rows:
+            return pd.DataFrame()
+        out = pd.DataFrame(rows)
+        out.index = [f"lab_{index}" for index in range(len(out))]
+        return out
+
     def _fit_target(self, forms: tuple[str, ...]) -> _TargetModel:
         key = _forms_key(forms)
         if key in self._target_cache:
@@ -301,8 +378,34 @@ class KalshiFightContextModel:
             return empty
 
         try:
-            history_featured, _ = add_prior_fighter_features(history, [TARGET])
-            fit, validation, _first_validation_date = chronological_split(history_featured, test_frac=0.20)
+            label_rows = self._label_rows_for(forms)
+            combined = pd.concat([history, label_rows], sort=False) if len(label_rows) else history
+            combined_featured, _ = add_prior_fighter_features(combined, [TARGET])
+            transcript_featured = combined_featured.loc[history.index]
+            fit_transcripts, validation_transcripts, _first_validation_date = chronological_split(
+                transcript_featured, test_frac=0.20,
+            )
+            label_fit_count = 0
+            if len(label_rows):
+                # Older settled cards join training; the newest settled card
+                # joins validation, so tuning and calibration are checked
+                # against the most recent live reality.
+                label_featured = combined_featured.loc[label_rows.index]
+                label_dates = label_featured["event_date"].astype(str)
+                newest_card = label_dates.max()
+                label_fit = label_featured.loc[label_dates < newest_card]
+                label_validation = label_featured.loc[label_dates == newest_card]
+                label_fit_count = len(label_fit)
+                fit = pd.concat([fit_transcripts, label_fit])
+                validation = pd.concat([validation_transcripts, label_validation])
+                sample_weights = np.concatenate([
+                    np.ones(len(fit_transcripts)),
+                    np.full(len(label_fit), self.label_weight),
+                ])
+            else:
+                fit, validation = fit_transcripts, validation_transcripts
+                sample_weights = None
+            history_featured = combined_featured
             y_fit = bool_series(fit[TARGET]).astype(int)
             y_validation = bool_series(validation[TARGET]).astype(int)
             if len(set(y_fit)) < 2:
@@ -336,15 +439,22 @@ class KalshiFightContextModel:
                 categorical_columns,
             )
             pipeline = make_pipeline(numeric_columns, categorical_columns, best_c)
-            pipeline.fit(prepared.loc[fit.index], y_fit)
+            if sample_weights is not None:
+                pipeline.fit(prepared.loc[fit.index], y_fit, model__sample_weight=sample_weights)
+            else:
+                pipeline.fit(prepared.loc[fit.index], y_fit)
             validation_probability = pipeline.predict_proba(prepared.loc[validation.index])[:, 1]
             model_loss = log_loss(y_validation, validation_probability, labels=[0, 1])
             base_probability = np.repeat(float(y_fit.mean()), len(y_validation))
             base_loss = log_loss(y_validation, base_probability, labels=[0, 1])
+            trained_note = (
+                f"fight model trained with {label_fit_count} settled live labels"
+                if label_fit_count else "fight model trained"
+            )
             prediction = ContextPrediction(
                 probability=None,
                 status="ok",
-                note="fight model trained",
+                note=trained_note,
                 profile=self.profile,
                 training_rows=len(fit),
                 validation_rows=len(validation),
