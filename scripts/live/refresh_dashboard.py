@@ -46,6 +46,8 @@ SETTLE_ATTEMPT_MARKER = ROOT / "model_outputs" / ".pl_settle_attempt"
 SETTLE_MIN_INTERVAL_SECONDS = 30 * 60
 PHOTO_FETCH_MARKER = ROOT / "model_outputs" / ".photo_fetch_stamp"
 PHOTO_FETCH_INTERVAL_SECONDS = 6 * 60 * 60
+UPCOMING_FETCH_MARKER = ROOT / "model_outputs" / ".upcoming_fetch_stamp"
+UPCOMING_FETCH_INTERVAL_SECONDS = 24 * 60 * 60
 
 
 def cards_needing_settle(
@@ -216,6 +218,21 @@ def maybe_fetch_photos(*, now: float | None = None) -> str:
     except Exception:
         return "photo fetch skipped"
     return "photo fetch started"
+
+
+def maybe_fetch_upcoming(*, now: float | None = None) -> str:
+    now = time.time() if now is None else now
+    if UPCOMING_FETCH_MARKER.exists():
+        age = now - UPCOMING_FETCH_MARKER.stat().st_mtime
+        if age < UPCOMING_FETCH_INTERVAL_SECONDS:
+            return "waiting"
+    try:
+        UPCOMING_FETCH_MARKER.parent.mkdir(parents=True, exist_ok=True)
+        UPCOMING_FETCH_MARKER.touch()
+        from scripts.data.fetch_upcoming_events import OUT_DEFAULT as UPCOMING_OUT, refresh as refresh_upcoming
+        return refresh_upcoming(UPCOMING_OUT)
+    except Exception as exc:
+        return f"upcoming fetch skipped ({exc})"
 
 
 FIELDS = [
@@ -627,6 +644,10 @@ def refresh_once(
     photo_note = maybe_fetch_photos()
     if verbose and photo_note == "photo fetch started":
         print("  fighter photos: refresh started", flush=True)
+
+    upcoming_note = maybe_fetch_upcoming()
+    if verbose and "saved" in upcoming_note:
+        print(f"  upcoming events: {upcoming_note}", flush=True)
 
     payload = build_payload()
     write_data(DASHBOARD_DATA, payload)

@@ -324,7 +324,17 @@
   function renderNav() {
     const cards = getCards();
     if (!cards.length) {
-      els.cardNav.innerHTML = '<div class="nav-empty">No Kalshi UFC mention markets are open right now. This page checks again automatically.</div>';
+      const upcoming = data.upcoming_events || [];
+      if (!upcoming.length) {
+        els.cardNav.innerHTML = '<div class="nav-empty">No Kalshi UFC mention markets are open right now. This page checks again automatically.</div>';
+        return;
+      }
+      els.cardNav.innerHTML = upcoming.slice(0, 8).map((event, index) => `
+        <div class="nav-card schedule ${index === 0 ? "is-next" : ""}">
+          <span class="nav-date">${escapeHtml(formatDate(event.date))}${tonightBadge(event.date)}${index === 0 ? ' <span class="next-chip">Next</span>' : ""}</span>
+          <h2>${escapeHtml(event.name)}</h2>
+          <span class="nav-sub">${escapeHtml([event.venue, event.location].filter(Boolean).join(" · "))}</span>
+        </div>`).join("");
       return;
     }
 
@@ -399,6 +409,17 @@
     const fight = getSelectedFight();
 
     if (!card) {
+      const next = (data.upcoming_events || [])[0];
+      if (next) {
+        const hero = next.fighter_1 && next.fighter_2
+          ? tapeHtml(next.fighter_1, next.fighter_2, { large: isMarquee(next.fighter_1, next.fighter_2) })
+          : `<h2 class="matchup-hero solo">${escapeHtml(next.name)}</h2>`;
+        els.fightHeader.innerHTML = `
+          <p class="crumb">Next event · ${escapeHtml(formatDate(next.date))}${tonightBadge(next.date)} · ${escapeHtml(countdownText(next.date))}</p>
+          ${hero}
+          <p class="fight-sub">${escapeHtml([next.name, next.venue, next.location].filter(Boolean).join(" · "))} · Mention markets usually open closer to fight night. This page checks on its own.</p>`;
+        return;
+      }
       els.fightHeader.innerHTML = "<h2>No cards yet</h2><p class=\"fight-sub\">When Kalshi lists UFC mention markets, they show up here on their own.</p>";
       return;
     }
@@ -430,6 +451,24 @@
       <p class="fight-sub">${formatInteger(card.fight_count)} fight${plural(card.fight_count)} listed · ${formatInteger(card.phrase_count)} phrase markets · ${watch ? `<span class="watch-note">${formatInteger(watch)} watch row${plural(watch)}</span>` : "no watch rows right now"}</p>`;
   }
 
+  function isMarquee(f1, f2) {
+    const a = identityFor(f1);
+    const b = identityFor(f2);
+    return ((a && a.marquee_score) || 0) + ((b && b.marquee_score) || 0) >= 40;
+  }
+
+  function countdownText(dateStr) {
+    if (!dateStr) return "";
+    const target = new Date(`${dateStr}T22:00:00`);
+    const ms = target.getTime() - Date.now();
+    if (Number.isNaN(ms)) return "";
+    if (ms <= 0) return "today";
+    const days = Math.floor(ms / 86400000);
+    const hours = Math.floor((ms % 86400000) / 3600000);
+    if (days > 0) return `in ${days}d ${hours}h`;
+    return `in ${hours}h`;
+  }
+
   function todayLocal() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -439,9 +478,21 @@
     return dateStr && dateStr === todayLocal() ? ' <span class="tonight">Tonight</span>' : "";
   }
 
-  /* Deterministic fighter identity art: every fighter gets a stable gradient
-     medallion with their initials, tinted to their side of the matchup.
-     Derived purely from the real name. Nothing is a photo, nothing is fake. */
+  /* Fighter identity: real photo when the local cache has one, otherwise a
+     deterministic gradient medallion with initials tinted to the corner. */
+
+  function identityFor(name) {
+    const fighters = data.fighters || {};
+    const key = String(name || "").trim().toLowerCase();
+    if (!key) return null;
+    if (fighters[key]) return fighters[key];
+    // last-name fallback (upcoming events only list surnames); must be unique
+    const matches = Object.values(fighters).filter((f) => {
+      const parts = String(f.name || "").toLowerCase().split(/\s+/);
+      return parts.length > 1 && parts.slice(1).join(" ").endsWith(key);
+    });
+    return matches.length === 1 ? matches[0] : null;
+  }
 
   function nameHash(name) {
     let hash = 0;
@@ -461,6 +512,11 @@
   }
 
   function avatarHtml(name, corner, size) {
+    const identity = identityFor(name);
+    if (identity && identity.photo) {
+      return `<span class="avatar photo" style="width:${size}px;height:${size}px" aria-hidden="true">` +
+        `<img src="${escapeHtml(identity.photo)}" alt="" loading="lazy"></span>`;
+    }
     const hash = nameHash(name);
     const base = corner === "red" ? 352 : 210;      // corner hue family
     const hue = (base + (hash % 26) - 13 + 360) % 360;
@@ -475,16 +531,36 @@
     return `<span class="mini-avatars">${avatarHtml(f1, "red", size)}${avatarHtml(f2, "blue", size)}</span>`;
   }
 
-  function tapeHtml(f1, f2) {
-    return `<div class="tape">
+  function tapeDetails(identity) {
+    if (!identity) return "";
+    const bits = [];
+    if (identity.record) bits.push(identity.record);
+    if (identity.stance) bits.push(identity.stance);
+    const tags = (identity.style_tags || [])
+      .map((tag) => `<span class="style-tag">${escapeHtml(tag)}</span>`)
+      .join("");
+    return `
+      ${identity.nickname ? `<span class="tape-nick">“${escapeHtml(identity.nickname)}”</span>` : ""}
+      ${bits.length ? `<span class="tape-stats">${escapeHtml(bits.join(" · "))}</span>` : ""}
+      ${tags ? `<span class="tape-tags">${tags}</span>` : ""}`;
+  }
+
+  function tapeHtml(f1, f2, options = {}) {
+    const id1 = identityFor(f1);
+    const id2 = identityFor(f2);
+    const size = options.large ? 116 : 76;
+    const marquee = options.large ? " is-marquee" : "";
+    return `<div class="tape${marquee}">
       <div class="tape-side">
-        ${avatarHtml(f1, "red", 76)}
+        ${avatarHtml(f1, "red", size)}
         <span class="tape-name f-red">${escapeHtml(f1)}</span>
+        ${tapeDetails(id1)}
       </div>
       <span class="tape-vs"><span>VS</span></span>
       <div class="tape-side is-right">
-        ${avatarHtml(f2, "blue", 76)}
+        ${avatarHtml(f2, "blue", size)}
         <span class="tape-name f-blue">${escapeHtml(f2)}</span>
+        ${tapeDetails(id2)}
       </div>
     </div>`;
   }
@@ -508,6 +584,12 @@
   }
 
   function renderTable() {
+    const marketSection = document.querySelector("#page-markets .content .toolbar");
+    const tableWrap = document.querySelector("#page-markets .content .table-wrap");
+    const noLiveMarkets = !getRows().length && !getCards().length;
+    if (marketSection) marketSection.hidden = noLiveMarkets;
+    if (tableWrap) tableWrap.hidden = noLiveMarkets;
+    if (noLiveMarkets) { els.tableMeta.textContent = ""; return; }
     const columns = activeColumns();
     let rows = getRows().map(deriveRow);
     rows = applyFilters(rows);
@@ -1000,7 +1082,7 @@
       }
       return `<tr>
         <td class="num muted">${escapeHtml(formatShortStamp(row.entered_at || row.tracked_at))}</td>
-        <td><div class="fight-cell"><strong>${escapeHtml(row.matchup || "")}</strong><span>${escapeHtml(row.card || "")}</span></div></td>
+        <td><div class="fight-cell with-avatars">${avatarPair(row.fighter_1, row.fighter_2, 22)}<div><strong>${escapeHtml(row.matchup || "")}</strong><span>${escapeHtml(row.card || "")}</span></div></div></td>
         <td>${pill(row.phrase || "")}</td>
         <td>${sidePill(side)}</td>
         <td class="num">${formatPlainPercent(entry)}</td>

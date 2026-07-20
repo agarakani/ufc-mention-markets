@@ -22,6 +22,7 @@ ASSETS_DEFAULT = ROOT / "dashboard" / "assets" / "fighters"
 LIVE_EDGES = ROOT / "market_data" / "kalshi_live_edges.csv"
 TRACKING_ROOT = ROOT / "data" / "tracking"
 DIRECTORY = ROOT / "data" / "processed" / "fighter_directory.csv"
+UPCOMING = ROOT / "data" / "processed" / "upcoming_events.json"
 
 NOT_FOUND_RETRY_DAYS = 30
 EVIDENCE = re.compile(r"martial|fighter|ufc", re.IGNORECASE)
@@ -147,11 +148,16 @@ def fetch_missing(names, assets_root: Path, http_get, now: datetime, pause_s: fl
 def default_http_get(url, params=None):
     import requests
 
-    response = requests.get(url, params=params, timeout=10, headers={"User-Agent": USER_AGENT})
+    for attempt in range(3):
+        response = requests.get(url, params=params, timeout=10, headers={"User-Agent": USER_AGENT})
+        if response.status_code == 429:
+            time.sleep(20 * (attempt + 1))
+            continue
+        response.raise_for_status()
+        if url == API:
+            return response.json()
+        return response.content
     response.raise_for_status()
-    if url == API:
-        return response.json()
-    return response.content
 
 
 def read_csv(path: Path) -> list[dict]:
@@ -175,14 +181,29 @@ def names_from_live(marquee_top: int = 100) -> list[str]:
     for row in read_csv(LIVE_EDGES):
         add(row.get("fighter_1"))
         add(row.get("fighter_2"))
+    directory_rows = read_csv(DIRECTORY)
+    if UPCOMING.exists():
+        try:
+            upcoming = json.loads(UPCOMING.read_text(encoding="utf-8")).get("events") or []
+        except (OSError, json.JSONDecodeError):
+            upcoming = []
+        for event in upcoming:
+            match = re.search(r":\s*(.+?)\s+vs\.?\s+(.+)$", str(event.get("name", "")))
+            if not match:
+                continue
+            for surname in (match.group(1), match.group(2)):
+                surname_l = surname.strip().lower()
+                hits = [row["name"] for row in directory_rows
+                        if str(row.get("name", "")).lower().split()[-1:] == [surname_l.split()[-1]]]
+                if len(hits) == 1:
+                    add(hits[0])
     if TRACKING_ROOT.exists():
         for card_dir in sorted(p for p in TRACKING_ROOT.iterdir() if p.is_dir()):
             for row in read_csv(card_dir / "paper_positions.csv"):
                 add(row.get("fighter_1"))
                 add(row.get("fighter_2"))
-    directory = read_csv(DIRECTORY)
-    directory.sort(key=lambda row: -float(row.get("marquee_score") or 0))
-    for row in directory[:marquee_top]:
+    directory_rows.sort(key=lambda row: -float(row.get("marquee_score") or 0))
+    for row in directory_rows[:marquee_top]:
         add(row.get("name"))
     return names
 
@@ -201,7 +222,7 @@ def main():
     names = names[: args.limit]
 
     now = datetime.now(timezone.utc)
-    manifest = fetch_missing(names, Path(args.assets), default_http_get, now, pause_s=0.4)
+    manifest = fetch_missing(names, Path(args.assets), default_http_get, now, pause_s=1.0)
     ok = sum(1 for entry in manifest.values() if entry.get("status") == "ok")
     print(f"Photo manifest: {ok}/{len(manifest)} fighters with photos")
 

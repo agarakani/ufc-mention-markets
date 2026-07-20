@@ -30,6 +30,7 @@ PL_BACKTEST_SUMMARY = ROOT / "model_outputs" / "pl_backtest_summary.json"
 WALKFORWARD_REPORT = ROOT / "model_outputs" / "walkforward_report.json"
 FIGHTER_DIRECTORY = ROOT / "data" / "processed" / "fighter_directory.csv"
 FIGHTER_ASSETS = ROOT / "dashboard" / "assets" / "fighters"
+UPCOMING_EVENTS = ROOT / "data" / "processed" / "upcoming_events.json"
 TRACKING_ROOT = ROOT / "data" / "tracking"
 TRACKING_WEEKLY_SUMMARY = TRACKING_ROOT / "weekly_summary.csv"
 TRACKING_HIDDEN_MARKERS = {".dashboard_hidden", ".practice_card"}
@@ -132,6 +133,29 @@ def build_fighter_identities() -> dict[str, dict]:
             },
         }
     return fighters
+
+
+def build_upcoming_events(today: str | None = None) -> list[dict]:
+    payload = read_json(UPCOMING_EVENTS)
+    events = payload.get("events") or []
+    if today is None:
+        today = datetime.now(timezone.utc).date().isoformat()
+    out = []
+    for event in events:
+        event_date = str(event.get("date", ""))
+        if not event_date or event_date < today:
+            continue
+        name = str(event.get("name", ""))
+        matchup = re.search(r":\s*(.+?)\s+vs\.?\s+(.+)$", name)
+        out.append({
+            "name": name,
+            "date": event_date,
+            "venue": str(event.get("venue", "")),
+            "location": str(event.get("location", "")),
+            "fighter_1": matchup.group(1).strip() if matchup else "",
+            "fighter_2": matchup.group(2).strip() if matchup else "",
+        })
+    return sorted(out, key=lambda e: e["date"])
 
 
 def fight_marquee_score(fighter_1: str, fighter_2: str, fighters: dict[str, dict]) -> int:
@@ -800,6 +824,7 @@ def build_payload() -> dict:
         ),
         "kalshi": kalshi_rows,
         "fighters": fighters,
+        "upcoming_events": build_upcoming_events(),
         "kalshi_cards": kalshi_cards,
         "kalshi_events": kalshi_events,
         "kalshi_meta": kalshi_meta,
