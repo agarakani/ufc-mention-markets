@@ -1,13 +1,26 @@
+import tempfile
 import time
 import unittest
+from pathlib import Path
 
 from scripts.live.publish_site import (
     LOADER_LINE,
     PUBLISH_MARKER,
     PUBLISH_MIN_INTERVAL_SECONDS,
     publish_due,
+    stage_site,
     static_index,
 )
+
+
+class StageSiteTests(unittest.TestCase):
+    def test_fighter_assets_are_published(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            site = Path(tmp) / "site"
+            site.mkdir()
+            stage_site(site)
+            self.assertTrue((site / "app.js").exists())
+            self.assertTrue((site / "assets" / "fighters" / "manifest.json").exists())
 
 
 class StaticIndexTests(unittest.TestCase):

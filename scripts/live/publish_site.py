@@ -56,6 +56,19 @@ def run(cmd: list[str], cwd: Path) -> None:
     subprocess.run(cmd, cwd=cwd, check=True, capture_output=True, text=True)
 
 
+def stage_site(site: Path) -> None:
+    (site / "index.html").write_text(
+        static_index((DASHBOARD / "index.html").read_text(encoding="utf-8")),
+        encoding="utf-8",
+    )
+    for name in SITE_FILES:
+        shutil.copyfile(DASHBOARD / name, site / name)
+    assets = DASHBOARD / "assets"
+    if assets.exists():
+        shutil.copytree(assets, site / "assets")
+    (site / ".nojekyll").write_text("", encoding="utf-8")
+
+
 def publish(quiet: bool = False) -> str:
     data_file = DASHBOARD / "data.js"
     if not data_file.exists():
@@ -67,13 +80,7 @@ def publish(quiet: bool = False) -> str:
 
     with tempfile.TemporaryDirectory() as tmp:
         site = Path(tmp)
-        (site / "index.html").write_text(
-            static_index((DASHBOARD / "index.html").read_text(encoding="utf-8")),
-            encoding="utf-8",
-        )
-        for name in SITE_FILES:
-            shutil.copyfile(DASHBOARD / name, site / name)
-        (site / ".nojekyll").write_text("", encoding="utf-8")
+        stage_site(site)
 
         run(["git", "init", "-q", "-b", "gh-pages"], site)
         run(["git", "config", "user.name", "agarakani"], site)
