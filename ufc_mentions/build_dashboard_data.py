@@ -28,6 +28,8 @@ KALSHI_CONTEXT_BACKTEST_SUMMARY = ROOT / "model_outputs" / "kalshi_context_model
 KALSHI_CONTEXT_BACKTEST_GROUPS = ROOT / "model_outputs" / "kalshi_context_model_backtest.csv"
 PL_BACKTEST_SUMMARY = ROOT / "model_outputs" / "pl_backtest_summary.json"
 WALKFORWARD_REPORT = ROOT / "model_outputs" / "walkforward_report.json"
+FIGHTER_DIRECTORY = ROOT / "data" / "processed" / "fighter_directory.csv"
+FIGHTER_ASSETS = ROOT / "dashboard" / "assets" / "fighters"
 TRACKING_ROOT = ROOT / "data" / "tracking"
 TRACKING_WEEKLY_SUMMARY = TRACKING_ROOT / "weekly_summary.csv"
 TRACKING_HIDDEN_MARKERS = {".dashboard_hidden", ".practice_card"}
@@ -89,6 +91,56 @@ def hidden_event_tickers() -> set[str]:
                 if event_ticker:
                     tickers.add(event_ticker)
     return tickers
+
+
+def build_fighter_identities() -> dict[str, dict]:
+    rows = read_csv(FIGHTER_DIRECTORY)
+    if not rows:
+        return {}
+    manifest_file = FIGHTER_ASSETS / "manifest.json"
+    manifest = read_json(manifest_file) if manifest_file.exists() else {}
+
+    fighters: dict[str, dict] = {}
+    for row in rows:
+        key = str(row.get("name_lower", "")).strip()
+        if not key:
+            continue
+        wins = as_int(row.get("record_wins"))
+        losses = as_int(row.get("record_losses"))
+        photo_entry = manifest.get(key) or {}
+        photo = None
+        if photo_entry.get("status") == "ok" and photo_entry.get("file"):
+            if (FIGHTER_ASSETS / photo_entry["file"]).exists():
+                photo = f"assets/fighters/{photo_entry['file']}"
+        fighters[key] = {
+            "name": row.get("name", ""),
+            "nickname": row.get("nickname", ""),
+            "photo": photo,
+            "record": f"{wins}-{losses}" if wins is not None and losses is not None else "",
+            "stance": row.get("stance", ""),
+            "height_cms": number(row.get("height_cms")),
+            "reach_cms": number(row.get("reach_cms")),
+            "n_fights": as_int(row.get("n_fights")) or 0,
+            "last_event_date": row.get("last_event_date", ""),
+            "style_tags": [tag for tag in str(row.get("style_tags", "")).split("|") if tag],
+            "marquee_score": as_int(row.get("marquee_score")) or 0,
+            "rates": {
+                "submission": number(row.get("rate_submission")),
+                "knockout_family": number(row.get("rate_knockout_family")),
+                "decision_family": number(row.get("rate_decision_family")),
+                "choke": number(row.get("rate_choke")),
+            },
+        }
+    return fighters
+
+
+def fight_marquee_score(fighter_1: str, fighter_2: str, fighters: dict[str, dict]) -> int:
+    total = 0
+    for name in (fighter_1, fighter_2):
+        ident = fighters.get(str(name or "").strip().lower())
+        if ident:
+            total += ident.get("marquee_score") or 0
+    return total
 
 
 def build_kalshi_rows(rows: list[dict]) -> list[dict]:
@@ -717,6 +769,12 @@ def build_payload() -> dict:
     ]
     kalshi_rows = build_kalshi_rows(kalshi_source_rows)
     kalshi_cards = build_kalshi_cards(kalshi_meta, kalshi_rows, hidden_events)
+    fighters = build_fighter_identities()
+    for card in kalshi_cards:
+        for fight in card.get("fights", []):
+            fight["marquee_score"] = fight_marquee_score(
+                fight.get("fighter_1", ""), fight.get("fighter_2", ""), fighters
+            )
     kalshi_events = flatten_card_fights(kalshi_cards) or build_kalshi_event_rows(kalshi_rows)
     tracking_cards = build_tracking_cards()
     tracking_positions = build_tracking_positions()
@@ -741,6 +799,7 @@ def build_payload() -> dict:
             tracking_positions,
         ),
         "kalshi": kalshi_rows,
+        "fighters": fighters,
         "kalshi_cards": kalshi_cards,
         "kalshi_events": kalshi_events,
         "kalshi_meta": kalshi_meta,
