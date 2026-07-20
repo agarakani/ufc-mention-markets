@@ -5,12 +5,29 @@ from pathlib import Path
 
 from scripts.live.publish_site import (
     LOADER_LINE,
+    PUBLISH_LIVE_INTERVAL_SECONDS,
+    PUBLISH_IDLE_INTERVAL_SECONDS,
     PUBLISH_MARKER,
     PUBLISH_MIN_INTERVAL_SECONDS,
     publish_due,
+    publish_interval_seconds,
     stage_site,
     static_index,
 )
+
+
+class PublishIntervalTests(unittest.TestCase):
+    def test_live_vs_idle(self):
+        today = "2026-07-19"
+        self.assertEqual(
+            publish_interval_seconds(today, ["2026-07-19", "2026-07-26"]),
+            PUBLISH_LIVE_INTERVAL_SECONDS,
+        )
+        self.assertEqual(
+            publish_interval_seconds(today, ["2026-07-26"]),
+            PUBLISH_IDLE_INTERVAL_SECONDS,
+        )
+        self.assertEqual(publish_interval_seconds(today, []), PUBLISH_IDLE_INTERVAL_SECONDS)
 
 
 class StageSiteTests(unittest.TestCase):

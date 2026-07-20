@@ -653,10 +653,13 @@ def refresh_once(
     write_data(DASHBOARD_DATA, payload)
 
     # Push the public snapshot when sharing is turned on (UFC_PUBLISH=1).
+    # Publishes every minute while a listed card is on today's date.
     if os.environ.get("UFC_PUBLISH") == "1":
         try:
-            from scripts.live.publish_site import publish, publish_due
-            if publish_due():
+            from scripts.live.publish_site import publish, publish_due, publish_interval_seconds
+            today = datetime.now(timezone.utc).date().isoformat()
+            live_dates = sorted({str(row.get("event_date", "")) for row in rows if row.get("event_date")})
+            if publish_due(interval_seconds=publish_interval_seconds(today, live_dates)):
                 note = publish(quiet=True)
                 if verbose:
                     print(f"  site: {note}", flush=True)

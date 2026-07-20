@@ -309,7 +309,10 @@
     const polling = summary.kalshi_poll_seconds > 0
       ? ` · auto-updates every ${formatInteger(summary.kalshi_poll_seconds)}s`
       : "";
-    els.status.innerHTML = `${stale ? '<span class="stale">Stale</span> · ' : ""}updated ${escapeHtml(when)} · read-only${polling}`;
+    const cardToday = getCards().some((card) => card.event_date === todayLocal());
+    const freshEnough = ts && (Date.now() - new Date(ts).getTime()) < 3 * 60 * 1000;
+    const livePill = cardToday && freshEnough ? '<span class="live-pill">LIVE</span> · ' : "";
+    els.status.innerHTML = `${livePill}${stale ? '<span class="stale">Stale</span> · ' : ""}updated ${escapeHtml(when)} · read-only${polling}`;
     if (els.footerStamp) {
       els.footerStamp.textContent = ts ? `Data updated ${formatTimestamp(ts)}` : "";
     }

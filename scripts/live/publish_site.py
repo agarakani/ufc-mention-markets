@@ -33,8 +33,17 @@ if str(ROOT) not in sys.path:
 DASHBOARD = ROOT / "dashboard"
 PUBLISH_MARKER = ROOT / "model_outputs" / ".site_publish_stamp"
 PUBLISH_MIN_INTERVAL_SECONDS = 5 * 60
+PUBLISH_LIVE_INTERVAL_SECONDS = 60
+PUBLISH_IDLE_INTERVAL_SECONDS = 10 * 60
 SITE_FILES = ["app.js", "styles.css", "data.js"]
 LOADER_LINE = "      const cacheBust = Date.now().toString();"
+
+
+def publish_interval_seconds(today: str, live_event_dates: list[str]) -> int:
+    """1-minute publishing while a listed card is on today's date; 10 minutes idle."""
+    if today and any(date == today for date in live_event_dates):
+        return PUBLISH_LIVE_INTERVAL_SECONDS
+    return PUBLISH_IDLE_INTERVAL_SECONDS
 
 
 def static_index(index_html: str) -> str:
@@ -45,11 +54,12 @@ def static_index(index_html: str) -> str:
     return index_html.replace(LOADER_LINE, flag + LOADER_LINE, 1)
 
 
-def publish_due(now: float | None = None) -> bool:
+def publish_due(now: float | None = None, interval_seconds: int | None = None) -> bool:
     now = time.time() if now is None else now
+    interval = PUBLISH_MIN_INTERVAL_SECONDS if interval_seconds is None else interval_seconds
     if not PUBLISH_MARKER.exists():
         return True
-    return (now - PUBLISH_MARKER.stat().st_mtime) >= PUBLISH_MIN_INTERVAL_SECONDS
+    return (now - PUBLISH_MARKER.stat().st_mtime) >= interval
 
 
 def run(cmd: list[str], cwd: Path) -> None:
