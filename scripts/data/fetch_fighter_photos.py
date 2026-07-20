@@ -113,6 +113,7 @@ def fetch_missing(names, assets_root: Path, http_get, now: datetime, pause_s: fl
     assets_root = Path(assets_root)
     assets_root.mkdir(parents=True, exist_ok=True)
     manifest = load_manifest(assets_root)
+    dirty = 0
     for name in names:
         name = str(name or "").strip()
         if not name:
@@ -139,6 +140,9 @@ def fetch_missing(names, assets_root: Path, http_get, now: datetime, pause_s: fl
             }
         else:
             manifest[key] = {"status": "not_found", "fetched_at": now.isoformat()}
+        dirty += 1
+        if dirty % 10 == 0:
+            save_manifest(assets_root, manifest)
         if pause_s:
             time.sleep(pause_s)
     save_manifest(assets_root, manifest)
