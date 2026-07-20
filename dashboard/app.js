@@ -1212,6 +1212,14 @@
         <p class="health-note">${formatInteger(officialTrades)} of the ${formatInteger(needed)} settled trades needed before this means anything.</p>`
       : '<p class="health-note">No settled markets replayed yet. This fills in by itself after a tracked card finishes.</p>';
 
+    const gate = health.v2_gate || {};
+    let gateBit = "";
+    if (gate.available) {
+      const chosen = String(gate.chosen_variant || "v1");
+      gateBit = chosen === "v1"
+        ? '<p class="health-note">Model upgrades (event-tier feature, settled-card calibration) were front-tested against the current model on held-out cards. None beat it yet, so the proven model stays. This recheck runs after every settled card.</p>'
+        : `<p class="health-note">Upgrade adopted: <strong>${escapeHtml(chosen)}</strong> scored best on held-out cards${gate.calibrated ? " and live predictions are recalibrated on settled results" : ""}.</p>`;
+    }
     const wf = health.walkforward || {};
     let wfBit = "";
     if (wf.available) {
@@ -1229,6 +1237,7 @@
         <p class="health-note">${formatInteger(prediction.prediction_rows)} old fight predictions scored across ${formatInteger(prediction.folds)} time-ordered folds. This checks guessing quality only, not profit.</p>
         ${strongBit}
         ${wfBit}
+        ${gateBit}
       </article>
       <article class="health-block">
         <p class="health-kicker">By phrase group (higher is better)</p>

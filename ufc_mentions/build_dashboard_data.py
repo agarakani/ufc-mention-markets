@@ -29,6 +29,7 @@ KALSHI_CONTEXT_BACKTEST_GROUPS = ROOT / "model_outputs" / "kalshi_context_model_
 PL_BACKTEST_SUMMARY = ROOT / "model_outputs" / "pl_backtest_summary.json"
 PL_BACKTEST_TRADES = ROOT / "model_outputs" / "pl_backtest_trades.csv"
 WALKFORWARD_REPORT = ROOT / "model_outputs" / "walkforward_report.json"
+V2_GATE_REPORT = ROOT / "model_outputs" / "v2_gate_report.json"
 FIGHTER_DIRECTORY = ROOT / "data" / "processed" / "fighter_directory.csv"
 FIGHTER_ASSETS = ROOT / "dashboard" / "assets" / "fighters"
 UPCOMING_EVENTS = ROOT / "data" / "processed" / "upcoming_events.json"
@@ -495,6 +496,21 @@ def build_walkforward(report: dict) -> dict:
     }
 
 
+def build_v2_gate(report: dict) -> dict:
+    if not report:
+        return {"available": False}
+    return {
+        "available": True,
+        "chosen_variant": report.get("chosen_variant", "v1"),
+        "variant_means": {
+            name: number(value)
+            for name, value in (report.get("variant_means") or {}).items()
+        },
+        "calibrated": bool(report.get("calibration")),
+        "generated_at": report.get("generated_at", ""),
+    }
+
+
 def build_model_health(
     context_summary: dict,
     groups: list[dict],
@@ -559,6 +575,7 @@ def build_model_health(
             "generated_at": pl_summary.get("generated_at", ""),
         },
         "walkforward": walkforward or {"available": False},
+        "v2_gate": build_v2_gate(read_json(V2_GATE_REPORT)),
     }
 
 
