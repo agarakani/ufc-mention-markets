@@ -1,0 +1,37 @@
+{
+  "alexander volkanovski": {
+    "fetched_at": "2026-07-20T01:14:49.482944+00:00",
+    "file": "alexander_volkanovski.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Alexander_Volkanovski_at_UFC_232.jpg/500px-Alexander_Volkanovski_at_UFC_232.jpg",
+    "source_title": "Alexander Volkanovski",
+    "status": "ok"
+  },
+  "donald cerrone": {
+    "fetched_at": "2026-07-20T01:13:37.282653+00:00",
+    "file": "donald_cerrone.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/VCJCS_hosts_USO_Spring_Tour_160312-D-HU462-263.jpg/500px-VCJCS_hosts_USO_Spring_Tour_160312-D-HU462-263.jpg",
+    "source_title": "Donald Cerrone",
+    "status": "ok"
+  },
+  "ilia topuria": {
+    "fetched_at": "2026-07-20T01:13:37.282653+00:00",
+    "file": "ilia_topuria.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Ilia_Topuria_in_the_Oval_Office_%28while_President_Donald_J._Trump_is_holding_a_meeting_with_UFC_fighters%29.jpg/500px-Ilia_Topuria_in_the_Oval_Office_%28while_President_Donald_J._Trump_is_holding_a_meeting_with_UFC_fighters%29.jpg",
+    "source_title": "Ilia Topuria",
+    "status": "ok"
+  },
+  "khamzat chimaev": {
+    "fetched_at": "2026-07-20T01:13:37.282653+00:00",
+    "file": "khamzat_chimaev.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/b/b3/Khamzat_Chimaev_2022_%28cropped%29.png",
+    "source_title": "Khamzat Chimaev",
+    "status": "ok"
+  },
+  "max holloway": {
+    "fetched_at": "2026-07-20T01:13:37.282653+00:00",
+    "file": "max_holloway.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Blue_Angels%27_VIP_Rider_Max_Holloway_%281%29_%28cropped%29.jpg/500px-Blue_Angels%27_VIP_Rider_Max_Holloway_%281%29_%28cropped%29.jpg",
+    "source_title": "Max Holloway",
+    "status": "ok"
+  }
+}
