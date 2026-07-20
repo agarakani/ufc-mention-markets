@@ -30,6 +30,7 @@ TAG_LIFT = 0.15
 OUT_FIELDS = [
     "name", "name_lower", "nickname", "n_fights", "last_event_date",
     "record_wins", "record_losses", "stance", "height_cms", "reach_cms",
+    "weight_class",
     "rate_submission", "rate_knockout_family", "rate_decision_family", "rate_choke",
     "style_tags", "marquee_score",
 ]
@@ -133,11 +134,15 @@ def build_directory(fight_rows: list[dict], joined_rows: list[dict]) -> list[dic
                 "nickname_date": "",
                 "n_fights": 0,
                 "last_event_date": "",
+                "weight_classes": {},
                 "counts": {field: 0 for field in RATE_FIELDS},
             })
             item["n_fights"] += 1
             if date > item["last_event_date"]:
                 item["last_event_date"] = date
+            weight = str(row.get("weight_class", "")).strip()
+            if weight:
+                item["weight_classes"][weight] = item["weight_classes"].get(weight, 0) + 1
             nickname = str(row.get(f"fighter_{slot}_nickname", "")).strip()
             if nickname and date >= item["nickname_date"]:
                 item["nickname"] = nickname
@@ -164,6 +169,8 @@ def build_directory(fight_rows: list[dict], joined_rows: list[dict]) -> list[dic
             "stance": stats.get("stance", "") or "",
             "height_cms": stats.get("height_cms") if stats.get("height_cms") is not None else "",
             "reach_cms": stats.get("reach_cms") if stats.get("reach_cms") is not None else "",
+            "weight_class": max(item["weight_classes"], key=item["weight_classes"].get)
+            if item["weight_classes"] else "",
             **{field: round(rates[field], 4) for field in RATE_FIELDS},
             "style_tags": "|".join(style_tags(rates, league)),
             "marquee_score": marquee_score(item["n_fights"], title_bouts),
