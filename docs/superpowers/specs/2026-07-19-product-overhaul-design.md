@@ -39,3 +39,7 @@ Make the whole product feel professional and personalized: every card, fight, an
 - Recorded history (price snapshots, paper trades) is never rewritten.
 - No terminal steps for the user; everything auto or double-clickable.
 - Photos are cached, offline-safe, and optional — the site must look deliberate without them.
+
+## Addendum (2026-07-19, late session)
+
+Superseded mid-session by user direction: fighter photos were rejected outright and removed. The visual system was replaced by "The Broadsheet Terminal" (chosen by a 3-designer/2-judge panel): deterministic engraved guilloche seals as fighter identity, Fraunces + IBM Plex Mono, one wire-amber accent, ruled ledger surfaces, per-card editions and per-fight moiré fields. Phase 4's gate ran: v1+calib adopted (held-out log loss 0.5113 → 0.5097).
