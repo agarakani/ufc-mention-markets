@@ -34,6 +34,7 @@ ID_COLUMNS = [
     "transcript_id",      # unique matchup key — natural primary key
     "fighter_1", "fighter_2",
     "fighter_1_last", "fighter_2_last",   # last names ease fuzzy name joins
+    "fighter_1_nickname", "fighter_2_nickname",
     "event_date", "weight_class", "event_title",
     "duration_s",
 ]
@@ -69,6 +70,8 @@ def build(data_dir, out_path, phrase_path=PHRASES_FILE_DEFAULT):
                 rec.get("fighter_2", ""),
                 last_name(rec.get("fighter_1")),
                 last_name(rec.get("fighter_2")),
+                rec.get("fighter_1_nickname", ""),
+                rec.get("fighter_2_nickname", ""),
                 rec.get("event_date", ""),
                 rec.get("weight_class", ""),
                 rec.get("event_title", ""),
