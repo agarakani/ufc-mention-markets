@@ -1,0 +1,50 @@
+name: Freshen public site
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: freshen-site
+  cancel-in-progress: false
+
+jobs:
+  freshen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main (scripts)
+        uses: actions/checkout@v4
+
+      - name: Checkout gh-pages (published site)
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: site
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install --quiet requests cryptography
+
+      - name: Reprice markets against live Kalshi books
+        run: python scripts/live/cloud_refresh.py --site-dir site
+
+      - name: Publish if anything changed
+        run: |
+          cd site
+          if git diff --quiet; then
+            echo "no changes to publish"
+            exit 0
+          fi
+          git config user.name "agarakani"
+          git config user.email "236674347+agarakani@users.noreply.github.com"
+          git add data.js
+          git commit -m "Cloud reprice: freshen prices and edges"
+          git push
