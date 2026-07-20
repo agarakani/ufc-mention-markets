@@ -1,11 +1,11 @@
 {
   "adrian yanez": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "alberto montes": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "alex pereira": {
     "fetched_at": "2026-07-20T01:17:25.411907+00:00",
@@ -15,12 +15,18 @@
     "status": "ok"
   },
   "alexa grasso": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "alexa_grasso.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Alexa_Grasso_2020_01.png/500px-Alexa_Grasso_2020_01.png",
+    "source_title": "Alexa Grasso",
+    "status": "ok"
   },
   "alexander gustafsson": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "alexander_gustafsson.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Alexander_%22The_Mauler%22_Gustafsson_2014.jpg/500px-Alexander_%22The_Mauler%22_Gustafsson_2014.jpg",
+    "source_title": "Alexander Gustafsson",
+    "status": "ok"
   },
   "alexander volkanovski": {
     "fetched_at": "2026-07-20T01:14:49.482944+00:00",
@@ -30,12 +36,18 @@
     "status": "ok"
   },
   "alexandre pantoja": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "alexandre_pantoja.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Pantoja_2025.jpg/500px-Pantoja_2025.jpg",
+    "source_title": "Alexandre Pantoja",
+    "status": "ok"
   },
   "aljamain sterling": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "aljamain_sterling.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Alijamain_Sterling_at_UFC_228.jpg/500px-Alijamain_Sterling_at_UFC_228.jpg",
+    "source_title": "Aljamain Sterling",
+    "status": "ok"
   },
   "amanda nunes": {
     "fetched_at": "2026-07-20T01:17:25.411907+00:00",
@@ -45,120 +57,186 @@
     "status": "ok"
   },
   "anderson silva": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "anderson_silva.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/a/a2/Anderson_Silva.png",
+    "source_title": "Anderson Silva",
+    "status": "ok"
   },
   "andre (bra) lima": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "andre fili": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "anthony johnson": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "anthony pettis": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "anthony_pettis.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/USO_Spring_2016_Entertainment_Tour_%28cropped%29.jpg/500px-USO_Spring_2016_Entertainment_Tour_%28cropped%29.jpg",
+    "source_title": "Anthony Pettis",
+    "status": "ok"
+  },
+  "anthony smith": {
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "austin bashi": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "beatriz mesquita": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "belal muhammad": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "belal_muhammad.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Belal_Muhammad_UFC_%28cropped%29.jpg/500px-Belal_Muhammad_UFC_%28cropped%29.jpg",
+    "source_title": "Belal Muhammad",
+    "status": "ok"
   },
   "benoit saint-denis": {
     "fetched_at": "2026-07-20T01:17:25.411907+00:00",
     "status": "not_found"
   },
   "benson henderson": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "benson_henderson.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/d/d0/Benhendersonfighter.jpg",
+    "source_title": "Benson Henderson",
+    "status": "ok"
   },
   "bj penn": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "bobby green": {
     "fetched_at": "2026-07-20T01:17:25.411907+00:00",
     "status": "not_found"
   },
+  "bogdan guskov": {
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
+  },
   "brandon moreno": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "brandon_moreno.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Brandon_Moreno_February_2021.jpg/500px-Brandon_Moreno_February_2021.jpg",
+    "source_title": "Brandon Moreno",
+    "status": "ok"
   },
   "brandon royval": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "brian ortega": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "brian_ortega.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Brian_Ortega_on_MMAnytt.jpg/500px-Brian_Ortega_on_MMAnytt.jpg",
+    "source_title": "Brian Ortega",
+    "status": "ok"
+  },
+  "brock lesnar": {
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "brock_lesnar.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Brock_Lesnar_At_SummerSlam_2023_%28cropped%29.jpg/500px-Brock_Lesnar_At_SummerSlam_2023_%28cropped%29.jpg",
+    "source_title": "Brock Lesnar",
+    "status": "ok"
   },
   "cain velasquez": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "cain_velasquez.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Cain_Velasquez.jpg/500px-Cain_Velasquez.jpg",
+    "source_title": "Cain Velasquez",
+    "status": "ok"
   },
   "carla esparza": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "carla_esparza.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/8/82/Carla_Esparza_2022_01.jpg",
+    "source_title": "Carla Esparza",
+    "status": "ok"
   },
   "carlos condit": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "carlos_condit.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/b/b1/Carloscondit.jpg",
+    "source_title": "Carlos Condit",
+    "status": "ok"
   },
   "chad mendes": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "chad_mendes.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/3b/Chad_Mendes.jpeg",
+    "source_title": "Chad Mendes",
+    "status": "ok"
   },
   "chael sonnen": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "chael_sonnen.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Meet_and_Greet_with_Special_MMA_Clinic_%282%29.jpg/500px-Meet_and_Greet_with_Special_MMA_Clinic_%282%29.jpg",
+    "source_title": "Chael Sonnen",
+    "status": "ok"
   },
   "chan sung jung": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "charles oliveira": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "charles_oliveira.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Charles_Oliveira_do_Bronxs.jpg/500px-Charles_Oliveira_do_Bronxs.jpg",
+    "source_title": "Charles Oliveira",
+    "status": "ok"
   },
   "chase hooper": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "chase_hooper.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Chase_Hooper_2022.png/500px-Chase_Hooper_2022.png",
+    "source_title": "Chase Hooper",
+    "status": "ok"
   },
   "chris weidman": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "chris_weidman.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Chris_Weidman_at_UFC_230.jpg/500px-Chris_Weidman_at_UFC_230.jpg",
+    "source_title": "Chris Weidman",
+    "status": "ok"
   },
   "christian duncan": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "christian rodriguez": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "ciryl gane": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "ciryl_gane.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/UFC_Freedom_250%2C_the_mixed_martial_arts_event_produced_by_the_Ultimate_Fighting_Championship%2C_Sunday%2C_June_14%2C_2026%2C_in_the_Grand_Foyer_of_the_White_House_-_64%28cropped%29.jpg/500px-thumbnail.jpg",
+    "source_title": "Ciryl Gane",
+    "status": "ok"
   },
   "cody garbrandt": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "cody_garbrandt.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/34/Cody_Garbrandt.png",
+    "source_title": "Cody Garbrandt",
+    "status": "ok"
   },
   "colby covington": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "colby_covington.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/1/18/ColbyCovingtonFortJackson2022%28cropped%29.jpg",
+    "source_title": "Colby Covington",
+    "status": "ok"
   },
   "conor mcgregor": {
     "fetched_at": "2026-07-20T01:17:25.411907+00:00",
@@ -168,16 +246,32 @@
     "status": "ok"
   },
   "cory sandhagen": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "cory_sandhagen.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/UFC%27s_Corey_Sandhagen_brings_his_fighting_spirit_to_the_1st_SOW_%281%29_%28cropped%29.jpg/500px-UFC%27s_Corey_Sandhagen_brings_his_fighting_spirit_to_the_1st_SOW_%281%29_%28cropped%29.jpg",
+    "source_title": "Cory Sandhagen",
+    "status": "ok"
+  },
+  "dan henderson": {
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "dan_henderson.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Dan_Henderson_2025_%28cropped%29.jpg/500px-Dan_Henderson_2025_%28cropped%29.jpg",
+    "source_title": "Dan Henderson",
+    "status": "ok"
   },
   "daniel cormier": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "daniel_cormier.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Daniel_Cormier_taking_a_picture_with_a_fan..jpg/500px-Daniel_Cormier_taking_a_picture_with_a_fan..jpg",
+    "source_title": "Daniel Cormier",
+    "status": "ok"
   },
   "deiveson figueiredo": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "deiveson_figueiredo.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Deiveson_Figueiredo_2024.jpg/500px-Deiveson_Figueiredo_2024.jpg",
+    "source_title": "Deiveson Figueiredo",
+    "status": "ok"
   },
   "demetrious johnson": {
     "fetched_at": "2026-07-20T01:17:25.411907+00:00",
@@ -187,8 +281,18 @@
     "status": "ok"
   },
   "demian maia": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "demian_maia.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Demian_Maia.jpg/500px-Demian_Maia.jpg",
+    "source_title": "Demian Maia",
+    "status": "ok"
+  },
+  "derrick lewis": {
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "derrick_lewis.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Derrick_Lewis_after_UFC_239.jpg/500px-Derrick_Lewis_after_UFC_239.jpg",
+    "source_title": "Derrick Lewis",
+    "status": "ok"
   },
   "donald cerrone": {
     "fetched_at": "2026-07-20T01:13:37.282653+00:00",
@@ -198,60 +302,97 @@
     "status": "ok"
   },
   "dricus du plessis": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "dricus_du_plessis.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/IMG-Dricus-Duplessis%28cropped%29.jpg/500px-IMG-Dricus-Duplessis%28cropped%29.jpg",
+    "source_title": "Dricus du Plessis",
+    "status": "ok"
   },
   "dustin poirier": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "dustin_poirier.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/6/6f/Dustin_Poirier_UFC_269.jpg",
+    "source_title": "Dustin Poirier",
+    "status": "ok"
   },
   "elisha ellison": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "fabricio werdum": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "fatima kline": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "francis ngannou": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "francis_ngannou.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Francis_Ngannou_2023_%28cropped%29.png/500px-Francis_Ngannou_2023_%28cropped%29.png",
+    "source_title": "Francis Ngannou",
+    "status": "ok"
   },
   "frank mir": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "frank_mir.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Frank_Mir_GCW_Bloodsport_%28cropped%29.jpg/500px-Frank_Mir_GCW_Bloodsport_%28cropped%29.jpg",
+    "source_title": "Frank Mir",
+    "status": "ok"
   },
   "frankie edgar": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "frankie_edgar.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Frankie_Edgar.jpg/500px-Frankie_Edgar.jpg",
+    "source_title": "Frankie Edgar",
+    "status": "ok"
   },
   "gable steveson": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "gable_steveson.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Gable_Steveson_%28USA%29_2018.jpg/500px-Gable_Steveson_%28USA%29_2018.jpg",
+    "source_title": "Gable Steveson",
+    "status": "ok"
   },
   "georges st-pierre": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "georges_st_pierre.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/2021_-_Centre_Stage_DG4_5765_%2851654942080%29_%28cropped%29.jpg/500px-2021_-_Centre_Stage_DG4_5765_%2851654942080%29_%28cropped%29.jpg",
+    "source_title": "Georges St-Pierre",
+    "status": "ok"
   },
   "glover teixeira": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "glover_teixeira.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/7/7d/Teixeira_at_his_training_facility_%28cropped%29.jpg",
+    "source_title": "Glover Teixeira",
+    "status": "ok"
   },
   "henry cejudo": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "henry_cejudo.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Henry_Cejudo_%2854235464255%29_%28cropped%29.jpg/500px-Henry_Cejudo_%2854235464255%29_%28cropped%29.jpg",
+    "source_title": "Henry Cejudo",
+    "status": "ok"
   },
   "holly holm": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "holly_holm.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Holly_Holm_at_UFC_246.jpg/500px-Holly_Holm_at_UFC_246.jpg",
+    "source_title": "Holly Holm",
+    "status": "ok"
   },
   "hyder amil": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
+  },
+  "ian machado garry": {
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "ian_machado_garry.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/e/ee/IanGarry.jpg",
+    "source_title": "Ian Machado Garry",
+    "status": "ok"
   },
   "ilia topuria": {
     "fetched_at": "2026-07-20T01:13:37.282653+00:00",
@@ -261,80 +402,143 @@
     "status": "ok"
   },
   "ion cutelaba": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "islam makhachev": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "islam_makhachev.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Islam_Makhachev_and_Sergey_Melikov_2025_%28cropped%29.jpg/500px-Islam_Makhachev_and_Sergey_Melikov_2025_%28cropped%29.jpg",
+    "source_title": "Islam Makhachev",
+    "status": "ok"
   },
   "israel adesanya": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "israel_adesanya.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Israel_Adesanya_at_UFC_230.jpg/500px-Israel_Adesanya_at_UFC_230.jpg",
+    "source_title": "Israel Adesanya",
+    "status": "ok"
   },
   "jacobe smith": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
+  },
+  "jamahal hill": {
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
+  },
+  "jan blachowicz": {
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "jared cannonier": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "jared_cannonier.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Jared_Cannonier_at_UFC_Fight_Night_160_in_Copenhagen.jpg/500px-Jared_Cannonier_at_UFC_Fight_Night_160_in_Copenhagen.jpg",
+    "source_title": "Jared Cannonier",
+    "status": "ok"
   },
   "jessica andrade": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "jiri prochazka": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "joanna jedrzejczyk": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "johny hendricks": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "johny_hendricks.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Johny_Hendricks_MMA.jpg/500px-Johny_Hendricks_MMA.jpg",
+    "source_title": "Johny Hendricks",
+    "status": "ok"
   },
   "jon jones": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "jon_jones.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Jon_Jones_-_Supporting_Brain_Health_Study.jpg/500px-Jon_Jones_-_Supporting_Brain_Health_Study.jpg",
+    "source_title": "Jon Jones",
+    "status": "ok"
   },
   "jose aldo": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "jose delgado": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
+  },
+  "josh koscheck": {
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "josh_koscheck.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/JoshKoscheck.png/500px-JoshKoscheck.png",
+    "source_title": "Josh Koscheck",
+    "status": "ok"
   },
   "julianna pena": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "junior dos santos": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "junior_dos_santos.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Junior_dos_Santos.jpg/500px-Junior_dos_Santos.jpg",
+    "source_title": "Junior dos Santos",
+    "status": "ok"
   },
   "kai kamaka iii": {
     "fetched_at": "2026-07-20T01:17:25.411907+00:00",
     "status": "not_found"
   },
+  "kai kara-france": {
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "kai_kara_france.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Kaikarafrance.png/500px-Kaikarafrance.png",
+    "source_title": "Kai Kara-France",
+    "status": "ok"
+  },
   "kamaru usman": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "kamaru_usman.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/KamaruUsmanPress2018.png/500px-KamaruUsmanPress2018.png",
+    "source_title": "Kamaru Usman",
+    "status": "ok"
+  },
+  "kelvin gastelum": {
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "kelvin_gastelum.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Kelvin_Gastelum.jpg/500px-Kelvin_Gastelum.jpg",
+    "source_title": "Kelvin Gastelum",
+    "status": "ok"
   },
   "kevin borjas": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "kevin holland": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "kevin_holland.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Kevin_Holland_at_UFC_316_%2854576727207%29.jpg/500px-Kevin_Holland_at_UFC_316_%2854576727207%29.jpg",
+    "source_title": "Kevin Holland",
+    "status": "ok"
+  },
+  "kevin lee": {
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "kevin_lee.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/d/d7/Kevin_Lee.jpg",
+    "source_title": "Kevin Lee",
+    "status": "ok"
   },
   "khabib nurmagomedov": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "khabib_nurmagomedov.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Khabib_nurmagomedov.jpg/500px-Khabib_nurmagomedov.jpg",
+    "source_title": "Khabib Nurmagomedov",
+    "status": "ok"
   },
   "khamzat chimaev": {
     "fetched_at": "2026-07-20T01:13:37.282653+00:00",
@@ -344,40 +548,80 @@
     "status": "ok"
   },
   "kyoji horiguchi": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "kyoji_horiguchi.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Kyoji_Horiguchi_2017.jpg/500px-Kyoji_Horiguchi_2017.jpg",
+    "source_title": "Kyoji Horiguchi",
+    "status": "ok"
   },
   "leon edwards": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "leon_edwards.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Leon_Edwards_2021.png/500px-Leon_Edwards_2021.png",
+    "source_title": "Leon Edwards",
+    "status": "ok"
+  },
+  "liz carmouche": {
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "liz_carmouche.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Liz_carmouche.jpg/500px-Liz_carmouche.jpg",
+    "source_title": "Liz Carmouche",
+    "status": "ok"
   },
   "loneer kavanagh": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "luke riley": {
     "fetched_at": "2026-07-20T01:17:25.411907+00:00",
     "status": "not_found"
   },
   "luke rockhold": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "luke_rockhold.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Luke_Rockhold_2025.jpg/500px-Luke_Rockhold_2025.jpg",
+    "source_title": "Luke Rockhold",
+    "status": "ok"
   },
   "lyoto machida": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "magomed ankalaev": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "magomed_ankalaev.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Magomed_Ankalaev_at_UFC_Fight_Night_136_in_Moscow%2C_Russia.jpg/500px-Magomed_Ankalaev_at_UFC_Fight_Night_136_in_Moscow%2C_Russia.jpg",
+    "source_title": "Magomed Ankalaev",
+    "status": "ok"
   },
   "manel kape": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "manel_kape.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/ManelKape2017.png/500px-ManelKape2017.png",
+    "source_title": "Manel Kape",
+    "status": "ok"
   },
   "mario bautista": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
+  },
+  "marlon vera": {
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "marlon_vera.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Marlon_%22Chito%22_Vera_2019.jpg/500px-Marlon_%22Chito%22_Vera_2019.jpg",
+    "source_title": "Marlon Vera",
+    "status": "ok"
+  },
+  "marvin vettori": {
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
+  },
+  "mateusz gamrot": {
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "mateusz_gamrot.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Mateusz_Gamrot.jpg/500px-Mateusz_Gamrot.jpg",
+    "source_title": "Mateusz Gamrot",
+    "status": "ok"
   },
   "max holloway": {
     "fetched_at": "2026-07-20T01:13:37.282653+00:00",
@@ -387,116 +631,183 @@
     "status": "ok"
   },
   "melissa mullins": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "melsik baghdasaryan": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "merab dvalishvili": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "merab_dvalishvili.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Merab_Dvalishvili_at_UFC_316_%28cropped%29.jpg/500px-Merab_Dvalishvili_at_UFC_316_%28cropped%29.jpg",
+    "source_title": "Merab Dvalishvili",
+    "status": "ok"
   },
   "michael bisping": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "michael_bisping.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/MichaelBispingProfile.png/500px-MichaelBispingProfile.png",
+    "source_title": "Michael Bisping",
+    "status": "ok"
   },
   "miesha tate": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "miesha_tate.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/MCAS_Yuma_hosts_MMA_Fight_Night_with_guest_of_honor%2C_Miesha_Tate_%286%29_%28cropped%29.jpg/500px-MCAS_Yuma_hosts_MMA_Fight_Night_with_guest_of_honor%2C_Miesha_Tate_%286%29_%28cropped%29.jpg",
+    "source_title": "Miesha Tate",
+    "status": "ok"
   },
   "mitch ramirez": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "murtazali magomedov": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
+  },
+  "nate diaz": {
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "nate_diaz.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Nate_Diaz_Oct_2019.jpg/500px-Nate_Diaz_Oct_2019.jpg",
+    "source_title": "Nate Diaz",
+    "status": "ok"
   },
   "navajo stirling": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "nick diaz": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "nick_diaz.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/5/5b/Nick_Diaz.png",
+    "source_title": "Nick Diaz",
+    "status": "ok"
   },
   "nikita krylov": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "paddy pimblett": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "paddy_pimblett.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/UFC_Star_Paddy_The_Baddy_Pimblett_tells_his_story_%28cropped%29.jpg/500px-UFC_Star_Paddy_The_Baddy_Pimblett_tells_his_story_%28cropped%29.jpg",
+    "source_title": "Paddy Pimblett",
+    "status": "ok"
   },
   "petr yan": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "petr_yan.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Vladimir_Putin_at_award_ceremonies_%282026-04-22%29_24%28cropped%29.jpg/500px-Vladimir_Putin_at_award_ceremonies_%282026-04-22%29_24%28cropped%29.jpg",
+    "source_title": "Petr Yan",
+    "status": "ok"
+  },
+  "quillan salkilld": {
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
+  },
+  "rafael dos anjos": {
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "raquel pennington": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "raquel_pennington.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/Raquel_Pennington_MCCS_Twentynine_Palms_presents_an_action-packed_MMA_Fight_Night_Live_at_The_Combat_Center_%285%29_%28cropped%29.jpg/500px-Raquel_Pennington_MCCS_Twentynine_Palms_presents_an_action-packed_MMA_Fight_Night_Live_at_The_Combat_Center_%285%29_%28cropped%29.jpg",
+    "source_title": "Raquel Pennington",
+    "status": "ok"
   },
   "renan barao": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "robbie lawler": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "robbie_lawler.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/1/12/Robbie_Lawler.png",
+    "source_title": "Robbie Lawler",
+    "status": "ok"
   },
   "robert whittaker": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "robert_whittaker.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ed/Robert_Whittaker_2024.png/500px-Robert_Whittaker_2024.png",
+    "source_title": "Robert Whittaker (fighter)",
+    "status": "ok"
   },
   "ronda rousey": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "rose namajunas": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "rose_namajunas.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Rose_Namajunas.jpg/500px-Rose_Namajunas.jpg",
+    "source_title": "Rose Namajunas",
+    "status": "ok"
   },
   "sean o'malley": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "sean_o_malley.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/UFC_Freedom_250_press_conference_at_the_Lincoln_Memorial_in_Washington%2C_D.C.%2C_Friday%2C_June_12%2C_2026_-_25%28cropped%29.jpg/500px-UFC_Freedom_250_press_conference_at_the_Lincoln_Memorial_in_Washington%2C_D.C.%2C_Friday%2C_June_12%2C_2026_-_25%28cropped%29.jpg",
+    "source_title": "Sean O'Malley (fighter)",
+    "status": "ok"
   },
   "sean strickland": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "sean_strickland.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/4/44/Sean_Strickland_at_UFN_200.png",
+    "source_title": "Sean Strickland",
+    "status": "ok"
+  },
+  "shane carwin": {
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "shane_carwin.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Shane_Carwin.JPG/500px-Shane_Carwin.JPG",
+    "source_title": "Shane Carwin",
+    "status": "ok"
   },
   "stipe miocic": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "stipe_miocic.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Stipe_Miocic_%2848086643396%29_%28cropped%29.jpg/500px-Stipe_Miocic_%2848086643396%29_%28cropped%29.jpg",
+    "source_title": "Stipe Miocic",
+    "status": "ok"
   },
   "tabatha ricci": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "terrance mckinney": {
     "fetched_at": "2026-07-20T01:17:25.411907+00:00",
     "status": "not_found"
   },
   "tj dillashaw": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "tom aspinall": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "tommy mcmillen": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "tyron woodley": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "tyron_woodley.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Tyron_Woodley.png/500px-Tyron_Woodley.png",
+    "source_title": "Tyron Woodley",
+    "status": "ok"
   },
   "urijah faber": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "urijah_faber.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Urijah_Faber_24_July_2009.jpg/500px-Urijah_Faber_24_July_2009.jpg",
+    "source_title": "Urijah Faber",
+    "status": "ok"
   },
   "valentina shevchenko": {
     "fetched_at": "2026-07-20T01:17:25.411907+00:00",
@@ -506,19 +817,29 @@
     "status": "ok"
   },
   "vinicius de oliveira prestes de matos": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "vitor belfort": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
   },
   "yair rodriguez": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "status": "not_found"
+  },
+  "yoel romero": {
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "yoel_romero.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/2/24/Yoel_Romero.jpg",
+    "source_title": "Yoel Romero",
+    "status": "ok"
   },
   "zhang weili": {
-    "fetched_at": "2026-07-20T01:17:25.411907+00:00",
-    "status": "error"
+    "fetched_at": "2026-07-20T01:25:23.605062+00:00",
+    "file": "zhang_weili.jpg",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/%E5%BC%A0%E4%BC%9F%E4%B8%BD.png/500px-%E5%BC%A0%E4%BC%9F%E4%B8%BD.png",
+    "source_title": "Zhang Weili",
+    "status": "ok"
   }
 }

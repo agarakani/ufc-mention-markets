@@ -161,14 +161,51 @@ def _prepare_with_types(
 def load_label_weight(config_path: str | Path = UPDATE_CONFIG_DEFAULT) -> float:
     """Weight for settled-result labels in training, chosen by the weekly
     walk-forward check. 0 means labels are not used in training."""
+    return load_model_config(config_path)["label_weight"]
+
+
+def load_model_config(config_path: str | Path = UPDATE_CONFIG_DEFAULT) -> dict:
+    """Model configuration proven by the walk-forward check.
+
+    feature_set and calibration only change from their defaults when the
+    walk-forward gate showed they scored better on held-out cards."""
+    defaults = {"label_weight": 0.0, "feature_set": "v1", "calibration": None}
     path = Path(config_path)
     if not path.exists():
-        return 0.0
+        return dict(defaults)
     try:
-        value = float(json.loads(path.read_text()).get("label_weight", 0.0))
-        return value if math.isfinite(value) and value >= 0 else 0.0
-    except (ValueError, TypeError, json.JSONDecodeError):
-        return 0.0
+        raw = json.loads(path.read_text())
+    except (ValueError, json.JSONDecodeError):
+        return dict(defaults)
+    out = dict(defaults)
+    try:
+        weight = float(raw.get("label_weight", 0.0))
+        if math.isfinite(weight) and weight >= 0:
+            out["label_weight"] = weight
+    except (TypeError, ValueError):
+        pass
+    if raw.get("feature_set") in ("v1", "v2"):
+        out["feature_set"] = raw["feature_set"]
+    calibration = raw.get("calibration")
+    if isinstance(calibration, dict):
+        a = calibration.get("a")
+        b = calibration.get("b")
+        if (
+            isinstance(a, (int, float)) and isinstance(b, (int, float))
+            and math.isfinite(a) and math.isfinite(b)
+        ):
+            out["calibration"] = {"a": float(a), "b": float(b)}
+    return out
+
+
+def apply_live_calibration(probability: float, calibration: dict | None) -> float:
+    """Platt-style recalibration proven on settled cards: logit -> a*z + b."""
+    if not calibration or "a" not in calibration or "b" not in calibration:
+        return probability
+    p = min(1 - 1e-6, max(1e-6, float(probability)))
+    z = math.log(p / (1 - p))
+    z = calibration["a"] * z + calibration["b"]
+    return 1.0 / (1.0 + math.exp(-z))
 
 
 class KalshiFightContextModel:
@@ -185,6 +222,8 @@ class KalshiFightContextModel:
         label_weight: float = 0.0,
         profile: str = "stats_only_history",
         min_training_rows: int = 500,
+        feature_set: str = "v1",
+        calibration: dict | None = None,
     ):
         self.history = add_date_features(history.copy()).reset_index(drop=True)
         self.history.index = [f"h_{index}" for index in range(len(self.history))]
@@ -196,6 +235,8 @@ class KalshiFightContextModel:
         self.label_weight = float(label_weight)
         self.profile = profile
         self.min_training_rows = min_training_rows
+        self.feature_set = feature_set if feature_set in ("v1", "v2") else "v1"
+        self.calibration = calibration
         self._target_cache: dict[tuple[str, ...], _TargetModel] = {}
         self._prediction_cache: dict[tuple[tuple[str, ...], str, str, str], ContextPrediction] = {}
         self._label_frame_cache: dict[tuple[str, str, str], pd.DataFrame | None] = {}
@@ -223,16 +264,18 @@ class KalshiFightContextModel:
         master = pd.read_csv(master_path) if master_path.exists() else pd.DataFrame()
         labels_path = Path(labels_path)
         labels = pd.read_csv(labels_path) if labels_path.exists() else pd.DataFrame()
-        label_weight = load_label_weight(config_path)
+        config = load_model_config(config_path)
         return cls(
             history,
             corpus,
             upcoming=upcoming,
             master=master,
             labels=labels,
-            label_weight=label_weight,
+            label_weight=config["label_weight"],
             profile=profile,
             min_training_rows=min_training_rows,
+            feature_set=config["feature_set"],
+            calibration=config["calibration"],
         )
 
     def predict(
@@ -267,6 +310,7 @@ class KalshiFightContextModel:
                 raw,
             )
             probability = _clip_probability(float(calibrated[0]))
+            probability = _clip_probability(apply_live_calibration(probability, self.calibration))
         except Exception as exc:
             prediction = ContextPrediction(
                 probability=None,
@@ -428,6 +472,7 @@ class KalshiFightContextModel:
                 profile=self.profile,
                 include_identity=False,
                 target=TARGET,
+                feature_set=self.feature_set,
             )
             numeric_columns, categorical_columns, prepared = split_feature_types(history_featured, columns)
             best_c, _validation_loss = tune_c(

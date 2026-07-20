@@ -43,6 +43,7 @@ from __future__ import annotations
 import argparse
 import csv
 import math
+import re
 from pathlib import Path
 
 
@@ -142,12 +143,23 @@ def parse_boolish(series: pd.Series) -> pd.Series:
     return mapped.where(lowered.isin({"true", "false"}), series)
 
 
+def event_tier(title) -> str:
+    text = str(title or "")
+    if re.search(r"\bUFC\s+\d+\b", text):
+        return "ppv"
+    if "fight night" in text.lower():
+        return "fight_night"
+    return "other"
+
+
 def add_date_features(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
     dates = pd.to_datetime(out["event_date"], errors="coerce")
     out["event_year"] = dates.dt.year
     out["event_month"] = dates.dt.month
     out["event_quarter"] = dates.dt.quarter
+    if "event_title" in out.columns:
+        out["event_tier"] = out["event_title"].map(event_tier)
     return out
 
 
@@ -171,6 +183,7 @@ def feature_columns(
     profile: str,
     include_identity: bool,
     target: str | None = None,
+    feature_set: str = "v1",
 ) -> list[str]:
     use_history = profile.endswith("_history")
     base_profile = profile.removesuffix("_history")
@@ -184,6 +197,10 @@ def feature_columns(
     else:
         raise ValueError(f"unknown profile: {profile}")
 
+    plain = {"weight_class", "event_year", "event_month", "event_quarter"}
+    if feature_set == "v2":
+        plain = plain | {"event_tier"}
+
     cols = []
     for col in df.columns:
         if col in excluded:
@@ -193,7 +210,7 @@ def feature_columns(
         # The joined file prefixes all Kaggle fields with kaggle_, plus we add date features.
         if (
             col.startswith("kaggle_")
-            or col in {"weight_class", "event_year", "event_month", "event_quarter"}
+            or col in plain
             or (
                 use_history
                 and target is not None

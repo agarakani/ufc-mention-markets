@@ -5,7 +5,14 @@ from pathlib import Path
 
 import pandas as pd
 
-from scripts.model.walkforward_update import forms_from_phrase, pick_best_weight
+from scripts.model.walkforward_update import (
+    calibrated_holdout_means,
+    fit_platt,
+    forms_from_phrase,
+    loss_from_pairs,
+    pick_best_variant,
+    pick_best_weight,
+)
 from ufc_mentions.kalshi_context_model import (
     TARGET,
     KalshiFightContextModel,
@@ -34,6 +41,49 @@ class PickBestWeightTests(unittest.TestCase):
 
     def test_all_none_returns_zero(self):
         self.assertEqual(pick_best_weight({0.0: None, 5.0: None}), 0.0)
+
+
+class VariantGateTests(unittest.TestCase):
+    def test_gate_keeps_v1_when_v2_worse(self):
+        self.assertEqual(
+            pick_best_variant({"v1": 0.50, "v2": 0.52, "v1+calib": 0.51, "v2+calib": 0.53}),
+            "v1",
+        )
+
+    def test_gate_adopts_winner(self):
+        self.assertEqual(
+            pick_best_variant({"v1": 0.52, "v2": 0.50, "v1+calib": 0.51, "v2+calib": 0.53}),
+            "v2",
+        )
+        self.assertEqual(
+            pick_best_variant({"v1": 0.52, "v2": 0.51, "v1+calib": 0.49, "v2+calib": 0.53}),
+            "v1+calib",
+        )
+
+    def test_tie_goes_to_simpler_variant(self):
+        self.assertEqual(pick_best_variant({"v1": 0.50, "v2+calib": 0.50}), "v1")
+
+    def test_all_none_returns_v1(self):
+        self.assertEqual(pick_best_variant({"v1": None, "v2": None}), "v1")
+
+    def test_fit_platt_needs_enough_two_sided_pairs(self):
+        self.assertIsNone(fit_platt([(0.6, 1)] * 10))
+        self.assertIsNone(fit_platt([(0.6, 1)] * 40))
+        pairs = [(0.55, 1)] * 25 + [(0.45, 0)] * 25
+        calibration = fit_platt(pairs)
+        self.assertIsNotNone(calibration)
+        self.assertIn("a", calibration)
+
+    def test_calibrated_holdout_uses_only_earlier_cards(self):
+        # First card scores raw (no earlier data); a compressed model on the
+        # second card improves once calibrated on the first card's pairs.
+        compressed = [(0.55, 1)] * 30 + [(0.45, 0)] * 30
+        per_holdout = {"card1": compressed, "card2": compressed}
+        raw_mean = loss_from_pairs(compressed)
+        mean = calibrated_holdout_means(per_holdout, ["card1", "card2"])
+        self.assertIsNotNone(mean)
+        # card1 is raw, card2 is calibrated-better, so the mean must not be worse
+        self.assertLessEqual(mean, raw_mean + 1e-9)
 
 
 class LoadLabelWeightTests(unittest.TestCase):
