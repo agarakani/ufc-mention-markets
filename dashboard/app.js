@@ -82,11 +82,13 @@
     renderTabs();
     renderNav();
     renderFightHeader();
+    renderSignalFeed();
     renderTable();
     renderFightPage();
     renderHealth();
     renderTracking();
     renderPerformance();
+    if (state.tab === "markets") markSeen();
   }
 
   function autoPickSignal() {
@@ -341,6 +343,49 @@
     const side = String(row.paper_side || row.side || "").toLowerCase();
     if (entry === null || !side || (row.outcome !== "yes" && row.outcome !== "no")) return 0;
     return side === row.outcome ? 1 - entry : -entry;
+  }
+
+  /* ---------- signal alerts ---------- */
+
+  const LAST_SEEN_KEY = "ufc_last_seen_ts";
+
+  function lastSeenTs() {
+    try { return localStorage.getItem(LAST_SEEN_KEY) || ""; } catch (e) { return ""; }
+  }
+
+  function markSeen() {
+    const ts = (data.summary || {}).kalshi_snapshot_timestamp || "";
+    if (!ts) return;
+    try { localStorage.setItem(LAST_SEEN_KEY, ts); } catch (e) { /* private mode */ }
+  }
+
+  function newWatchRows() {
+    if (state.lastSeenAtLoad === undefined) state.lastSeenAtLoad = lastSeenTs();
+    const seen = state.lastSeenAtLoad;
+    return getRows().filter((row) => row.watch && (!seen || String(row.snapshot_timestamp || "") > seen));
+  }
+
+  function renderSignalFeed() {
+    const holder = document.getElementById("signalFeed");
+    if (!holder) return;
+    const fresh = newWatchRows();
+    if (!fresh.length) { holder.innerHTML = ""; holder.hidden = true; return; }
+    holder.hidden = false;
+    const items = fresh.slice(0, 6).map((row) => {
+      const side = String(row.side || "").toUpperCase();
+      const matchup = row.fighter_1 && row.fighter_2 ? `${row.fighter_1} vs ${row.fighter_2}` : row.event_title || "";
+      return `<button class="signal-item" type="button" data-signal-fight="${escapeHtml(row.event_ticker || "")}">
+        <span class="signal-new">NEW</span>
+        <strong>${escapeHtml(String(row.phrase || ""))}</strong>
+        <span class="signal-side">${escapeHtml(side)}</span>
+        <span class="signal-fight">${escapeHtml(matchup)}</span>
+        <span class="signal-edge">${formatPlainPercent(row.edge, true)} edge</span>
+      </button>`;
+    }).join("");
+    holder.innerHTML = `<div class="signal-feed-head">New signals since your last visit</div>${items}`;
+    holder.querySelectorAll("[data-signal-fight]").forEach((button) => {
+      button.addEventListener("click", () => openFight(button.dataset.signalFight));
+    });
   }
 
   /* ---------- sidebar nav ---------- */
@@ -885,6 +930,10 @@
     if (column.type === "signal") {
       let chips = "";
       const call = String(value || "");
+      if (row.watch && state.lastSeenAtLoad !== undefined
+        && (!state.lastSeenAtLoad || String(row.snapshot_timestamp || "") > state.lastSeenAtLoad)) {
+        chips += ' <span class="chip-new">NEW</span>';
+      }
       const showChips = call.startsWith("WATCH") || call.startsWith("LEAN");
       if (showChips && row.status !== "error" && !missingPrices(row)) {
         if (row.data_risk) {

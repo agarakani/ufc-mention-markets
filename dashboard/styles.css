@@ -944,6 +944,55 @@ tbody tr.detail-row > td { padding: 0 14px 14px; border-bottom: 1px solid var(--
 .tape.is-marquee .tape-name { font-size: 52px; }
 .tape.is-marquee .tape-vs { width: 58px; height: 58px; font-size: 14px; }
 
+/* signal feed */
+.signal-feed {
+  margin-bottom: 16px;
+  border: 1px solid var(--red-line);
+  background: var(--red-bg);
+  padding: 10px 12px 12px;
+}
+.signal-feed-head {
+  margin-bottom: 8px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red-bright);
+}
+.signal-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  border-top: 1px solid var(--hairline-soft);
+  background: transparent;
+  color: var(--ink);
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+.signal-item:hover { background: rgba(229, 72, 77, 0.08); }
+.signal-item strong { font-weight: 650; }
+.signal-side { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.signal-fight { flex: 1; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.signal-edge { font-family: var(--mono); font-size: 11.5px; color: var(--pos); }
+.signal-new,
+.chip-new {
+  display: inline-block;
+  padding: 0 6px;
+  border: 1px solid var(--red-line);
+  background: var(--red);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+.chip-new { background: transparent; color: var(--red-bright); }
+
 /* performance charts */
 .perf-grid {
   display: grid;
