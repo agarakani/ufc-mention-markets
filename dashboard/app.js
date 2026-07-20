@@ -86,6 +86,7 @@
     renderFightPage();
     renderHealth();
     renderTracking();
+    renderPerformance();
   }
 
   function autoPickSignal() {
@@ -1275,6 +1276,84 @@
         <td>${result}</td>
       </tr>`;
     }).join("");
+  }
+
+  /* ---------- performance charts ---------- */
+
+  function equityChartSvg(equity) {
+    if (equity.length < 2) return "";
+    const width = 620;
+    const height = 170;
+    const pad = { top: 18, right: 76, bottom: 26, left: 14 };
+    const values = equity.map((e) => e.cumulative_pnl);
+    const min = Math.min(0, ...values);
+    const max = Math.max(0, ...values);
+    const span = (max - min) || 1;
+    const x = (i) => pad.left + (i / (equity.length - 1)) * (width - pad.left - pad.right);
+    const y = (v) => pad.top + (1 - (v - min) / span) * (height - pad.top - pad.bottom);
+
+    let path = `M ${x(0)} ${y(0)}`;
+    equity.forEach((point, i) => {
+      path += ` L ${x(i)} ${y(equity[Math.max(0, i - 1)].cumulative_pnl)} L ${x(i)} ${y(point.cumulative_pnl)}`;
+    });
+
+    const dots = equity.map((point, i) => {
+      const tone = point.cumulative_pnl >= 0 ? "var(--pos)" : "var(--neg)";
+      return `<circle cx="${x(i)}" cy="${y(point.cumulative_pnl)}" r="3.5" fill="${tone}">
+        <title>${escapeHtml(formatDate(point.date))}: card ${escapeHtml(formatMoney(point.card_pnl))}, total ${escapeHtml(formatMoney(point.cumulative_pnl))}</title>
+      </circle>`;
+    }).join("");
+
+    const last = equity[equity.length - 1];
+    const lastTone = last.cumulative_pnl >= 0 ? "var(--pos)" : "var(--neg)";
+    const zeroY = y(0);
+    const firstLabel = formatDate(equity[0].date);
+    const lastLabel = formatDate(last.date);
+
+    return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Cumulative paper profit across settled cards">
+      <line x1="${pad.left}" y1="${zeroY}" x2="${width - pad.right}" y2="${zeroY}" stroke="var(--rule)" stroke-width="1" stroke-dasharray="1 3"/>
+      <path d="${path}" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linejoin="round"/>
+      ${dots}
+      <text x="${x(equity.length - 1) + 10}" y="${y(last.cumulative_pnl) + 4}" fill="${lastTone}" font-size="14" font-weight="650" font-family="var(--mono)">${escapeHtml(formatMoney(last.cumulative_pnl))}</text>
+      <text x="${pad.left}" y="${height - 8}" fill="var(--faint)" font-size="10.5" font-family="var(--mono)">${escapeHtml(firstLabel)}</text>
+      <text x="${width - pad.right}" y="${height - 8}" fill="var(--faint)" font-size="10.5" font-family="var(--mono)" text-anchor="end">${escapeHtml(lastLabel)}</text>
+    </svg>`;
+  }
+
+  function renderPerformance() {
+    const holder = document.getElementById("performanceCharts");
+    if (!holder) return;
+    const perf = data.performance || {};
+    const equity = perf.equity || [];
+    const phrases = perf.by_phrase || [];
+    if (!equity.length && !phrases.length) { holder.innerHTML = ""; return; }
+
+    const chart = equityChartSvg(equity);
+    const equityBlock = chart
+      ? `<article class="health-block perf-block">
+          <p class="health-kicker">Paper P/L by settled card</p>
+          ${chart}
+          <p class="health-note quiet">Cumulative watch-rule paper profit, one step per settled event date. Hover a point for that card.</p>
+        </article>`
+      : "";
+
+    const maxAbs = Math.max(...phrases.map((p) => Math.abs(p.pnl)), 0.0001);
+    const phraseRows = phrases.slice(0, 12).map((p) => {
+      const width = Math.max(2, Math.abs(p.pnl) / maxAbs * 100);
+      const rate = p.trades ? Math.round(p.wins / p.trades * 100) : 0;
+      return `<div class="bar-row" title="${escapeHtml(p.phrase)}: ${formatInteger(p.trades)} trades, ${rate}% wins, ${escapeHtml(formatMoney(p.pnl))}">
+        <div class="bar-label"><span>${escapeHtml(p.phrase)} · ${formatInteger(p.trades)}</span><strong class="${toneClass(p.pnl)}">${escapeHtml(formatMoney(p.pnl))} · ${rate}%</strong></div>
+        <div class="bar-track"><span class="bar-fill ${p.pnl >= 0 ? "good" : "bad"}" style="width:${width}%"></span></div>
+      </div>`;
+    }).join("");
+    const phraseBlock = phrases.length
+      ? `<article class="health-block perf-block">
+          <p class="health-kicker">P/L by phrase (settled trades · win rate)</p>
+          <div class="bar-chart">${phraseRows}</div>
+        </article>`
+      : "";
+
+    holder.innerHTML = equityBlock + phraseBlock;
   }
 
   function formatShortStamp(value) {

@@ -27,6 +27,7 @@ KALSHI_AUDIT_SUMMARY = ROOT / "model_outputs" / "kalshi_grouped_rule_audit_summa
 KALSHI_CONTEXT_BACKTEST_SUMMARY = ROOT / "model_outputs" / "kalshi_context_model_backtest_summary.json"
 KALSHI_CONTEXT_BACKTEST_GROUPS = ROOT / "model_outputs" / "kalshi_context_model_backtest.csv"
 PL_BACKTEST_SUMMARY = ROOT / "model_outputs" / "pl_backtest_summary.json"
+PL_BACKTEST_TRADES = ROOT / "model_outputs" / "pl_backtest_trades.csv"
 WALKFORWARD_REPORT = ROOT / "model_outputs" / "walkforward_report.json"
 FIGHTER_DIRECTORY = ROOT / "data" / "processed" / "fighter_directory.csv"
 FIGHTER_ASSETS = ROOT / "dashboard" / "assets" / "fighters"
@@ -448,6 +449,38 @@ def build_backtest_groups(rows: list[dict]) -> list[dict]:
     return groups
 
 
+def build_performance(trade_rows: list[dict]) -> dict:
+    official = [row for row in trade_rows if str(row.get("cohort", "")).strip() == "official"]
+    if not official:
+        return {"equity": [], "by_phrase": [], "official_trades": 0}
+
+    by_date: dict[str, float] = {}
+    by_phrase: dict[str, dict] = {}
+    for row in official:
+        pnl = number(row.get("pnl")) or 0.0
+        date = str(row.get("event_date", "")).strip() or "unknown"
+        by_date[date] = by_date.get(date, 0.0) + pnl
+        phrase = str(row.get("phrase", "")).strip() or "unknown"
+        entry = by_phrase.setdefault(phrase, {"phrase": phrase, "trades": 0, "wins": 0, "pnl": 0.0})
+        entry["trades"] += 1
+        entry["wins"] += str(row.get("won", "")).strip().lower() == "true"
+        entry["pnl"] += pnl
+
+    equity = []
+    cumulative = 0.0
+    for date in sorted(by_date):
+        cumulative += by_date[date]
+        equity.append({
+            "date": date,
+            "card_pnl": round(by_date[date], 4),
+            "cumulative_pnl": round(cumulative, 4),
+        })
+    phrases = sorted(by_phrase.values(), key=lambda item: -item["pnl"])
+    for entry in phrases:
+        entry["pnl"] = round(entry["pnl"], 4)
+    return {"equity": equity, "by_phrase": phrases, "official_trades": len(official)}
+
+
 def build_walkforward(report: dict) -> dict:
     if not report:
         return {"available": False}
@@ -828,6 +861,7 @@ def build_payload() -> dict:
         "kalshi": kalshi_rows,
         "fighters": fighters,
         "upcoming_events": build_upcoming_events(),
+        "performance": build_performance(read_csv(PL_BACKTEST_TRADES)),
         "kalshi_cards": kalshi_cards,
         "kalshi_events": kalshi_events,
         "kalshi_meta": kalshi_meta,
