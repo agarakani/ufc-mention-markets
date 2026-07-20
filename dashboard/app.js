@@ -16,6 +16,7 @@
   };
 
   const els = {
+    fightPage: document.getElementById("fightPage"),
     countsLine: document.getElementById("countsLine"),
     status: document.getElementById("dataStatus"),
     refreshButton: document.getElementById("refreshButton"),
@@ -24,6 +25,7 @@
     paperBadge: document.getElementById("paperBadge"),
     pages: {
       markets: document.getElementById("page-markets"),
+      fight: document.getElementById("page-fight"),
       paper: document.getElementById("page-paper"),
       model: document.getElementById("page-model"),
     },
@@ -50,12 +52,28 @@
       els.tableBody.innerHTML = '<tr><td class="empty">No local dashboard data found.</td></tr>';
       return;
     }
+    readRoute();
     chooseDefaultCard();
     populatePhraseFilter();
     setupRefreshButton();
     bindEvents();
     renderAll();
     scheduleAutoUpdate();
+    window.addEventListener("hashchange", () => {
+      readRoute();
+      renderAll();
+    });
+  }
+
+  function readRoute() {
+    const match = window.location.hash.match(/^#fight\/(.+)$/);
+    state.fightRoute = match ? decodeURIComponent(match[1]) : "";
+    if (state.fightRoute) state.tab = "fight";
+    else if (state.tab === "fight") state.tab = "markets";
+  }
+
+  function openFight(eventTicker) {
+    window.location.hash = `#fight/${encodeURIComponent(eventTicker)}`;
   }
 
   function renderAll() {
@@ -65,6 +83,7 @@
     renderNav();
     renderFightHeader();
     renderTable();
+    renderFightPage();
     renderHealth();
     renderTracking();
   }
@@ -224,6 +243,10 @@
     els.tabBar.addEventListener("click", (event) => {
       const tab = event.target.closest("[data-tab]");
       if (!tab) return;
+      if (state.fightRoute) {
+        state.fightRoute = "";
+        history.replaceState(null, "", window.location.pathname + window.location.search);
+      }
       state.tab = tab.dataset.tab;
       renderTabs();
     });
@@ -435,10 +458,10 @@
           watch ? `<span class="watch-note">${formatInteger(watch)} watch row${plural(watch)}</span>` : "no watch rows right now",
         ];
       const hero = fight.fighter_1 && fight.fighter_2
-        ? tapeHtml(fight.fighter_1, fight.fighter_2)
+        ? tapeHtml(fight.fighter_1, fight.fighter_2, { large: isMarquee(fight.fighter_1, fight.fighter_2) })
         : `<h2 class="matchup-hero solo">${escapeHtml(fight.matchup || "TBD fight")}</h2>`;
       els.fightHeader.innerHTML = `
-        <p class="crumb">${escapeHtml(card.card_title || "UFC card")} · ${escapeHtml(formatDate(fight.event_date) || "date TBD")}${tonightBadge(fight.event_date)}</p>
+        <p class="crumb">${escapeHtml(card.card_title || "UFC card")} · ${escapeHtml(formatDate(fight.event_date) || "date TBD")}${tonightBadge(fight.event_date)} · <a class="fight-link" href="#fight/${encodeURIComponent(fight.event_ticker)}">Fight page &rarr;</a></p>
         ${hero}
         <p class="fight-sub">${bits.join(" · ")}</p>`;
       return;
@@ -917,6 +940,167 @@
     return `<span class="pill ${tone || ""}">${escapeHtml(String(value))}</span>`;
   }
 
+  /* ---------- fight page ---------- */
+
+  function findLiveFight(eventTicker) {
+    for (const card of getCards()) {
+      const fight = (card.fights || []).find((f) => f.event_ticker === eventTicker);
+      if (fight) return { fight, card };
+    }
+    return null;
+  }
+
+  function historyStrip(name) {
+    const identity = identityFor(name);
+    if (!identity) return "";
+    const rates = identity.rates || {};
+    const families = [
+      ["submission", "Submission"],
+      ["knockout_family", "Knockout words"],
+      ["decision_family", "Decision words"],
+      ["choke", "Choke"],
+    ];
+    const bars = families.map(([key, label]) => {
+      const rate = parseNumber(rates[key]);
+      if (rate === null) return "";
+      return `<div class="bar-row">
+        <div class="bar-label"><span>${escapeHtml(label)}</span><strong>${formatPlainPercent(rate)}</strong></div>
+        <div class="bar-track"><span class="bar-fill" style="width:${Math.max(2, rate * 100)}%"></span></div>
+      </div>`;
+    }).filter(Boolean).join("");
+    const meta = [
+      identity.n_fights ? `${formatInteger(identity.n_fights)} fights in our transcript data` : "",
+      identity.last_event_date ? `last ${formatDate(identity.last_event_date)}` : "",
+    ].filter(Boolean).join(" · ");
+    return `<article class="health-block fighter-history">
+      <p class="health-kicker">${escapeHtml(identity.name)}${identity.nickname ? ` “${escapeHtml(identity.nickname)}”` : ""}</p>
+      ${meta ? `<p class="health-note">${escapeHtml(meta)}</p>` : ""}
+      <div class="bar-chart">${bars || '<p class="health-note">No transcript history for this fighter yet.</p>'}</div>
+      <p class="health-note quiet">Share of this fighter's past fights where commentary used each word family.</p>
+    </article>`;
+  }
+
+  function fightMarketTable(rows) {
+    if (!rows.length) {
+      return '<div class="panel"><p class="empty-block">No open mention markets for this fight right now.</p></div>';
+    }
+    const columns = activeColumns().filter((column) => column.key !== "matchup");
+    const head = `<tr>${columns.map((c) => `<th class="${c.className || ""}">${escapeHtml(c.label)}</th>`).join("")}</tr>`;
+    const body = rows.map((row) => {
+      const key = String(row.ticker || "");
+      const open = key && state.expanded.has(key);
+      const cells = columns.map((c) => `<td class="${c.className || ""}">${formatCell(row[c.key], c, row)}</td>`).join("");
+      const detail = open ? `<tr class="detail-row"><td colspan="${columns.length}">${auditDetail(row)}</td></tr>` : "";
+      return `<tr class="${row.watch ? "is-watch" : ""} is-expandable ${open ? "is-open" : ""}" data-fp-expand="${escapeHtml(key)}">${cells}</tr>${detail}`;
+    }).join("");
+    return `<div class="panel"><div class="table-wrap"><table>
+      <thead>${head}</thead><tbody>${body}</tbody>
+    </table></div></div>`;
+  }
+
+  function fightPositionsTable(positions) {
+    if (!positions.length) return "";
+    const rows = positions.map((row) => {
+      const side = String(row.paper_side || row.side || "").toLowerCase();
+      const entry = parseNumber(row.paper_price);
+      const settled = row.outcome === "yes" || row.outcome === "no";
+      let result;
+      if (settled) {
+        const pnl = settledPnl(row);
+        result = pill(`${side === row.outcome ? "WIN" : "LOSS"} ${formatMoney(pnl)}`, pnl > 0 ? "good" : "bad");
+      } else if (row.resolution_status === "pending") {
+        result = pill("PENDING", "quiet-warn");
+      } else {
+        result = pill("OPEN");
+      }
+      return `<tr>
+        <td class="num muted">${escapeHtml(formatShortStamp(row.entered_at || row.tracked_at))}</td>
+        <td>${pill(row.phrase || "")}</td>
+        <td>${sidePill(side)}</td>
+        <td class="num">${formatPlainPercent(entry)}</td>
+        <td>${result}</td>
+      </tr>`;
+    }).join("");
+    return `<h3 class="fight-section-title">Paper trades on this fight</h3>
+      <div class="panel"><div class="table-wrap"><table class="tracking-table">
+      <thead><tr><th>Entered</th><th>Phrase</th><th>Side</th><th class="num">Entry</th><th>Result</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div></div>`;
+  }
+
+  function renderFightPage() {
+    if (!els.fightPage) return;
+    if (state.tab !== "fight" || !state.fightRoute) {
+      els.fightPage.innerHTML = "";
+      return;
+    }
+    const ticker = state.fightRoute;
+    const live = findLiveFight(ticker);
+    const liveRows = getRows().filter((row) => row.event_ticker === ticker).map(deriveRow);
+    const positions = (data.tracking_positions || []).filter((p) => p.event_ticker === ticker);
+    const source = live || (positions.length ? { fight: positions[0], card: null } : null);
+
+    if (!source) {
+      els.fightPage.innerHTML = `
+        <p><a class="back-link" href="#" data-fight-back>&larr; Back to markets</a></p>
+        <h2>Fight not found</h2>
+        <p class="fight-sub">This fight is not in the current data. It may have settled long ago or not opened yet.</p>`;
+      bindFightPage();
+      return;
+    }
+
+    const f1 = source.fight.fighter_1 || "";
+    const f2 = source.fight.fighter_2 || "";
+    const title = live ? (live.card || {}).card_title : positions[0] && positions[0].card;
+    const date = live ? live.fight.event_date : "";
+    const watch = liveRows.filter((row) => row.watch).length;
+    const settledCount = positions.filter((p) => p.outcome === "yes" || p.outcome === "no").length;
+    const subBits = [
+      title || "",
+      date ? `${formatDate(date)}${tonightBadge(date)}` : "",
+      liveRows.length ? `${formatInteger(liveRows.length)} phrase market${plural(liveRows.length)}` : "",
+      watch ? `<span class="watch-note">${formatInteger(watch)} watch</span>` : "",
+      positions.length ? `${formatInteger(positions.length)} paper trade${plural(positions.length)}${settledCount ? ` (${formatInteger(settledCount)} settled)` : ""}` : "",
+    ].filter(Boolean).join(" · ");
+
+    const hero = f1 && f2
+      ? tapeHtml(f1, f2, { large: isMarquee(f1, f2) })
+      : `<h2 class="matchup-hero solo">${escapeHtml(source.fight.matchup || source.fight.event_title || "Fight")}</h2>`;
+
+    const strips = [historyStrip(f1), historyStrip(f2)].filter(Boolean).join("");
+
+    els.fightPage.innerHTML = `
+      <p><a class="back-link" href="#" data-fight-back>&larr; Back to markets</a></p>
+      ${hero}
+      <p class="fight-sub">${subBits}</p>
+      ${liveRows.length ? '<h3 class="fight-section-title">Mention markets</h3>' : ""}
+      ${fightMarketTable(liveRows)}
+      ${strips ? `<h3 class="fight-section-title">What these fighters bring</h3><div class="health-grid two">${strips}</div>` : ""}
+      ${fightPositionsTable(positions)}`;
+    bindFightPage();
+  }
+
+  function bindFightPage() {
+    els.fightPage.querySelectorAll("[data-fight-back]").forEach((link) => {
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        state.fightRoute = "";
+        history.replaceState(null, "", window.location.pathname + window.location.search);
+        state.tab = "markets";
+        renderAll();
+      });
+    });
+    els.fightPage.querySelectorAll("tr[data-fp-expand]").forEach((tr) => {
+      tr.addEventListener("click", () => {
+        const key = tr.dataset.fpExpand;
+        if (!key) return;
+        if (state.expanded.has(key)) state.expanded.delete(key);
+        else state.expanded.add(key);
+        renderFightPage();
+      });
+    });
+  }
+
   /* ---------- model health ---------- */
 
   function renderHealth() {
@@ -1082,7 +1266,7 @@
       }
       return `<tr>
         <td class="num muted">${escapeHtml(formatShortStamp(row.entered_at || row.tracked_at))}</td>
-        <td><div class="fight-cell with-avatars">${avatarPair(row.fighter_1, row.fighter_2, 22)}<div><strong>${escapeHtml(row.matchup || "")}</strong><span>${escapeHtml(row.card || "")}</span></div></div></td>
+        <td><div class="fight-cell with-avatars">${avatarPair(row.fighter_1, row.fighter_2, 22)}<div><strong><a class="fight-link" href="#fight/${encodeURIComponent(row.event_ticker || "")}">${escapeHtml(row.matchup || "")}</a></strong><span>${escapeHtml(row.card || "")}</span></div></div></td>
         <td>${pill(row.phrase || "")}</td>
         <td>${sidePill(side)}</td>
         <td class="num">${formatPlainPercent(entry)}</td>

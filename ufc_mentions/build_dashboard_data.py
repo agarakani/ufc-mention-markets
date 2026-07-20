@@ -364,6 +364,7 @@ def build_tracking_positions() -> list[dict]:
                 "paper_action",
                 "paper_reason",
                 "event_title",
+                "event_ticker",
                 "fighter_1",
                 "fighter_2",
                 "ticker",
@@ -371,6 +372,8 @@ def build_tracking_positions() -> list[dict]:
                 "watch",
                 "confidence_note",
             ])
+            if not item.get("event_ticker"):
+                item["event_ticker"] = "-".join(str(row.get("ticker", "")).split("-")[:2])
             for field in [
                 "paper_price",
                 "model_probability",
