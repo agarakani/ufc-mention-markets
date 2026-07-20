@@ -95,6 +95,8 @@ def publish(quiet: bool = False) -> str:
         run(["git", "init", "-q", "-b", "gh-pages"], site)
         run(["git", "config", "user.name", "agarakani"], site)
         run(["git", "config", "user.email", "236674347+agarakani@users.noreply.github.com"], site)
+        # the photo assets push several MB at once; the default 1MB buffer hangs up
+        run(["git", "config", "http.postBuffer", "157286400"], site)
         run(["git", "add", "-A"], site)
         run(["git", "commit", "-q", "-m", "Publish dashboard snapshot"], site)
         run(["git", "push", "--force", "-q", remote, "gh-pages"], site)
