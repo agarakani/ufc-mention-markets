@@ -46,12 +46,17 @@ def publish_interval_seconds(today: str, live_event_dates: list[str]) -> int:
     return PUBLISH_IDLE_INTERVAL_SECONDS
 
 
-def static_index(index_html: str) -> str:
-    """Mark the published copy as a static site so the page behaves right."""
+def static_index(index_html: str, version: int | None = None) -> str:
+    """Mark the published copy as a static site so the page behaves right.
+
+    The stylesheet link gets a version query so browsers and the Pages CDN
+    can never pair fresh markup with a stale cached stylesheet."""
     flag = "      window.STATIC_SITE = true;\n"
     if LOADER_LINE not in index_html:
         raise SystemExit("dashboard/index.html changed shape; update publish_site.py")
-    return index_html.replace(LOADER_LINE, flag + LOADER_LINE, 1)
+    out = index_html.replace(LOADER_LINE, flag + LOADER_LINE, 1)
+    stamp = int(time.time()) if version is None else version
+    return out.replace('href="styles.css"', f'href="styles.css?v={stamp}"', 1)
 
 
 def publish_due(now: float | None = None, interval_seconds: int | None = None) -> bool:

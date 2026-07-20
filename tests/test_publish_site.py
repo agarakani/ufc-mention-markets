@@ -48,6 +48,11 @@ class StaticIndexTests(unittest.TestCase):
         self.assertIn("window.STATIC_SITE = true;", out)
         self.assertLess(out.index("STATIC_SITE"), out.index("cacheBust"))
 
+    def test_stylesheet_link_is_version_busted(self):
+        html = f'<link rel="stylesheet" href="styles.css"><script>\n{LOADER_LINE}\n</script>'
+        out = static_index(html, version=12345)
+        self.assertIn('href="styles.css?v=12345"', out)
+
     def test_unexpected_index_shape_fails_loudly(self):
         with self.assertRaises(SystemExit):
             static_index("<html>changed</html>")
