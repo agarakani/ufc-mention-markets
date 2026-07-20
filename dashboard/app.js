@@ -584,11 +584,6 @@
   }
 
   function avatarHtml(name, corner, size) {
-    const identity = identityFor(name);
-    if (identity && identity.photo) {
-      return `<span class="avatar photo" style="width:${size}px;height:${size}px" aria-hidden="true">` +
-        `<img src="${escapeHtml(identity.photo)}" alt="" loading="lazy"></span>`;
-    }
     const hash = nameHash(name);
     const base = corner === "red" ? 352 : 210;      // corner hue family
     const hue = (base + (hash % 26) - 13 + 360) % 360;

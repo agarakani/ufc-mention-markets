@@ -913,15 +913,6 @@ tbody tr.detail-row > td { padding: 0 14px 14px; border-bottom: 1px solid var(--
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
   user-select: none;
 }
-.avatar.photo { overflow: hidden; background: #16161a; }
-.avatar.photo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top center;
-  display: block;
-  filter: saturate(0.92) contrast(1.04);
-}
 .mini-avatars { display: inline-flex; align-items: center; flex: none; }
 .mini-avatars .avatar + .avatar { margin-left: -7px; }
 .nav-fight .mini-avatars .avatar { box-shadow: inset 0 -6px 10px rgba(0,0,0,.35), 0 0 0 1.5px var(--bg); }

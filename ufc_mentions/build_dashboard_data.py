@@ -31,7 +31,6 @@ PL_BACKTEST_TRADES = ROOT / "model_outputs" / "pl_backtest_trades.csv"
 WALKFORWARD_REPORT = ROOT / "model_outputs" / "walkforward_report.json"
 V2_GATE_REPORT = ROOT / "model_outputs" / "v2_gate_report.json"
 FIGHTER_DIRECTORY = ROOT / "data" / "processed" / "fighter_directory.csv"
-FIGHTER_ASSETS = ROOT / "dashboard" / "assets" / "fighters"
 UPCOMING_EVENTS = ROOT / "data" / "processed" / "upcoming_events.json"
 TRACKING_ROOT = ROOT / "data" / "tracking"
 TRACKING_WEEKLY_SUMMARY = TRACKING_ROOT / "weekly_summary.csv"
@@ -100,8 +99,6 @@ def build_fighter_identities() -> dict[str, dict]:
     rows = read_csv(FIGHTER_DIRECTORY)
     if not rows:
         return {}
-    manifest_file = FIGHTER_ASSETS / "manifest.json"
-    manifest = read_json(manifest_file) if manifest_file.exists() else {}
 
     fighters: dict[str, dict] = {}
     for row in rows:
@@ -110,15 +107,9 @@ def build_fighter_identities() -> dict[str, dict]:
             continue
         wins = as_int(row.get("record_wins"))
         losses = as_int(row.get("record_losses"))
-        photo_entry = manifest.get(key) or {}
-        photo = None
-        if photo_entry.get("status") == "ok" and photo_entry.get("file"):
-            if (FIGHTER_ASSETS / photo_entry["file"]).exists():
-                photo = f"assets/fighters/{photo_entry['file']}"
         fighters[key] = {
             "name": row.get("name", ""),
             "nickname": row.get("nickname", ""),
-            "photo": photo,
             "record": f"{wins}-{losses}" if wins is not None and losses is not None else "",
             "stance": row.get("stance", ""),
             "height_cms": number(row.get("height_cms")),

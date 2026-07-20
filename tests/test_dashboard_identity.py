@@ -31,18 +31,10 @@ def write_directory(path, rows):
 def test_build_fighter_identities(tmp_path, monkeypatch):
     directory = tmp_path / "fighter_directory.csv"
     write_directory(directory, [DIRECTORY_ROW])
-    assets = tmp_path / "fighters"
-    assets.mkdir()
-    (assets / "manifest.json").write_text(json.dumps({
-        "max holloway": {"status": "ok", "file": "max_holloway.jpg"},
-    }))
-    (assets / "max_holloway.jpg").write_bytes(b"\xff\xd8fake")
     monkeypatch.setattr(bdd, "FIGHTER_DIRECTORY", directory)
-    monkeypatch.setattr(bdd, "FIGHTER_ASSETS", assets)
 
     fighters = bdd.build_fighter_identities()
     ident = fighters["max holloway"]
-    assert ident["photo"] == "assets/fighters/max_holloway.jpg"
     assert ident["nickname"] == "Blessed"
     assert ident["marquee_score"] == 95
     assert ident["style_tags"] == ["FINISHER"]
@@ -51,7 +43,6 @@ def test_build_fighter_identities(tmp_path, monkeypatch):
 
 def test_missing_directory_is_soft(tmp_path, monkeypatch):
     monkeypatch.setattr(bdd, "FIGHTER_DIRECTORY", tmp_path / "missing.csv")
-    monkeypatch.setattr(bdd, "FIGHTER_ASSETS", tmp_path / "missing_assets")
     assert bdd.build_fighter_identities() == {}
 
 
@@ -60,11 +51,7 @@ def test_fight_marquee_score(tmp_path, monkeypatch):
     other = dict(DIRECTORY_ROW, name="Ilia Topuria", name_lower="ilia topuria",
                  nickname="El Matador", marquee_score="26")
     write_directory(directory, [DIRECTORY_ROW, other])
-    assets = tmp_path / "fighters"
-    assets.mkdir()
-    (assets / "manifest.json").write_text("{}")
     monkeypatch.setattr(bdd, "FIGHTER_DIRECTORY", directory)
-    monkeypatch.setattr(bdd, "FIGHTER_ASSETS", assets)
 
     fighters = bdd.build_fighter_identities()
     assert bdd.fight_marquee_score("Max Holloway", "Ilia Topuria", fighters) == 121

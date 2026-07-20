@@ -31,13 +31,14 @@ class PublishIntervalTests(unittest.TestCase):
 
 
 class StageSiteTests(unittest.TestCase):
-    def test_fighter_assets_are_published(self):
+    def test_site_files_are_staged(self):
         with tempfile.TemporaryDirectory() as tmp:
             site = Path(tmp) / "site"
             site.mkdir()
             stage_site(site)
             self.assertTrue((site / "app.js").exists())
-            self.assertTrue((site / "assets" / "fighters" / "manifest.json").exists())
+            self.assertTrue((site / "styles.css").exists())
+            self.assertTrue((site / ".nojekyll").exists())
 
 
 class StaticIndexTests(unittest.TestCase):

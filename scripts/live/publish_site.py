@@ -73,9 +73,6 @@ def stage_site(site: Path) -> None:
     )
     for name in SITE_FILES:
         shutil.copyfile(DASHBOARD / name, site / name)
-    assets = DASHBOARD / "assets"
-    if assets.exists():
-        shutil.copytree(assets, site / "assets")
     (site / ".nojekyll").write_text("", encoding="utf-8")
 
 
