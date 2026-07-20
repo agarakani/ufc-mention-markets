@@ -44,6 +44,8 @@ HISTORY_DEFAULT = ROOT / "market_data" / "kalshi_price_history.csv"
 META_DEFAULT = ROOT / "market_data" / "kalshi_live_meta.json"
 SETTLE_ATTEMPT_MARKER = ROOT / "model_outputs" / ".pl_settle_attempt"
 SETTLE_MIN_INTERVAL_SECONDS = 30 * 60
+PHOTO_FETCH_MARKER = ROOT / "model_outputs" / ".photo_fetch_stamp"
+PHOTO_FETCH_INTERVAL_SECONDS = 6 * 60 * 60
 
 
 def cards_needing_settle(
@@ -189,6 +191,32 @@ def maybe_settle_money_backtest(*, now: float | None = None) -> str:
         f"through {summary.get('latest_settled_event_date') or '?'}; "
         f"paper trades now {official.get('trades', 0)}"
     )
+
+def _launch_photo_fetch() -> None:
+    import subprocess
+
+    subprocess.Popen(
+        [sys.executable, str(ROOT / "scripts" / "data" / "fetch_fighter_photos.py"), "--from-live"],
+        stdout=open(ROOT / "model_outputs" / "photo_fetch.log", "a"),
+        stderr=subprocess.STDOUT,
+        start_new_session=True,
+    )
+
+
+def maybe_fetch_photos(*, now: float | None = None) -> str:
+    now = time.time() if now is None else now
+    if PHOTO_FETCH_MARKER.exists():
+        age = now - PHOTO_FETCH_MARKER.stat().st_mtime
+        if age < PHOTO_FETCH_INTERVAL_SECONDS:
+            return f"waiting ({int((PHOTO_FETCH_INTERVAL_SECONDS - age) // 3600)}h)"
+    try:
+        PHOTO_FETCH_MARKER.parent.mkdir(parents=True, exist_ok=True)
+        PHOTO_FETCH_MARKER.touch()
+        _launch_photo_fetch()
+    except Exception:
+        return "photo fetch skipped"
+    return "photo fetch started"
+
 
 FIELDS = [
     "snapshot_timestamp", "series_ticker", "event_ticker", "event_date",
@@ -595,6 +623,10 @@ def refresh_once(
     except Exception as exc:
         if verbose:
             print(f"  money backtest settle skipped: {exc}", flush=True)
+
+    photo_note = maybe_fetch_photos()
+    if verbose and photo_note == "photo fetch started":
+        print("  fighter photos: refresh started", flush=True)
 
     payload = build_payload()
     write_data(DASHBOARD_DATA, payload)
