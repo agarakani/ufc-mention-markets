@@ -487,8 +487,7 @@
       const watch = Number(fight.watch_count || 0);
       const tag = tbd ? "TBD" : watch ? `${formatInteger(watch)} watch` : formatInteger(fight.priced_count);
       items.push(`<button class="nav-fight ${selected ? "is-selected" : ""} ${tbd ? "is-tbd" : ""}" type="button" data-nav-fight="${escapeHtml(fight.event_ticker)}">
-        ${avatarPair(fight.fighter_1, fight.fighter_2, 20)}
-        <strong>${escapeHtml(fight.matchup || "TBD fight")}</strong>
+        <strong>${fight.fighter_1 && fight.fighter_2 ? cornerKey(fight.fighter_1, fight.fighter_2) : escapeHtml(fight.matchup || "TBD fight")}</strong>
         <span class="nav-tag ${watch ? "watch" : ""}">${escapeHtml(tag)}</span>
       </button>`);
     });
@@ -605,237 +604,52 @@
     return matches.length === 1 ? matches[0] : null;
   }
 
-  function fnv1a(text) {
-    let h = 2166136261;
-    const s = String(text || "");
-    for (let i = 0; i < s.length; i += 1) {
-      h ^= s.charCodeAt(i);
-      h = Math.imul(h, 16777619) >>> 0;
-    }
-    return h >>> 0;
+  /* ---------- fighter identity ----------
+     No generated emblem: a mark that cannot be read at 20px is decoration.
+     Identity is the corner (the sport's own code) plus the fighter's real
+     numbers, which is what anyone actually reads a fighter by. */
+
+  function cornerKey(f1, f2) {
+    if (!f1 || !f2) return `<span class="corner red">${escapeHtml(f1 || f2 || "--")}</span>`;
+    return `<span class="corner red">${escapeHtml(f1)}</span>`
+      + '<span class="vs">v</span>'
+      + `<span class="corner blue">${escapeHtml(f2)}</span>`;
   }
 
-  function mulberry32(seed) {
-    let a = seed >>> 0;
-    return function () {
-      a = (a + 0x6D2B79F5) | 0;
-      let t = Math.imul(a ^ (a >>> 15), 1 | a);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
-
-  const WEIGHT_ABBR = {
-    strawweight: "SW", flyweight: "FLW", bantamweight: "BW", featherweight: "FW",
-    lightweight: "LW", welterweight: "WW", middleweight: "MW",
-    "light heavyweight": "LHW", heavyweight: "HW", "catch weight": "CW",
-  };
-
-  function weightAbbr(weightClass) {
-    const text = String(weightClass || "").toLowerCase();
-    for (const key of Object.keys(WEIGHT_ABBR)) {
-      if (text.includes(key)) return (text.includes("women") ? "W·" : "") + WEIGHT_ABBR[key];
-    }
-    return "";
-  }
-
-  function sealParams(name) {
-    const identity = identityFor(name) || {};
-    const key = [
-      identity.name || name, identity.nickname || "", identity.record || "",
-      identity.stance || "", identity.reach_cms || "", identity.height_cms || "",
-      (identity.style_tags || []).slice().sort().join("+"), identity.weight_class || "",
-    ].join("|");
-    const h = fnv1a(key.toLowerCase());
-    const rand = mulberry32(h);
-    const pick = (arr) => arr[Math.floor(rand() * arr.length)];
-    const wins = identity.wins != null ? identity.wins : h % 19;
-    const losses = identity.losses != null ? identity.losses : (h >>> 5) % 9;
-    const fights = identity.n_fights || (h >>> 3) % 20;
-    const tag = (identity.style_tags || [])[0] || "";
-    const family = tag === "GRAPPLER" ? "lattice"
-      : tag === "FINISHER" ? "burst"
-        : tag === "DISTANCE FIGHTER" ? "gauge"
-          : pick(["lattice", "burst", "gauge"]);
-    const reachDiffIn = identity.reach_cms && identity.height_cms
-      ? (identity.reach_cms - identity.height_cms) / 2.54 : rand() * 6 - 1;
-    const clampMap = (v, a, b, c, d) => c + (Math.min(b, Math.max(a, v)) - a) / (b - a) * (d - c);
-    const stance = String(identity.stance || "").toLowerCase();
-    return {
-      h,
-      k1: 6 + (wins % 7),
-      k2: (6 + (wins % 7)) * pick([2, 3, 5]),
-      a1: clampMap(reachDiffIn, -2, 8, 0.06, 0.22),
-      rings: Math.min(7, Math.max(3, 3 + Math.floor(fights / 8))),
-      gap: clampMap(losses, 0, 10, 3.2, 1.6),
-      mirrored: stance === "southpaw",
-      counter: stance === "switch",
-      bearing: clampMap(["sw", "flw", "bw", "fw", "lw", "ww", "mw", "lhw", "hw"]
-        .indexOf((weightAbbr(identity.weight_class) || "lw").replace("W·", "").toLowerCase()), 0, 8, 1.0, 2.6),
-      classMark: weightAbbr(identity.weight_class),
-      record: identity.record || "",
-      theta0: h % 360,
-      phi2: ((h >>> 9) % 628) / 100,
-      family,
-    };
-  }
-
-  function sealCurve(p, opts = {}) {
-    const R = 44;
-    const k2 = opts.singleFrequency ? 1 : (opts.k2 || p.k2);
-    const k1 = opts.k1 || p.k1;
-    const phi1 = opts.phi1 || 0;
-    const points = [];
-    for (let i = 0; i <= 240; i += 1) {
-      const t = (i * 1.5) * Math.PI / 180;
-      const r = R * (0.78 + p.a1 * Math.cos(k1 * t + phi1) * Math.cos(k2 * t + p.phi2));
-      points.push(`${(50 + r * Math.cos(t)).toFixed(2)},${(50 + r * Math.sin(t)).toFixed(2)}`);
-    }
-    return `M ${points.join(" L ")} Z`;
-  }
-
-  function sealFamilyOverlay(p) {
-    const parts = [];
-    if (p.family === "lattice") {
-      for (let i = 0; i < Math.min(p.rings, p.k1); i += 1) {
-        const t = (i / p.k1) * 2 * Math.PI;
-        const cx = 50 + 17 * Math.cos(t);
-        const cy = 50 + 17 * Math.sin(t);
-        parts.push(`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="27" fill="none" stroke-opacity="0.45"/>`);
-      }
-    } else if (p.family === "burst") {
-      for (let i = 0; i < 2 * p.k1; i += 1) {
-        const t = (i / (2 * p.k1)) * 2 * Math.PI;
-        const outer = i % 2 ? 39.6 : 31.7;
-        parts.push(`<line x1="${(50 + 13.2 * Math.cos(t)).toFixed(1)}" y1="${(50 + 13.2 * Math.sin(t)).toFixed(1)}" x2="${(50 + outer * Math.cos(t)).toFixed(1)}" y2="${(50 + outer * Math.sin(t)).toFixed(1)}" stroke-opacity="0.5"/>`);
-      }
-    } else {
-      for (let i = 0; i < p.rings; i += 1) {
-        const r = 14 + i * (26 / p.rings);
-        parts.push(`<circle cx="50" cy="50" r="${r.toFixed(1)}" fill="none" stroke-dasharray="1 ${p.gap.toFixed(1)}" stroke-opacity="0.55"/>`);
-      }
-    }
-    return parts.join("");
-  }
-
-  function sealSVG(name, corner, sizePx, detail) {
-    const p = sealParams(name);
-    const cornerColor = corner === "blue" ? "var(--corner-blue)" : "var(--corner-red)";
-    const uid = `s${p.h.toString(36)}${detail}${corner === "blue" ? "b" : "r"}`;
-    const flip = p.mirrored ? ' transform="scale(-1,1) translate(-100,0)"' : "";
-    const rotate = `rotate(${p.theta0} 50 50)`;
-    let inner = "";
-    if (detail === 0) {
-      inner = `<path d="${sealCurve(p, { singleFrequency: true })}" fill="none" stroke-width="2.5"/>`;
-    } else {
-      inner = `<path d="${sealCurve(p)}" fill="none" stroke-width="0.9" stroke-opacity="0.85"/>`
-        + `<g transform="translate(0.5,0.5)"><path d="${sealCurve(p)}" fill="none" stroke-width="0.9" stroke-opacity="0.3"/></g>`
-        + `<g stroke-width="0.55">${sealFamilyOverlay(p)}</g>`;
-      if (p.counter) {
-        inner += `<path d="${sealCurve(p, { phi1: Math.PI / p.k1 })}" fill="none" stroke-width="0.6" stroke-opacity="0.4"/>`;
-      }
-    }
-    if (detail === 2) {
-      inner += `<path d="${sealCurve(p, { k1: p.k1 + 1 })}" fill="none" stroke-width="0.55" stroke-opacity="0.3"/>`;
-      for (let i = 0; i < 60; i += 1) {
-        const t = (i / 60) * 2 * Math.PI;
-        inner += `<line x1="${(50 + 44 * Math.cos(t)).toFixed(1)}" y1="${(50 + 44 * Math.sin(t)).toFixed(1)}" x2="${(50 + 47 * Math.cos(t)).toFixed(1)}" y2="${(50 + 47 * Math.sin(t)).toFixed(1)}" stroke-width="0.4" stroke-opacity="0.5"/>`;
-      }
-      if (p.record) {
-        const micro = `${p.record} · `.repeat(8);
-        inner += `<defs><path id="${uid}m" d="M 50 14 A 36 36 0 1 1 49.9 14"/></defs>`
-          + `<text font-size="3.2" letter-spacing="0.6" fill="var(--ink-3)" stroke="none"><textPath href="#${uid}m">${escapeHtml(micro)}</textPath></text>`;
-      }
-    }
-    let classText = "";
-    if (detail >= 1 && p.classMark) {
-      classText = `<defs><path id="${uid}c" d="M 50 9 A 41 41 0 0 1 91 50"/></defs>`
-        + `<text font-size="7" letter-spacing="3" fill="var(--ink-2)" stroke="none" font-family="var(--label)"><textPath href="#${uid}c">${escapeHtml(p.classMark)}</textPath></text>`;
-    }
-    return `<svg class="seal" viewBox="0 0 100 100" width="${sizePx}" height="${sizePx}" aria-hidden="true">
-      <g stroke="var(--seal-ink)"${flip}><g transform="${rotate}">${inner}</g>${classText}</g>
-      <circle cx="50" cy="50" r="47" fill="none" stroke="${cornerColor}" stroke-width="${p.bearing.toFixed(1)}"/>
-    </svg>`;
-  }
-
-  function recordTicks(name) {
-    const identity = identityFor(name);
-    if (!identity || identity.wins == null) return "";
-    const wins = Math.min(identity.wins, 20);
-    const losses = Math.min(identity.losses || 0, 20);
-    let ticks = "";
-    for (let i = 0; i < wins; i += 1) ticks += '<span class="tick win"></span>';
-    for (let i = 0; i < losses; i += 1) ticks += '<span class="tick loss"></span>';
-    return `<span class="record-ticks" title="${escapeHtml(identity.record || "")}">${ticks}</span>`;
-  }
-
-  function avatarHtml(name, corner, size) {
-    const detail = size >= 100 ? 2 : size >= 48 ? 1 : 0;
-    return sealSVG(name, corner, size, detail);
-  }
-
-  function avatarPair(f1, f2, size) {
-    if (!f1 || !f2) return "";
-    return `<span class="mini-avatars">${avatarHtml(f1, "red", size)}${avatarHtml(f2, "blue", size)}</span>`;
-  }
-
-  /* moiré field: both fighters' seal curves interfering behind the hero */
-  function moireField(f1, f2, opacity) {
-    if (!f1 || !f2) return "";
-    const p1 = sealParams(f1);
-    const p2 = sealParams(f2);
-    return `<svg class="moire" viewBox="0 0 200 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      <g stroke="var(--seal-ink)" fill="none" stroke-width="0.18" opacity="${opacity}">
-        <g transform="translate(10,0) scale(1.55)"><path d="${sealCurve(p1)}"/></g>
-        <g transform="translate(90,0) scale(1.55)"><path d="${sealCurve(p2)}"/></g>
-      </g>
-    </svg>`;
-  }
-
-  function tapeDetails(identity, name) {
+  function tapeStats(identity) {
     if (!identity) return "";
     const rows = [];
-    if (identity.stance) rows.push(["STANCE", identity.stance]);
-    if (identity.reach_cms) rows.push(["REACH", `${Math.round(identity.reach_cms / 2.54)}″`]);
-    if (identity.n_fights) rows.push(["BOUTS", String(identity.n_fights)]);
-    const tags = (identity.style_tags || [])
-      .map((tag) => `<span class="style-tag">${escapeHtml(tag)}</span>`)
-      .join("");
-    const statRows = rows.map(([label, value]) =>
-      `<span class="tape-stat"><span class="tape-stat-label">${escapeHtml(label)}</span><span class="leader"></span><span class="tape-stat-value">${escapeHtml(value)}</span></span>`
+    if (identity.record) rows.push(["Record", identity.record]);
+    if (identity.stance) rows.push(["Stance", identity.stance]);
+    if (identity.reach_cms) rows.push(["Reach", `${Math.round(identity.reach_cms / 2.54)}"`]);
+    if (identity.n_fights) rows.push(["Bouts in our data", String(identity.n_fights)]);
+    return rows.map(([label, value]) =>
+      `<span class="tape-stat"><span class="tape-stat-label">${escapeHtml(label)}</span>`
+      + `<span class="leader"></span><span class="tape-stat-value">${escapeHtml(value)}</span></span>`
     ).join("");
-    return `
-      ${identity.nickname ? `<span class="tape-nick">“${escapeHtml(identity.nickname)}”</span>` : ""}
-      ${identity.record ? `<span class="tape-record">${escapeHtml(identity.record)}${recordTicks(name)}</span>` : ""}
-      ${statRows ? `<span class="tape-statrows">${statRows}</span>` : ""}
-      ${tags ? `<span class="tape-tags">${tags}</span>` : ""}`;
+  }
+
+  function tapeSide(name, corner) {
+    const identity = identityFor(name);
+    const tags = ((identity || {}).style_tags || [])
+      .map((tag) => `<span class="style-tag">${escapeHtml(tag)}</span>`).join("");
+    return `<div class="tape-side ${corner}">
+      <span class="tape-corner">${corner === "red" ? "Red corner" : "Blue corner"}</span>
+      <span class="tape-name fit-name">${escapeHtml(name)}</span>
+      ${identity && identity.nickname ? `<span class="tape-nick">"${escapeHtml(identity.nickname)}"</span>` : ""}
+      ${tags ? `<span class="tape-tags">${tags}</span>` : ""}
+      <span class="tape-statrows">${tapeStats(identity)}</span>
+    </div>`;
   }
 
   function tapeHtml(f1, f2, options = {}) {
-    const id1 = identityFor(f1);
-    const id2 = identityFor(f2);
-    const size = options.large ? 116 : 76;
     const marquee = options.large ? " is-marquee" : "";
-    const bout = options.bout ? `<span class="bout-folio">${escapeHtml(options.bout)}</span>` : "";
+    const slug = options.bout ? `<span class="tape-slug">${escapeHtml(options.bout)}</span>` : "";
     return `<div class="tape${marquee}">
-      ${moireField(f1, f2, options.large ? 0.09 : 0.05)}
-      <span class="crop tl"></span><span class="crop tr"></span><span class="crop bl"></span><span class="crop br"></span>
-      ${bout}
-      <div class="tape-side">
-        ${avatarHtml(f1, "red", size)}
-        <div class="tape-id">
-          <span class="tape-name f-red fit-name">${escapeHtml(f1)}</span>
-          ${tapeDetails(id1, f1)}
-        </div>
-      </div>
-      <span class="tape-vs"><span>VS</span></span>
-      <div class="tape-side is-right">
-        ${avatarHtml(f2, "blue", size)}
-        <div class="tape-id">
-          <span class="tape-name f-blue fit-name">${escapeHtml(f2)}</span>
-          ${tapeDetails(id2, f2)}
-        </div>
-      </div>
+      ${slug}
+      ${tapeSide(f1, "red")}
+      <span class="tape-vs">v</span>
+      ${tapeSide(f2, "blue")}
     </div>`;
   }
 
@@ -870,16 +684,77 @@
     const cols = [
       { key: "call", label: "Call", type: "signal" },
       { key: "phrase", label: "Phrase", type: "phrase" },
-      { key: "model_probability", label: "Our %", type: "prob", className: "num prob-col" },
-      { key: "yes_ask", label: "YES price", type: "pct", className: "num" },
-      { key: "no_ask", label: "NO price", type: "pct", className: "num" },
-      { key: "side", label: "Side", type: "side" },
+      { key: "model_probability", label: "The book", type: "lane", className: "lane-col" },
+      { key: "yes_ask", label: "YES", type: "pct", className: "num optional" },
+      { key: "no_ask", label: "NO", type: "pct", className: "num optional" },
+      { key: "side", label: "Side", type: "side", className: "optional" },
       { key: "edge", label: "Edge", type: "pct", className: "num", badge: true, signed: true },
     ];
     if (!state.selectedEvent) {
       cols.splice(2, 0, { key: "matchup", label: "Fight", type: "fight" });
     }
     return cols;
+  }
+
+  /* ---------- the lane ----------
+     Every market drawn on one shared logit axis. Prices here live at 3-12c and
+     88-97c, where a linear 0-100 bar shows nothing; logit spreads those ends
+     out. The gap between bid and ask is dead air: the market has no opinion,
+     and our number is the only thing planted in it. */
+
+  const LOGIT_SPAN = 9.19024;   // logit(0.99) - logit(0.01)
+  const LOGIT_MIN = -4.59512;   // logit(0.01)
+
+  function laneX(p) {
+    const value = Math.min(0.99, Math.max(0.01, Number(p)));
+    return ((Math.log(value / (1 - value)) - LOGIT_MIN) / LOGIT_SPAN) * 100;
+  }
+
+  const LANE_TICKS = [0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99];
+
+  function laneCell(row) {
+    const model = parseNumber(row.model_probability);
+    if (model === null) return '<span class="muted">no model</span>';
+    const bid = parseNumber(row.yes_bid);
+    const ask = parseNumber(row.yes_ask);
+    const base = parseNumber(row.league_rate);
+    const hurdle = parseNumber(row.hurdle);
+    const side = String(row.side || "").toLowerCase();
+
+    const ticks = LANE_TICKS.map((t) =>
+      `<i class="tick${t === 0.5 ? " spine" : ""}" style="left:${laneX(t).toFixed(2)}%"></i>`).join("");
+
+    let book = "";
+    if (bid !== null && ask !== null && ask > bid) {
+      const x1 = laneX(bid);
+      const x2 = laneX(ask);
+      book = `<i class="dead" style="left:${x1.toFixed(2)}%;width:${Math.max(0, x2 - x1).toFixed(2)}%"></i>`
+        + `<i class="quote bid" style="left:${x1.toFixed(2)}%"></i>`
+        + `<i class="quote ask" style="left:${x2.toFixed(2)}%"></i>`;
+    }
+    const baseTick = base !== null
+      ? `<i class="base" style="left:${laneX(base).toFixed(2)}%" title="Base rate ${formatPlainPercent(base)}"></i>` : "";
+    const hurdleTick = hurdle !== null && side && ask !== null
+      ? `<i class="hurdle" style="left:${laneX(side === "no" ? Math.max(0.01, 1 - (parseNumber(row.no_ask) || 0) + hurdle) : Math.min(0.99, ask + hurdle)).toFixed(2)}%"></i>`
+      : "";
+    const mark = `<b class="mark${row.watch ? " is-watch" : ""}" style="left:${laneX(model).toFixed(2)}%"></b>`;
+
+    const spread = bid !== null && ask !== null
+      ? `<span class="lane-quote">${formatPlainPercent(bid)}<i>–</i>${formatPlainPercent(ask)}</span>` : "";
+    return `<span class="lane-cell">
+      <span class="lane" role="img" aria-label="${escapeHtml(laneLabel(row, model, bid, ask))}">
+        <i class="bed"></i>${ticks}${book}${baseTick}${hurdleTick}${mark}
+      </span>
+      <span class="lane-read"><b>${formatPlainPercent(model)}</b>${spread}</span>
+    </span>`;
+  }
+
+  function laneLabel(row, model, bid, ask) {
+    const bits = [`our number ${formatPlainPercent(model)}`];
+    if (bid !== null && ask !== null) bits.push(`market ${formatPlainPercent(bid)} bid, ${formatPlainPercent(ask)} ask`);
+    const edge = parseNumber(row.edge);
+    if (edge !== null) bits.push(`${formatPlainPercent(edge, true)} edge`);
+    return bits.join("; ");
   }
 
   function renderTable() {
@@ -1016,8 +891,13 @@
     els.tableHead.innerHTML = `<tr>${columns.map((column) => {
       const sorted = state.sortKey === column.key;
       const ariaSort = sorted ? (state.sortDir === "asc" ? "ascending" : "descending") : "none";
+      // The lane's axis is printed once, here, instead of on every row.
+      const scale = column.type === "lane"
+        ? `<span class="lane-scale" aria-hidden="true">${[0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 0.95]
+          .map((t) => `<i style="left:${laneX(t).toFixed(2)}%">${Math.round(t * 100)}</i>`).join("")}</span>`
+        : "";
       return `<th data-key="${escapeHtml(column.key)}" class="${column.className || ""}" aria-sort="${ariaSort}" scope="col">`
-        + `<button type="button" class="th-sort">${escapeHtml(column.label)}<span class="sort-caret" aria-hidden="true">${sorted ? (state.sortDir === "asc" ? "▲" : "▼") : ""}</span></button></th>`;
+        + `<button type="button" class="th-sort">${escapeHtml(column.label)}<span class="sort-caret" aria-hidden="true">${sorted ? (state.sortDir === "asc" ? "▲" : "▼") : ""}</span></button>${scale}</th>`;
     }).join("")}</tr>`;
     els.tableHead.querySelectorAll("th").forEach((th) => {
       const button = th.querySelector(".th-sort");
@@ -1173,21 +1053,22 @@
       return pill(formatPercent(value, column), tone);
     }
     if (column.type === "pct") return formatPercent(value, column);
-    if (column.type === "prob") return probCell(row);
-    if (column.type === "phrase") return pill(value);
+    if (column.type === "lane") return laneCell(row);
+    if (column.type === "phrase") return cueBox(value, row);
     if (column.type === "signal") {
-      let chips = "";
       const call = String(value || "");
+      let chips = "";
       if (row.watch && state.seenAtLoad && !state.seenAtLoad.has(String(row.ticker || ""))) {
         chips += ' <span class="chip-new">NEW</span>';
       }
+      // One caveat mark, not a stack of boxes: the detail is in the log.
       const showChips = call.startsWith("WATCH") || call.startsWith("LEAN");
       if (showChips && row.status !== "error" && !missingPrices(row)) {
-        if (row.data_risk) {
-          chips += ' <span class="chip-thin" title="Fighter history is small; this row needs extra edge">thin data</span>';
-        }
-        if (row.trust_ok === false) {
-          chips += ' <span class="chip-thin" title="This phrase group has not shown real skill in the prediction test">low trust</span>';
+        const notes = [];
+        if (row.data_risk) notes.push("thin fighter history");
+        if (row.trust_ok === false) notes.push("phrase has not shown skill in the prediction test");
+        if (notes.length) {
+          chips += ` <span class="caveat" title="${escapeHtml(notes.join("; "))}" aria-label="${escapeHtml(notes.join("; "))}">!</span>`;
         }
       }
       return signalPill(value) + chips;
@@ -1214,39 +1095,30 @@
   }
 
   function fightCell(row) {
-    return `<div class="fight-cell with-avatars">${avatarPair(row.fighter_1, row.fighter_2, 22)}<div><strong>${escapeHtml(row.matchup || "--")}</strong><span>${escapeHtml(formatDate(row.event_date) || "")}</span></div></div>`;
+    return `<div class="fight-cell">${cornerKey(row.fighter_1, row.fighter_2)}<span class="fight-date">${escapeHtml(formatDate(row.event_date) || "")}</span></div>`;
   }
 
-  function probCell(row) {
-    const p = parseNumber(row.model_probability);
-    if (p === null) return '<span class="muted">--</span>';
-    const yes = parseNumber(row.yes_ask);
-    const pc = Math.max(0, Math.min(100, p * 100));
-    let gap = "";
-    let market = "";
-    if (yes !== null) {
-      const yc = Math.max(0, Math.min(100, yes * 100));
-      const left = Math.min(pc, yc);
-      const width = Math.abs(pc - yc);
-      const tone = p > yes ? "gain" : "loss";
-      gap = `<span class="prob-gap ${tone}" style="left:${left}%;width:${width}%"></span>`;
-      market = `<span class="prob-market" style="left:${yc}%" title="YES price ${formatPlainPercent(yes)}"></span>`;
-    }
-    const ticks = [0, 25, 50, 75, 100]
-      .map((t) => `<span class="prob-tick" style="left:${t}%"></span>`).join("");
-    return `<div class="prob-cell">
-      <span class="prob-value">${formatPlainPercent(p)}</span>
-      <span class="prob-track" title="Model ${formatPlainPercent(p)}${yes !== null ? ` vs YES price ${formatPlainPercent(yes)}` : ""}">
-        ${ticks}${gap}
-        <span class="prob-model" style="left:${pc}%"></span>
-        ${market}
-      </span>
-    </div>`;
-  }
 
   function pill(value, tone) {
     if (value === null || value === undefined || value === "") return '<span class="muted">--</span>';
     return `<span class="pill ${tone || ""}">${escapeHtml(String(value))}</span>`;
+  }
+
+  /* A phrase is a line of speech, so it is set as a burned-in caption. The
+     market resolves on the exact word plus its plural and possessive, and the
+     extra forms are worth showing: they are what actually counts as a hit. */
+  function cueBox(value, row) {
+    const text = String(value || "").trim();
+    if (!text) return '<span class="muted">--</span>';
+    const forms = String((row && row.forms) || "")
+      .split(/[|,]/).map((f) => f.trim()).filter(Boolean);
+    // Caption the head word; the plural and possessive forms also settle the
+    // market, so count them rather than stacking the box three lines deep.
+    const head = forms[0] || text.split(/\s*\/\s*/)[0] || text;
+    const extra = forms.length > 1
+      ? `<span class="cue-forms" title="${escapeHtml(forms.join(", "))}">+${forms.length - 1}</span>`
+      : "";
+    return `<span class="cue">${escapeHtml(head)}</span>${extra}`;
   }
 
   /* ---------- fight page ---------- */
@@ -1601,7 +1473,7 @@
       }
       return `<tr>
         <td class="num muted">${escapeHtml(formatShortStamp(row.entered_at || row.tracked_at))}</td>
-        <td><div class="fight-cell with-avatars">${avatarPair(row.fighter_1, row.fighter_2, 22)}<div><strong><a class="fight-link" href="#fight/${encodeURIComponent(row.event_ticker || "")}">${escapeHtml(row.matchup || "")}</a></strong><span>${escapeHtml(cardLabel(row.card))}</span></div></div></td>
+        <td><div class="fight-cell stacked"><a class="fight-link" href="#fight/${encodeURIComponent(row.event_ticker || "")}">${cornerKey(row.fighter_1, row.fighter_2)}</a><span class="fight-date">${escapeHtml(cardLabel(row.card))}</span></div></td>
         <td>${pill(row.phrase || "")}</td>
         <td>${sidePill(side)}</td>
         <td class="num">${formatPlainPercent(entry)}</td>
@@ -1823,9 +1695,9 @@
     // The published site can only be as fresh as its publish cadence, so
     // judging it by the local 30s poll would flag it stale forever.
     if (window.STATIC_SITE) return ageSeconds > 25 * 60;
-    // Polling mode should stay fresh within a few cycles; a one-shot refresh
-    // is fine for a while before it deserves the stale flag.
-    const limit = expected > 0 ? Math.max(90, expected * 3) : 1800;
+    // A card-day cycle prices dozens of books and can run past a minute, so
+    // judge against several cycles rather than crying stale between refreshes.
+    const limit = expected > 0 ? Math.max(300, expected * 6) : 1800;
     return ageSeconds > limit;
   }
 
