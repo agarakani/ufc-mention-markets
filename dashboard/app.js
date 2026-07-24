@@ -58,6 +58,7 @@
     setupRefreshButton();
     bindEvents();
     renderAll();
+    state.dataStamp = dataFingerprint();
     scheduleAutoUpdate();
     window.addEventListener("hashchange", () => {
       readRoute();
@@ -88,6 +89,9 @@
     autoPickSignal();
     renderTopline();
     renderTabs();
+    renderEventStage();
+    renderTicker();
+    renderCardBoard();
     renderNav();
     renderFightHeader();
     renderSignalFeed();
@@ -98,6 +102,254 @@
     renderPerformance();
     if (state.tab === "markets") markSeen();
     window.requestAnimationFrame(() => fitNames(document));
+  }
+
+  /* ---------- the stage ----------
+     The card is an event, so the page opens like one: the octagon lit from
+     above, the name at poster scale, and a clock running down to first bell. */
+
+  const FIGHT_ACCENTS = ["#ff6b2c", "#ffc53d", "#3ddc97", "#22d3ee", "#5b9dff", "#ff5c8a"];
+
+  function accentFor(key) {
+    const text = String(key || "");
+    let h = 0;
+    for (let i = 0; i < text.length; i += 1) h = (h * 31 + text.charCodeAt(i)) >>> 0;
+    return FIGHT_ACCENTS[h % FIGHT_ACCENTS.length];
+  }
+
+  function stageCard() {
+    const live = getSelectedCard() || getCards()[0];
+    if (live) {
+      return {
+        title: live.card_title || "UFC card",
+        date: live.event_date,
+        venue: live.card_venue || "",
+        location: live.card_location || "",
+        fights: live.fight_count || (live.fights || []).length,
+        markets: live.phrase_count || 0,
+        live: true,
+      };
+    }
+    const next = (data.upcoming_events || [])[0];
+    if (!next) return null;
+    return {
+      title: next.name, date: next.date, venue: next.venue || "",
+      location: next.location || "", fights: 0, markets: 0, live: false,
+    };
+  }
+
+  function bestEdgeOnCard() {
+    let best = null;
+    getRows().forEach((row) => {
+      const edge = parseNumber(row.edge);
+      if (edge !== null && (best === null || edge > best)) best = edge;
+    });
+    return best;
+  }
+
+  function octagonSvg() {
+    const pts = [];
+    for (let i = 0; i < 8; i += 1) {
+      const a = (Math.PI / 4) * i + Math.PI / 8;
+      pts.push(`${(50 + 46 * Math.cos(a)).toFixed(2)},${(50 + 46 * Math.sin(a)).toFixed(2)}`);
+    }
+    const inner = [];
+    for (let i = 0; i < 8; i += 1) {
+      const a = (Math.PI / 4) * i + Math.PI / 8;
+      inner.push(`${(50 + 34 * Math.cos(a)).toFixed(2)},${(50 + 34 * Math.sin(a)).toFixed(2)}`);
+    }
+    return `<svg class="cage" viewBox="0 0 100 100" aria-hidden="true">
+      <polygon points="${pts.join(" ")}" />
+      <polygon points="${inner.join(" ")}" class="cage-inner" />
+    </svg>`;
+  }
+
+  function renderEventStage() {
+    const holder = document.getElementById("eventStage");
+    if (!holder) return;
+    const card = stageCard();
+    if (!card) { holder.innerHTML = ""; holder.hidden = true; return; }
+    holder.hidden = false;
+    const best = bestEdgeOnCard();
+    const where = [card.venue, card.location].filter(Boolean).join(" · ");
+    const tonight = card.date === todayLocal();
+    holder.innerHTML = `
+      <section class="stage${tonight ? " is-tonight" : ""}">
+        <div class="stage-light" aria-hidden="true"></div>
+        ${octagonSvg()}
+        <div class="stage-body">
+          <p class="stage-kicker">
+            ${tonight ? '<span class="onair">On air</span>' : ""}
+            <span>${escapeHtml(formatDate(card.date) || "date TBD")}</span>
+            ${where ? `<span class="dot">·</span><span>${escapeHtml(where)}</span>` : ""}
+          </p>
+          <h2 class="stage-title">${escapeHtml(card.title)}</h2>
+          <div class="stage-meta">
+            <div class="clock" id="stageClock" data-date="${escapeHtml(card.date || "")}"></div>
+            <div class="stage-stats">
+              <span><strong>${formatInteger(card.fights)}</strong>fights</span>
+              <span><strong>${formatInteger(card.markets)}</strong>phrase markets</span>
+              <span><strong class="${best !== null && best > 0 ? "hot" : ""}">${best === null ? "--" : formatPlainPercent(best, true)}</strong>best edge</span>
+            </div>
+          </div>
+        </div>
+      </section>`;
+    startClock();
+  }
+
+  let clockTimer = 0;
+  function startClock() {
+    const el = document.getElementById("stageClock");
+    if (!el) return;
+    const date = el.dataset.date;
+    if (!date) { el.innerHTML = ""; return; }
+    const target = new Date(`${date}T22:00:00`).getTime();
+    const paint = () => {
+      const node = document.getElementById("stageClock");
+      if (!node) { window.clearInterval(clockTimer); return; }
+      const ms = target - Date.now();
+      if (ms <= 0) { node.innerHTML = '<span class="clock-live">Card in progress</span>'; return; }
+      const d = Math.floor(ms / 86400000);
+      const h = Math.floor((ms % 86400000) / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      const s = Math.floor((ms % 60000) / 1000);
+      const unit = (value, label) =>
+        `<span class="unit"><b>${String(value).padStart(2, "0")}</b><i>${label}</i></span>`;
+      node.innerHTML = (d > 0 ? unit(d, "days") : "") + unit(h, "hrs") + unit(m, "min") + unit(s, "sec");
+    };
+    paint();
+    window.clearInterval(clockTimer);
+    clockTimer = window.setInterval(paint, 1000);
+  }
+
+  /* ---------- the ticker ----------
+     A live card reprices constantly; the strip makes that visible. */
+  function renderTicker() {
+    const holder = document.getElementById("ticker");
+    if (!holder) return;
+    const rows = getRows()
+      .map(deriveRow)
+      .filter((row) => parseNumber(row.edge) !== null)
+      .sort((a, b) => (parseNumber(b.edge) || 0) - (parseNumber(a.edge) || 0))
+      .slice(0, 18);
+    if (rows.length < 4) { holder.innerHTML = ""; holder.hidden = true; return; }
+    holder.hidden = false;
+    const item = (row) => {
+      const edge = parseNumber(row.edge);
+      const tone = edge > 0 ? "up" : edge < 0 ? "down" : "";
+      return `<span class="tick-item">
+        <b>${escapeHtml(String(row.phrase || "").split(/\s*\/\s*/)[0])}</b>
+        <i>${escapeHtml(lastName(row.fighter_1))}–${escapeHtml(lastName(row.fighter_2))}</i>
+        <em class="${tone}">${formatPlainPercent(edge, true)}</em>
+      </span>`;
+    };
+    const strip = rows.map(item).join("");
+    holder.innerHTML = `<div class="ticker-rail"><div class="ticker-run">${strip}${strip}</div></div>`;
+  }
+
+  function lastName(name) {
+    const parts = String(name || "").trim().split(/\s+/);
+    return parts[parts.length - 1] || "";
+  }
+
+  /* ---------- the board ----------
+     Every fight on the card as its own lit tile, then the whole card as a
+     grid: fights down, phrases across, colour by how big our disagreement is. */
+  function renderCardBoard() {
+    const holder = document.getElementById("cardBoard");
+    if (!holder) return;
+    const card = getSelectedCard() || getCards()[0];
+    const rows = getRows().map(deriveRow);
+    if (!card || !rows.length) { holder.innerHTML = ""; holder.hidden = true; return; }
+    holder.hidden = false;
+
+    const fights = (card.fights || []).filter((f) => f.fighter_1 && f.fighter_2);
+    const tiles = fights.map((fight) => {
+      const accent = accentFor(fight.event_ticker);
+      const fightRows = rows.filter((row) => row.event_ticker === fight.event_ticker);
+      const best = fightRows.reduce((max, row) => {
+        const edge = parseNumber(row.edge);
+        return edge !== null && edge > max ? edge : max;
+      }, -Infinity);
+      const watch = fightRows.filter((row) => row.watch).length;
+      const top = fightRows.slice().sort((a, b) => (parseNumber(b.edge) || 0) - (parseNumber(a.edge) || 0))[0];
+      return `<button class="tile" type="button" data-nav-fight="${escapeHtml(fight.event_ticker)}" style="--accent:${accent}">
+        <span class="tile-bar" aria-hidden="true"></span>
+        <span class="tile-head">
+          <span class="tile-count">${formatInteger(fightRows.length)} markets</span>
+          ${watch ? `<span class="tile-watch">${formatInteger(watch)} watch</span>` : ""}
+        </span>
+        <span class="tile-names">
+          <span class="tile-name red">${escapeHtml(fight.fighter_1)}</span>
+          <span class="tile-v">v</span>
+          <span class="tile-name blue">${escapeHtml(fight.fighter_2)}</span>
+        </span>
+        <span class="tile-foot">
+          <span class="tile-edge ${best > 0 ? "hot" : ""}">${best === -Infinity ? "--" : formatPlainPercent(best, true)}<i>best edge</i></span>
+          ${top ? `<span class="tile-top">${escapeHtml(String(top.phrase || "").split(/\s*\/\s*/)[0])}</span>` : ""}
+        </span>
+      </button>`;
+    }).join("");
+
+    holder.innerHTML = `
+      <section class="board-block">
+        <p class="block-title">The card</p>
+        <div class="tiles">${tiles}</div>
+      </section>
+      ${heatGrid(fights, rows)}`;
+
+    holder.querySelectorAll("[data-nav-fight]").forEach((el) => {
+      el.addEventListener("click", () => {
+        state.selectedEvent = el.dataset.navFight;
+        state.signalUserSet = false;
+        renderAll();
+        const target = document.querySelector(".content");
+        if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+  }
+
+  function heatGrid(fights, rows) {
+    if (fights.length < 2) return "";
+    const phrases = [];
+    rows.forEach((row) => {
+      const head = String(row.phrase || "").split(/\s*\/\s*/)[0];
+      if (head && !phrases.includes(head)) phrases.push(head);
+    });
+    if (phrases.length < 3) return "";
+    const byKey = new Map();
+    rows.forEach((row) => {
+      const head = String(row.phrase || "").split(/\s*\/\s*/)[0];
+      byKey.set(`${row.event_ticker}|${head}`, row);
+    });
+    const maxEdge = rows.reduce((max, row) => Math.max(max, Math.abs(parseNumber(row.edge) || 0)), 0.01);
+
+    const head = `<tr><th class="corner-cell"></th>${phrases
+      .map((p) => `<th><span>${escapeHtml(p)}</span></th>`).join("")}</tr>`;
+    const body = fights.map((fight) => {
+      const cells = phrases.map((phrase) => {
+        const row = byKey.get(`${fight.event_ticker}|${phrase}`);
+        if (!row) return '<td class="cell empty-cell"></td>';
+        const edge = parseNumber(row.edge);
+        if (edge === null) return '<td class="cell empty-cell"></td>';
+        const strength = Math.min(1, Math.abs(edge) / maxEdge);
+        const tone = edge > 0 ? "up" : "down";
+        // Dark ink only once the fill is bright enough to carry it.
+        const bright = strength > 0.55 ? " on-bright" : "";
+        const label = `${row.phrase} · ${fight.matchup} · ${formatPlainPercent(edge, true)} edge`;
+        return `<td class="cell ${tone}${bright}${row.watch ? " is-watch" : ""}" style="--s:${strength.toFixed(3)}"
+          data-heat="${escapeHtml(row.ticker || "")}" data-fight="${escapeHtml(fight.event_ticker)}"
+          title="${escapeHtml(label)}"><span>${formatPlainPercent(edge, true)}</span></td>`;
+      }).join("");
+      return `<tr><th class="row-head" style="--accent:${accentFor(fight.event_ticker)}">
+        <span>${escapeHtml(lastName(fight.fighter_1))} <i>v</i> ${escapeHtml(lastName(fight.fighter_2))}</span>
+      </th>${cells}</tr>`;
+    }).join("");
+
+    return `<section class="board-block">
+      <p class="block-title">Where we disagree with the market <span class="block-note">green = we say more likely · red = less</span></p>
+      <div class="heat-wrap"><table class="heat">${head}${body}</table></div>
+    </section>`;
   }
 
   function autoPickSignal() {
@@ -112,9 +364,16 @@
     els.tabBar.querySelectorAll(".tab").forEach((tab) => {
       tab.classList.toggle("is-active", tab.dataset.tab === state.tab);
     });
+    const switched = state.paintedTab !== state.tab;
     Object.entries(els.pages).forEach(([name, page]) => {
       page.hidden = name !== state.tab;
+      if (name === state.tab && switched) {
+        page.classList.remove("is-entering");
+        void page.offsetWidth;
+        page.classList.add("is-entering");
+      }
     });
+    state.paintedTab = state.tab;
     if (els.signalFilter) {
       els.signalFilter.querySelectorAll(".segment").forEach((seg) => {
         seg.classList.toggle("is-active", seg.dataset.signal === state.signal);
@@ -222,6 +481,20 @@
     });
   }
 
+  /* Cheap identity for a payload: the snapshot stamp plus the numbers that
+     actually drive the board. */
+  function dataFingerprint() {
+    const summary = data.summary || {};
+    const rows = getRows();
+    let acc = `${summary.kalshi_snapshot_timestamp || ""}|${rows.length}|`;
+    for (let i = 0; i < rows.length; i += 1) {
+      const row = rows[i];
+      acc += `${row.ticker || ""}:${row.yes_bid}:${row.yes_ask}:${row.model_probability}:${row.watch ? 1 : 0};`;
+    }
+    acc += `|${(data.tracking_positions || []).length}`;
+    return acc;
+  }
+
   function scheduleAutoUpdate() {
     let seconds = Number((data.summary || {}).kalshi_poll_seconds || 0);
     if (window.STATIC_SITE) seconds = Math.max(seconds, 60);
@@ -231,6 +504,12 @@
       if (state.refreshing || state.loadingData) return;
       try {
         await loadFreshData();
+        // Between price changes the payload is identical. Rebuilding the page
+        // anyway would flash every card, drop hover and lose the user's place,
+        // so only the age readout is repainted until something actually moves.
+        const stamp = dataFingerprint();
+        if (stamp === state.dataStamp) { renderTopline(); return; }
+        state.dataStamp = stamp;
         chooseDefaultCard();
         populatePhraseFilter();
         renderAll();
@@ -552,11 +831,14 @@
       return;
     }
 
+    // The stage above already names the card; this section is the board itself.
     const watch = Number(card.watch_count || 0);
     els.fightHeader.innerHTML = `
-      <p class="crumb">${escapeHtml(formatDate(card.event_date) || "Date TBD")}${tonightBadge(card.event_date)}</p>
-      <h2 class="matchup-hero solo">${escapeHtml(card.card_title || "UFC card")}</h2>
-      <p class="fight-sub">${formatInteger(card.fight_count)} fight${plural(card.fight_count)} listed · ${formatInteger(card.phrase_count)} phrase markets · ${watch ? `<span class="watch-note">${formatInteger(watch)} watch row${plural(watch)}</span>` : "no watch rows right now"}</p>`;
+      <p class="block-title">Every market on the card
+        <span class="block-note">${formatInteger(card.phrase_count)} phrase markets · ${watch
+          ? `<span class="watch-note">${formatInteger(watch)} watch row${plural(watch)}</span>`
+          : "no watch rows right now"}</span>
+      </p>`;
   }
 
   function isMarquee(f1, f2) {
