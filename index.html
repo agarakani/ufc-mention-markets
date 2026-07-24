@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#090c10">
+    <meta name="description" content="Live research board for UFC announcer-mention markets: model probabilities vs Kalshi prices, paper-traded and honestly scored.">
+    <title>UFC Mention Markets</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M6.5 1.5 L13.5 1.5 L18.5 6.5 L18.5 13.5 L13.5 18.5 L6.5 18.5 L1.5 13.5 L1.5 6.5 Z' fill='none' stroke='%2379a2ff' stroke-width='1.8'/%3E%3Cpath d='M7 10.8 L9.2 13 L13.6 7.4' fill='none' stroke='%23e1ad59' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="styles.css?v=1784887308">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="mark" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M6.5 1.5 L13.5 1.5 L18.5 6.5 L18.5 13.5 L13.5 18.5 L6.5 18.5 L1.5 13.5 L1.5 6.5 Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+              <path d="M7 10.8 L9.2 13 L13.6 7.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <div>
+            <h1>UFC mention markets</h1>
+            <p class="lede" id="countsLine">Loading…</p>
+          </div>
+        </div>
+        <div class="status-wrap">
+          <button class="portfolio-chip" id="portfolioChip" type="button" hidden></button>
+          <div class="status" id="dataStatus">Loading local data</div>
+          <button class="refresh-button" id="refreshButton" type="button">Update now</button>
+        </div>
+      </header>
+
+      <nav class="tabs" id="tabBar" aria-label="Sections">
+        <button class="tab is-active" data-tab="markets" type="button">Markets</button>
+        <button class="tab" data-tab="paper" type="button">Paper trades <span class="tab-badge" id="paperBadge" hidden></span></button>
+        <button class="tab" data-tab="model" type="button">Model</button>
+      </nav>
+
+      <section class="tab-page" id="page-markets">
+        <div class="layout">
+          <aside class="sidebar" aria-label="Cards and fights">
+            <p class="side-title">Upcoming cards</p>
+            <nav id="cardNav"></nav>
+          </aside>
+
+          <section class="content">
+            <div class="signal-feed" id="signalFeed" hidden></div>
+            <div class="fight-header" id="fightHeader"></div>
+
+            <div class="toolbar">
+              <div class="segments" id="signalFilter">
+                <button class="segment is-active" data-signal="watch" type="button">Watch</button>
+                <button class="segment" data-signal="active" type="button">Active</button>
+                <button class="segment" data-signal="all" type="button">All</button>
+              </div>
+              <select id="phraseFilter" aria-label="Filter by phrase">
+                <option value="">All phrases</option>
+              </select>
+              <input id="searchInput" type="search" placeholder="Search" aria-label="Search">
+              <span class="toolbar-meta" id="tableMeta"></span>
+            </div>
+
+            <div class="panel">
+              <div class="table-wrap">
+                <table id="dataTable">
+                  <thead id="tableHead"></thead>
+                  <tbody id="tableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="tab-page" id="page-fight" hidden>
+        <div id="fightPage"></div>
+      </section>
+
+      <section class="tab-page" id="page-paper" hidden>
+        <div class="page-head">
+          <div>
+            <h2>Paper trades</h2>
+            <p class="page-sub" id="trackingSummary"></p>
+          </div>
+        </div>
+        <div class="stat-tiles" id="paperStats"></div>
+        <div class="perf-grid" id="performanceCharts"></div>
+        <div class="tracking-grid" id="trackingCards"></div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table class="tracking-table" id="trackingTable">
+              <thead>
+                <tr>
+                  <th>Entered</th>
+                  <th>Fight</th>
+                  <th>Phrase</th>
+                  <th>Side</th>
+                  <th class="num">Entry</th>
+                  <th class="num">Now</th>
+                  <th class="num">Move</th>
+                  <th>Result</th>
+                </tr>
+              </thead>
+              <tbody id="trackingBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <p class="page-note">One pretend contract per new watch row, entered at the live buy price at that moment. Nothing here uses real money, and entries are never edited after the fact. "Now" is the current bid for the side held.</p>
+      </section>
+
+      <section class="tab-page" id="page-model" hidden>
+        <div class="page-head">
+          <div>
+            <h2>Model</h2>
+            <p class="page-sub" id="healthSummary"></p>
+          </div>
+        </div>
+        <div class="health-grid" id="healthGrid"></div>
+      </section>
+
+      <footer class="footer">
+        <span>Research tool. Paper trading only. This site cannot place real trades.</span>
+        <span id="footerStamp"></span>
+      </footer>
+    </main>
+
+    <script>
+      window.STATIC_SITE = true;
+      const cacheBust = Date.now().toString();
+      const dataScript = document.createElement("script");
+      dataScript.src = `data.js?v=${cacheBust}`;
+      dataScript.onload = () => {
+        const appScript = document.createElement("script");
+        appScript.src = `app.js?v=${cacheBust}`;
+        document.body.appendChild(appScript);
+      };
+      document.body.appendChild(dataScript);
+    </script>
+  </body>
+</html>
