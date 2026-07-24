@@ -505,6 +505,19 @@ def build_v2_gate(report: dict) -> dict:
     }
 
 
+def settled_card_count() -> int:
+    """How many distinct cards have settled.
+
+    Trades inside one card are correlated, so the honest sample size for the
+    money record is the number of cards, not the number of trades."""
+    dates = {
+        str(row.get("event_date", "")).strip()
+        for row in read_csv(PL_BACKTEST_TRADES)
+        if str(row.get("event_date", "")).strip()
+    }
+    return len(dates)
+
+
 def build_model_health(
     context_summary: dict,
     groups: list[dict],
@@ -549,6 +562,7 @@ def build_model_health(
             "entry_rule": pl_summary.get("entry_rule", ""),
             "markets_with_results": as_int(pl_summary.get("markets_with_results")),
             "resolved_event_count": as_int(pl_summary.get("resolved_event_count")),
+            "resolved_card_count": settled_card_count(),
             "official_trades": as_int(official.get("trades")),
             "official_wins": as_int(official.get("wins")),
             "official_staked": number(official.get("total_staked")),
@@ -822,6 +836,25 @@ def summarize(
     return summary
 
 
+def name_cards_from_schedule(cards: list[dict], upcoming: list[dict]) -> None:
+    """Give each Kalshi card its real event name.
+
+    Kalshi groups phrase markets per fight and never names the card, so cards
+    fall back to "UFC card · <date>". The published schedule has the real name
+    for the same date, which is a source rather than a guess."""
+    by_date = {str(event.get("date", "")): event for event in upcoming if event.get("date")}
+    for card in cards:
+        if card.get("has_kalshi_card_title"):
+            continue
+        event = by_date.get(str(card.get("event_date", "")))
+        if not event or not event.get("name"):
+            continue
+        card["card_title"] = event["name"]
+        card["card_venue"] = event.get("venue", "")
+        card["card_location"] = event.get("location", "")
+        card["source_note"] = "Card name from the published UFC schedule; markets from Kalshi."
+
+
 def build_payload() -> dict:
     kalshi_meta = read_json(KALSHI_META)
     kalshi_audit_summary = read_json(KALSHI_AUDIT_SUMMARY)
@@ -840,6 +873,7 @@ def build_payload() -> dict:
     ]
     kalshi_rows = build_kalshi_rows(kalshi_source_rows)
     kalshi_cards = build_kalshi_cards(kalshi_meta, kalshi_rows, hidden_events)
+    name_cards_from_schedule(kalshi_cards, build_upcoming_events())
     fighters = build_fighter_identities()
     for card in kalshi_cards:
         for fight in card.get("fights", []):

@@ -552,8 +552,16 @@ def refresh_once(
     ))
     previous = read_csv(live_path)
     add_price_changes(rows, previous)
-    write_csv(live_path, rows, FIELDS)
-    append_csv(history_path, rows, HISTORY_FIELDS)
+    # A total fetch failure must not erase a good board: an empty result while
+    # rows sit on disk means the API hiccuped, not that every market closed.
+    kept_previous = False
+    if not rows and previous and errors:
+        kept_previous = True
+        if verbose:
+            print("  kept the last board: this refresh returned no rows", flush=True)
+    else:
+        write_csv(live_path, rows, FIELDS)
+        append_csv(history_path, rows, HISTORY_FIELDS)
     paper_tracking = None
     if paper_card:
         card_groups = paper_card_groups(paper_card, rows)
@@ -599,6 +607,7 @@ def refresh_once(
         "authenticated": client.authenticated,
         "paper_tracking": paper_tracking,
         "errors": errors,
+        "kept_previous_board": kept_previous,
     }
     meta_path.parent.mkdir(parents=True, exist_ok=True)
     meta_path.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
@@ -625,7 +634,9 @@ def refresh_once(
     if os.environ.get("UFC_PUBLISH") == "1":
         try:
             from scripts.live.publish_site import publish, publish_due, publish_interval_seconds
-            today = datetime.now(timezone.utc).date().isoformat()
+            # Card dates are local calendar dates, so compare against the
+            # local date — UTC rolls over mid-card and drops the fast cadence.
+            today = datetime.now().date().isoformat()
             live_dates = sorted({str(row.get("event_date", "")) for row in rows if row.get("event_date")})
             if publish_due(interval_seconds=publish_interval_seconds(today, live_dates)):
                 note = publish(quiet=True)

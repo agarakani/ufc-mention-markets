@@ -54,7 +54,9 @@ class StaticIndexTests(unittest.TestCase):
         self.assertIn('href="styles.css?v=12345"', out)
 
     def test_unexpected_index_shape_fails_loudly(self):
-        with self.assertRaises(SystemExit):
+        # ValueError, not SystemExit: SystemExit slips past the refresh
+        # loop's `except Exception` and takes the whole service down.
+        with self.assertRaises(ValueError):
             static_index("<html>changed</html>")
 
 

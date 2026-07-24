@@ -53,7 +53,9 @@ def static_index(index_html: str, version: int | None = None) -> str:
     can never pair fresh markup with a stale cached stylesheet."""
     flag = "      window.STATIC_SITE = true;\n"
     if LOADER_LINE not in index_html:
-        raise SystemExit("dashboard/index.html changed shape; update publish_site.py")
+        # A normal exception: SystemExit would slip past the caller's
+        # `except Exception` and kill the always-on refresh thread.
+        raise ValueError("dashboard/index.html changed shape; update publish_site.py")
     out = index_html.replace(LOADER_LINE, flag + LOADER_LINE, 1)
     stamp = int(time.time()) if version is None else version
     return out.replace('href="styles.css"', f'href="styles.css?v={stamp}"', 1)

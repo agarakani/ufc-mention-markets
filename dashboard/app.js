@@ -359,22 +359,34 @@
 
   /* ---------- signal alerts ---------- */
 
-  const LAST_SEEN_KEY = "ufc_last_seen_ts";
+  const LAST_SEEN_KEY = "ufc_seen_watch_tickers";
 
-  function lastSeenTs() {
-    try { return localStorage.getItem(LAST_SEEN_KEY) || ""; } catch (e) { return ""; }
+  /* Which watch signals are new is per-market, not per-poll: every row carries
+     the same snapshot stamp, so remember the tickers already shown instead. */
+  function seenTickers() {
+    try {
+      const raw = localStorage.getItem(LAST_SEEN_KEY);
+      if (!raw) return new Set();
+      const parsed = JSON.parse(raw);
+      return new Set(Array.isArray(parsed) ? parsed : []);
+    } catch (e) {
+      return new Set();
+    }
   }
 
   function markSeen() {
-    const ts = (data.summary || {}).kalshi_snapshot_timestamp || "";
-    if (!ts) return;
-    try { localStorage.setItem(LAST_SEEN_KEY, ts); } catch (e) { /* private mode */ }
+    const tickers = getRows().filter((row) => row.watch).map((row) => String(row.ticker || ""));
+    if (!tickers.length) return;
+    const merged = new Set([...state.seenAtLoad || [], ...tickers]);
+    try {
+      localStorage.setItem(LAST_SEEN_KEY, JSON.stringify([...merged].slice(-400)));
+    } catch (e) { /* private mode */ }
   }
 
   function newWatchRows() {
-    if (state.lastSeenAtLoad === undefined) state.lastSeenAtLoad = lastSeenTs();
-    const seen = state.lastSeenAtLoad;
-    return getRows().filter((row) => row.watch && (!seen || String(row.snapshot_timestamp || "") > seen));
+    if (state.seenAtLoad === undefined) state.seenAtLoad = seenTickers();
+    const seen = state.seenAtLoad;
+    return getRows().filter((row) => row.watch && !seen.has(String(row.ticker || "")));
   }
 
   function renderSignalFeed() {
@@ -1001,11 +1013,16 @@
   }
 
   function renderHeader(columns) {
-    els.tableHead.innerHTML = `<tr>${columns.map((column) => (
-      `<th data-key="${escapeHtml(column.key)}" class="${column.className || ""}">${escapeHtml(column.label)}</th>`
-    )).join("")}</tr>`;
+    els.tableHead.innerHTML = `<tr>${columns.map((column) => {
+      const sorted = state.sortKey === column.key;
+      const ariaSort = sorted ? (state.sortDir === "asc" ? "ascending" : "descending") : "none";
+      return `<th data-key="${escapeHtml(column.key)}" class="${column.className || ""}" aria-sort="${ariaSort}" scope="col">`
+        + `<button type="button" class="th-sort">${escapeHtml(column.label)}<span class="sort-caret" aria-hidden="true">${sorted ? (state.sortDir === "asc" ? "▲" : "▼") : ""}</span></button></th>`;
+    }).join("")}</tr>`;
     els.tableHead.querySelectorAll("th").forEach((th) => {
-      th.addEventListener("click", () => {
+      const button = th.querySelector(".th-sort");
+      if (!button) return;
+      button.addEventListener("click", () => {
         const key = th.dataset.key;
         if (state.sortKey === key) {
           state.sortDir = state.sortDir === "asc" ? "desc" : "asc";
@@ -1042,16 +1059,29 @@
       const detail = open
         ? `<tr class="detail-row"><td colspan="${columns.length}">${auditDetail(row)}</td></tr>`
         : "";
-      return `<tr class="${rowClass}" data-expand="${escapeHtml(key)}">${cells}</tr>${detail}`;
+      return `<tr class="${rowClass}" data-expand="${escapeHtml(key)}" tabindex="0" role="button"`
+        + ` aria-expanded="${open ? "true" : "false"}"`
+        + ` aria-label="${escapeHtml(`${row.phrase || "market"}, ${row.fighter_1 || ""} vs ${row.fighter_2 || ""}. Show how this number was made.`)}">${cells}</tr>${detail}`;
     }).join("");
 
+    const toggle = (tr) => {
+      const key = tr.dataset.expand;
+      if (!key) return;
+      if (state.expanded.has(key)) state.expanded.delete(key);
+      else state.expanded.add(key);
+      renderTable();
+      if (key) {
+        const next = els.tableBody.querySelector(`tr[data-expand="${CSS.escape(key)}"]`);
+        if (next) next.focus();
+      }
+    };
     els.tableBody.querySelectorAll("tr[data-expand]").forEach((tr) => {
-      tr.addEventListener("click", () => {
-        const key = tr.dataset.expand;
-        if (!key) return;
-        if (state.expanded.has(key)) state.expanded.delete(key);
-        else state.expanded.add(key);
-        renderTable();
+      tr.addEventListener("click", () => toggle(tr));
+      tr.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          toggle(tr);
+        }
       });
     });
   }
@@ -1148,8 +1178,7 @@
     if (column.type === "signal") {
       let chips = "";
       const call = String(value || "");
-      if (row.watch && state.lastSeenAtLoad !== undefined
-        && (!state.lastSeenAtLoad || String(row.snapshot_timestamp || "") > state.lastSeenAtLoad)) {
+      if (row.watch && state.seenAtLoad && !state.seenAtLoad.has(String(row.ticker || ""))) {
         chips += ' <span class="chip-new">NEW</span>';
       }
       const showChips = call.startsWith("WATCH") || call.startsWith("LEAN");
@@ -1336,7 +1365,7 @@
     const watch = liveRows.filter((row) => row.watch).length;
     const settledCount = positions.filter((p) => p.outcome === "yes" || p.outcome === "no").length;
     const subBits = [
-      title || "",
+      escapeHtml(cardLabel(title) || title || ""),
       date ? `${formatDate(date)}${tonightBadge(date)}` : "",
       liveRows.length ? `${formatInteger(liveRows.length)} phrase market${plural(liveRows.length)}` : "",
       watch ? `<span class="watch-note">${formatInteger(watch)} watch</span>` : "",
@@ -1406,8 +1435,15 @@
       : "Money test: no settled markets yet";
     els.healthSummary.innerHTML = `Prediction test: ${formatInteger(prediction.groups_beating_base)} of ${formatInteger(prediction.measured_groups)} phrase groups pass · ${plBit}`;
 
+    // The entry rule bars a group when it fails the baseline or scores under
+    // 0.55 AUC — not simply because it sits at the bottom of the table.
+    const barred = groups
+      .filter((g) => !(g.beats_base && (parseNumber(g.auc) || 0) >= 0.55))
+      .map((g) => g.phrase);
     const strongBit = (prediction.strongest || []).length
-      ? `<p class="health-note">Strongest: ${escapeHtml((prediction.strongest || []).join(", "))}. Weakest: ${escapeHtml((prediction.weakest || []).join(", "))}. The weakest groups can lean but never watch.</p>`
+      ? `<p class="health-note">Strongest: ${escapeHtml((prediction.strongest || []).join(", "))}.${barred.length
+        ? ` Barred from watch calls (fails the baseline or scores under 0.55): ${escapeHtml(barred.join(", "))} — these can lean, never watch.`
+        : ""}</p>`
       : "";
     const weakest = prediction.weakest_phrase
       ? `<p class="health-note">Bottom of the table: <strong>${escapeHtml(prediction.weakest_phrase)}</strong> (${formatSignedDecimal(prediction.weakest_improvement)} vs baseline${parseNumber(prediction.weakest_improvement) <= 0 ? ", fails it" : ""}).</p>`
@@ -1436,7 +1472,9 @@
         <p class="health-note">Looser leans (positive edge, below the bar): ${formatInteger(pl.lean_trades)} trades, ${formatInteger(pl.lean_wins)} wins, <span class="${toneClass(pl.lean_pnl)}">${formatMoney(pl.lean_pnl)}</span>.</p>
         ${ruleBit}
         <p class="health-note">Everything here is from cards that already happened${settledThrough ? ` (latest: ${settledThrough})` : ""}: ${formatInteger(pl.markets_with_results)} settled markets, replayed from recorded live snapshots against final Kalshi results. Upcoming cards settle in on their own.</p>
-        <p class="health-note">${formatInteger(officialTrades)} of the ${formatInteger(needed)} settled trades needed before this means anything.</p>`
+        <p class="health-note">${officialTrades >= needed
+          ? `Past the ${formatInteger(needed)}-trade review bar, on ${formatInteger(officialTrades)} settled trades. Trades inside one card move together, so cards are the real sample: ${formatInteger(pl.resolved_card_count || 0)} so far, and results swing hard from card to card.`
+          : `${formatInteger(officialTrades)} of the ${formatInteger(needed)} settled trades needed before this means anything.`}</p>`
       : '<p class="health-note">No settled markets replayed yet. This fills in by itself after a tracked card finishes.</p>';
 
     const gate = health.v2_gate || {};
@@ -1506,10 +1544,19 @@
       const open = positions.length - settled.length;
       const winRate = settled.length ? `${Math.round(wins / settled.length * 100)}%` : "--";
       els.paperStats.innerHTML = `
-        <div class="stat-tile"><strong class="${toneClass(realized)}">${formatMoney(realized)}</strong><span>realized P/L</span></div>
-        <div class="stat-tile"><strong>${winRate}</strong><span>win rate</span></div>
+        <div class="stat-tile"><strong class="${toneClass(realized)}">${formatMoney(realized)}</strong><span>tracker P/L · realized</span></div>
+        <div class="stat-tile"><strong>${winRate}</strong><span>tracker win rate</span></div>
         <div class="stat-tile"><strong>${formatInteger(settled.length)}</strong><span>settled</span></div>
         <div class="stat-tile"><strong>${formatInteger(open)}</strong><span>open</span></div>`;
+    }
+
+    // Two ledgers, deliberately: say so rather than let the totals look wrong.
+    const ledger = document.getElementById("ledgerNote");
+    if (ledger) {
+      const pl = (data.model_health || {}).pl || {};
+      ledger.textContent = pl.available
+        ? `Tracker: one pretend contract the first time a market became a watch, including entries made under the older rule. The chart below and the Model page replay today's rule over recorded snapshots instead (${formatInteger(pl.official_trades)} trades, ${formatMoney(pl.official_pnl)}), so the two totals differ on purpose.`
+        : "Tracker: one pretend contract the first time a market became a watch.";
     }
 
     els.trackingCards.innerHTML = cards.map((card) => {
@@ -1517,7 +1564,7 @@
       const leanPnl = parseNumber(card.lean_pnl);
       return `<article class="tracking-card">
         <p class="tracking-date">${escapeHtml(formatDate(card.settled_at ? String(card.settled_at).slice(0, 10) : "") || "in progress")}</p>
-        <h3>${escapeHtml(card.label || card.card)}</h3>
+        <h3>${escapeHtml(cardLabel(card.card) || card.label || card.card)}</h3>
         <div class="tracking-card-stats">
           <span><strong>${formatInteger(card.official_trades)}</strong> trades</span>
           <span><strong>${formatInteger(card.leans)}</strong> leans</span>
@@ -1531,8 +1578,7 @@
     const liveByTicker = new Map(getRows().map((row) => [row.ticker, row]));
     const shown = positions
       .slice()
-      .sort((a, b) => String(b.entered_at || b.tracked_at || "").localeCompare(String(a.entered_at || a.tracked_at || "")))
-      .slice(0, 100);
+      .sort((a, b) => String(b.entered_at || b.tracked_at || "").localeCompare(String(a.entered_at || a.tracked_at || "")));
     if (!shown.length) {
       els.trackingBody.innerHTML = '<tr><td class="tracking-empty" colspan="8">No paper entries logged yet.</td></tr>';
       return;
@@ -1555,7 +1601,7 @@
       }
       return `<tr>
         <td class="num muted">${escapeHtml(formatShortStamp(row.entered_at || row.tracked_at))}</td>
-        <td><div class="fight-cell with-avatars">${avatarPair(row.fighter_1, row.fighter_2, 22)}<div><strong><a class="fight-link" href="#fight/${encodeURIComponent(row.event_ticker || "")}">${escapeHtml(row.matchup || "")}</a></strong><span>${escapeHtml(row.card || "")}</span></div></div></td>
+        <td><div class="fight-cell with-avatars">${avatarPair(row.fighter_1, row.fighter_2, 22)}<div><strong><a class="fight-link" href="#fight/${encodeURIComponent(row.event_ticker || "")}">${escapeHtml(row.matchup || "")}</a></strong><span>${escapeHtml(cardLabel(row.card))}</span></div></div></td>
         <td>${pill(row.phrase || "")}</td>
         <td>${sidePill(side)}</td>
         <td class="num">${formatPlainPercent(entry)}</td>
@@ -1626,7 +1672,12 @@
       : "";
 
     const maxAbs = Math.max(...phrases.map((p) => Math.abs(p.pnl)), 0.0001);
-    const phraseRows = phrases.slice(0, 12).map((p) => {
+    // Sorted by P/L descending, so a plain head-slice would hide every loser.
+    // Keep the best and worst ends: those are the two a reader needs.
+    const shownPhrases = phrases.length > 12
+      ? phrases.slice(0, 8).concat(phrases.slice(-4))
+      : phrases;
+    const phraseRows = shownPhrases.map((p) => {
       const width = Math.max(2, Math.abs(p.pnl) / maxAbs * 100);
       const rate = p.trades ? Math.round(p.wins / p.trades * 100) : 0;
       return `<div class="bar-row" title="${escapeHtml(p.phrase)}: ${formatInteger(p.trades)} trades, ${rate}% wins, ${escapeHtml(formatMoney(p.pnl))}">
@@ -1642,6 +1693,20 @@
       : "";
 
     holder.innerHTML = equityBlock + phraseBlock;
+  }
+
+  /* Paper cards are stored as folder slugs ("ufc_card_2026-07-18"). Show the
+     card's real name when the schedule knows it, else a plain date. */
+  function cardLabel(slug) {
+    const text = String(slug || "").trim();
+    if (!text) return "";
+    const date = (text.match(/(\d{4}-\d{2}-\d{2})/) || [])[1];
+    if (!date) return text;
+    const named = (data.upcoming_events || []).find((event) => event.date === date);
+    if (named && named.name) return named.name;
+    const card = getCards().find((item) => item.event_date === date);
+    if (card && card.card_title && !/^UFC card/.test(card.card_title)) return card.card_title;
+    return formatDate(date) || date;
   }
 
   function formatShortStamp(value) {
@@ -1755,6 +1820,9 @@
     if (Number.isNaN(date.getTime())) return false;
     const ageSeconds = (Date.now() - date.getTime()) / 1000;
     const expected = Number(pollSeconds || 0);
+    // The published site can only be as fresh as its publish cadence, so
+    // judging it by the local 30s poll would flag it stale forever.
+    if (window.STATIC_SITE) return ageSeconds > 25 * 60;
     // Polling mode should stay fresh within a few cycles; a one-shot refresh
     // is fine for a while before it deserves the stale flag.
     const limit = expected > 0 ? Math.max(90, expected * 3) : 1800;

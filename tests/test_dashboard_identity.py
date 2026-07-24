@@ -57,3 +57,32 @@ def test_fight_marquee_score(tmp_path, monkeypatch):
     assert bdd.fight_marquee_score("Max Holloway", "Ilia Topuria", fighters) == 121
     assert bdd.fight_marquee_score("Max Holloway", "Unknown Person", fighters) == 95
     assert bdd.fight_marquee_score("", "", fighters) == 0
+
+
+def test_cards_take_their_name_from_the_schedule():
+    cards = [{
+        "card_id": "KXFIGHTMENTION:2026-07-25",
+        "card_title": "UFC card · 2026-07-25",
+        "event_date": "2026-07-25",
+        "has_kalshi_card_title": False,
+    }]
+    upcoming = [{
+        "date": "2026-07-25",
+        "name": "UFC Fight Night: Ankalaev vs. Guskov",
+        "venue": "Etihad Arena",
+        "location": "Abu Dhabi, United Arab Emirates",
+    }]
+    bdd.name_cards_from_schedule(cards, upcoming)
+    assert cards[0]["card_title"] == "UFC Fight Night: Ankalaev vs. Guskov"
+    assert cards[0]["card_venue"] == "Etihad Arena"
+
+
+def test_kalshi_card_title_is_never_overwritten():
+    cards = [{
+        "card_title": "Kalshi's own name",
+        "event_date": "2026-07-25",
+        "has_kalshi_card_title": True,
+    }]
+    upcoming = [{"date": "2026-07-25", "name": "UFC Fight Night: Ankalaev vs. Guskov"}]
+    bdd.name_cards_from_schedule(cards, upcoming)
+    assert cards[0]["card_title"] == "Kalshi's own name"
