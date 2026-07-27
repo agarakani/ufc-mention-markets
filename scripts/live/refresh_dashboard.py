@@ -180,6 +180,16 @@ def maybe_settle_money_backtest(*, now: float | None = None) -> str:
         build_labels(offline=False, quiet=True)
     except Exception:
         pass  # labels are a byproduct; never break the refresh
+    try:
+        from scripts.model.calibration_report import build as build_calibration_report
+        import json as _json
+
+        report = build_calibration_report()
+        out = ROOT / "model_outputs" / "calibration_report.json"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(_json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    except Exception:
+        pass  # the calibration readout is a byproduct too
     official = summary.get("official") or {}
     return (
         f"settled {summary.get('markets_with_results', 0)} markets "

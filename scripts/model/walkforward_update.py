@@ -125,15 +125,22 @@ def calibrated_pairs(pairs: list[tuple[float, int]], calibration: dict | None) -
     return [(apply_live_calibration(p, calibration), y) for p, y in pairs]
 
 
-def calibrated_holdout_means(per_holdout_pairs: dict[str, list], holdout_order: list[str]) -> float | None:
+def as_pairs(rows: list) -> list[tuple[float, int]]:
+    """Accept either (p, y) or (p, y, phrase group) rows."""
+    return [(row[0], row[1]) for row in rows]
+
+
+def calibrated_holdout_means(per_holdout_rows: dict[str, list], holdout_order: list[str]) -> float | None:
     """Mean holdout loss when each card is scored with a calibrator fitted
     only on the holdout cards before it. Cards with no earlier fit data are
     scored uncalibrated."""
     losses = []
     for index, holdout in enumerate(holdout_order):
-        earlier = [pair for prior in holdout_order[:index] for pair in per_holdout_pairs.get(prior, [])]
+        earlier = as_pairs([row for prior in holdout_order[:index] for row in per_holdout_rows.get(prior, [])])
         calibration = fit_platt(earlier)
-        loss = loss_from_pairs(calibrated_pairs(per_holdout_pairs.get(holdout, []), calibration))
+        loss = loss_from_pairs(
+            calibrated_pairs(as_pairs(per_holdout_rows.get(holdout, [])), calibration)
+        )
         if loss is not None:
             losses.append(loss)
     return sum(losses) / len(losses) if losses else None

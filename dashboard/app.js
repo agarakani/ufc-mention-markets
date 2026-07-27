@@ -1631,6 +1631,44 @@
           : `${formatInteger(officialTrades)} of the ${formatInteger(needed)} settled trades needed before this means anything.`}</p>`
       : '<p class="health-note">No settled markets replayed yet. This fills in by itself after a tracked card finishes.</p>';
 
+    // Did the numbers hold up? Settled markets, scored against the last
+    // prediction the board actually showed before each card.
+    const cal = health.calibration || {};
+    let calBlock = "";
+    if (cal.available) {
+      const ece = parseNumber(cal.ece);
+      const marketEce = parseNumber(cal.market_ece);
+      const grade = ece === null ? "" : ece < 0.05 ? "good" : ece < 0.10 ? "" : "bad";
+      const bins = (cal.bins || []).filter((b) => b.count >= 5);
+      const worst = bins.slice().sort((a, b) =>
+        Math.abs(b.actual_rate - b.mean_prediction) - Math.abs(a.actual_rate - a.mean_prediction))[0];
+      const rows = bins.map((bin) => {
+        const said = parseNumber(bin.mean_prediction);
+        const happened = parseNumber(bin.actual_rate);
+        const off = happened - said;
+        const width = Math.min(100, Math.abs(off) * 260);
+        return `<div class="cal-row">
+          <span class="cal-band">${formatPlainPercent(bin.low)}–${formatPlainPercent(bin.high)}</span>
+          <span class="cal-n">${formatInteger(bin.count)}</span>
+          <span class="cal-track"><i class="${off >= 0 ? "over" : "under"}" style="width:${width.toFixed(1)}%"></i></span>
+          <span class="cal-said">${formatPlainPercent(said)}</span>
+          <span class="cal-happened ${Math.abs(off) > 0.1 ? (off > 0 ? "up" : "down") : ""}">${formatPlainPercent(happened)}</span>
+        </div>`;
+      }).join("");
+      calBlock = `
+        <article class="health-block is-wide">
+          <p class="health-kicker">Did the numbers hold up?</p>
+          <p class="health-big ${grade}">${formatDecimal3(ece)}<span>average gap between what we said and what happened, over ${formatInteger(cal.markets)} settled markets${marketEce !== null ? ` · the market itself scored ${formatDecimal3(marketEce)}` : ""}</span></p>
+          <div class="cal-table">
+            <div class="cal-row is-head"><span>we said</span><span>n</span><span></span><span>said</span><span>happened</span></div>
+            ${rows}
+          </div>
+          ${worst ? `<p class="health-note">${Math.abs(worst.actual_rate - worst.mean_prediction) > 0.1
+            ? `Worst band: at ${formatPlainPercent(worst.mean_prediction)} the board was ${worst.actual_rate > worst.mean_prediction ? "too low" : "too high"} — those markets landed ${formatPlainPercent(worst.actual_rate)}.`
+            : "No band is off by more than 10 points."}</p>` : ""}
+        </article>`;
+    }
+
     const gate = health.v2_gate || {};
     let gateBit = "";
     if (gate.available) {
@@ -1678,7 +1716,7 @@
     }
     els.healthGrid.innerHTML = `
       <article class="health-block">
-        <p class="health-kicker">Prediction test (old fights) <span class="cal-ece ${eceClass(prediction.ece)}">ECE ${formatDecimal3(prediction.ece)}</span></p>
+        <p class="health-kicker">Prediction test (old fights)</p>
         <p class="health-big">${formatInteger(prediction.groups_beating_base)}<span> of ${formatInteger(prediction.measured_groups)} phrase groups beat the simple average</span></p>
         <p class="health-note">${formatInteger(prediction.prediction_rows)} old fight predictions scored across ${formatInteger(prediction.folds)} time-ordered folds. This checks guessing quality only, not profit.</p>
         ${strongBit}
@@ -1693,7 +1731,8 @@
         <p class="health-kicker">Money test</p>
         <p class="health-warn">${enough ? "Enough sample to review" : "Still too small to trust"}</p>
         ${plBlock}
-      </article>`;
+      </article>
+      ${calBlock}`;
   }
 
   /* ---------- paper tracking ---------- */

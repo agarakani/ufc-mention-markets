@@ -61,3 +61,31 @@ def test_config_round_trips_group_bias(tmp_path):
 
 def test_missing_config_has_no_bias(tmp_path):
     assert load_model_config(tmp_path / "nope.json")["group_bias"] is None
+
+
+def test_calibration_bins_and_ece():
+    from scripts.model.calibration_report import calibration_bins, expected_calibration_error
+
+    # Two bands: one perfectly calibrated, one badly off.
+    pairs = (
+        [{"probability": 0.05, "outcome": 0} for _ in range(19)]
+        + [{"probability": 0.05, "outcome": 1}]
+        + [{"probability": 0.25, "outcome": 1} for _ in range(10)]
+    )
+    bins = calibration_bins(pairs)
+    bands = {(round(b["low"], 2), round(b["high"], 2)): b for b in bins}
+    low = bands[(0.0, 0.05)] if (0.0, 0.05) in bands else bands[(0.05, 0.1)]
+    assert low["count"] == 20
+    assert abs(low["actual_rate"] - 0.05) < 1e-9
+
+    ece = expected_calibration_error(bins)
+    assert ece is not None and ece > 0        # the 25% band went 100%
+    assert expected_calibration_error([]) is None
+
+
+def test_calibration_report_is_empty_without_data(tmp_path):
+    from scripts.model.calibration_report import build
+
+    report = build(tmp_path / "labels.csv", tmp_path / "history.csv")
+    assert report["markets"] == 0
+    assert report["ece"] is None

@@ -30,6 +30,7 @@ PL_BACKTEST_SUMMARY = ROOT / "model_outputs" / "pl_backtest_summary.json"
 PL_BACKTEST_TRADES = ROOT / "model_outputs" / "pl_backtest_trades.csv"
 WALKFORWARD_REPORT = ROOT / "model_outputs" / "walkforward_report.json"
 V2_GATE_REPORT = ROOT / "model_outputs" / "v2_gate_report.json"
+CALIBRATION_REPORT = ROOT / "model_outputs" / "calibration_report.json"
 FIGHTER_DIRECTORY = ROOT / "data" / "processed" / "fighter_directory.csv"
 UPCOMING_EVENTS = ROOT / "data" / "processed" / "upcoming_events.json"
 TRACKING_ROOT = ROOT / "data" / "tracking"
@@ -490,6 +491,32 @@ def build_walkforward(report: dict) -> dict:
     }
 
 
+def build_calibration(report: dict) -> dict:
+    """Live calibration on settled markets: did the numbers hold up?"""
+    if not report or report.get("ece") is None:
+        return {"available": False}
+    return {
+        "available": True,
+        "markets": as_int(report.get("markets")),
+        "cards": len(report.get("cards") or []),
+        "ece": number(report.get("ece")),
+        "market_ece": number(report.get("market_ece")),
+        "mean_prediction": number(report.get("mean_prediction")),
+        "actual_rate": number(report.get("actual_rate")),
+        "bins": [
+            {
+                "low": number(row.get("low")),
+                "high": number(row.get("high")),
+                "count": as_int(row.get("count")),
+                "mean_prediction": number(row.get("mean_prediction")),
+                "actual_rate": number(row.get("actual_rate")),
+            }
+            for row in (report.get("bins") or [])
+        ],
+        "generated_at": report.get("generated_at", ""),
+    }
+
+
 def build_v2_gate(report: dict) -> dict:
     if not report:
         return {"available": False}
@@ -586,6 +613,7 @@ def build_model_health(
         },
         "walkforward": walkforward or {"available": False},
         "v2_gate": build_v2_gate(read_json(V2_GATE_REPORT)),
+        "calibration": build_calibration(read_json(CALIBRATION_REPORT)),
     }
 
 

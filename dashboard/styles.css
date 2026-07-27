@@ -1129,6 +1129,43 @@ td.empty, .tracking-empty { padding: 30px; text-align: center; color: var(--ink-
 .cal-ece.warn { border-color: rgba(255,107,44,0.4); color: #ff8c5a; }
 .cal-ece.bad { border-color: rgba(242,105,95,0.4); color: var(--loss); }
 
+/* calibration: what we said against what happened */
+.health-block.is-wide { grid-column: 1 / -1; }
+.health-block.is-wide .cal-table { max-width: 680px; }
+.cal-table { margin: 12px 0 8px; }
+.cal-row {
+  display: grid;
+  grid-template-columns: 62px 30px 1fr 46px 46px;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--edge-line);
+  font-family: var(--num);
+  font-size: 11px;
+  color: var(--ink-2);
+}
+.cal-row.is-head {
+  border-bottom-color: var(--edge-strong);
+  font-family: var(--voice);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.cal-row.is-head span:nth-child(4),
+.cal-row.is-head span:last-child,
+.cal-said, .cal-happened { text-align: right; }
+.cal-n { text-align: right; color: var(--ink-3); }
+.cal-track { position: relative; height: 4px; background: var(--lane); }
+.cal-track i { position: absolute; top: 0; bottom: 0; left: 50%; }
+.cal-track i.over { background: #3ddc97; }
+.cal-track i.under { background: var(--loss); transform: translateX(-100%); }
+.cal-happened { color: var(--ink); }
+.cal-happened.up { color: #3ddc97; }
+.cal-happened.down { color: var(--loss); }
+.health-big.good { color: #3ddc97; }
+.health-big.bad { color: var(--loss); }
+
 /* the bake-off: every candidate model and what it scored */
 .gate-board { margin: 10px 0 8px; border-top: 1px solid var(--edge-line); }
 .gate-row {
