@@ -42,6 +42,8 @@ from ufc_mentions.kalshi_context_model import (  # noqa: E402
     UPCOMING_DEFAULT,
     UPDATE_CONFIG_DEFAULT,
     KalshiFightContextModel,
+    apply_group_bias,
+    group_bias_key,
 )
 from ufc_mentions.kalshi_mentions import TranscriptCorpus  # noqa: E402
 
@@ -63,7 +65,14 @@ def clipped(p: float) -> float:
 
 def collect_card_pairs(model: KalshiFightContextModel, card_labels: pd.DataFrame) -> list[tuple[float, int]]:
     """(probability, outcome) for every scorable market on one held-out card."""
-    pairs = []
+    return [(p, y) for p, y, _ in collect_card_rows(model, card_labels)]
+
+
+def collect_card_rows(
+    model: KalshiFightContextModel, card_labels: pd.DataFrame
+) -> list[tuple[float, int, str]]:
+    """(probability, outcome, phrase group) for one held-out card."""
+    rows = []
     for _, label in card_labels.iterrows():
         prediction = model.predict(
             forms_from_phrase(label["phrase"]),
@@ -74,8 +83,8 @@ def collect_card_pairs(model: KalshiFightContextModel, card_labels: pd.DataFrame
         if prediction.status != "ok" or prediction.probability is None:
             continue
         y = 1 if str(label["outcome"]).strip().lower() == "yes" else 0
-        pairs.append((float(prediction.probability), y))
-    return pairs
+        rows.append((float(prediction.probability), y, group_bias_key(str(label["phrase"]))))
+    return rows
 
 
 def loss_from_pairs(pairs: list[tuple[float, int]]) -> float | None:
@@ -130,7 +139,61 @@ def calibrated_holdout_means(per_holdout_pairs: dict[str, list], holdout_order: 
     return sum(losses) / len(losses) if losses else None
 
 
-VARIANT_ORDER = ["v1", "v2", "v1+calib", "v2+calib"]
+GROUP_BIAS_SHRINK = 30.0   # a group needs ~30 settled markets to move halfway
+GROUP_BIAS_MIN_ROWS = 8
+GROUP_BIAS_MAX = 1.2       # logit units, so no group can be flipped wholesale
+
+
+def fit_group_bias(rows: list[tuple[float, int, str]]) -> dict[str, float]:
+    """Per-phrase-group logit shift, fitted on settled cards and shrunk hard.
+
+    Commentary vocabulary is uneven: the physical-action groups have settled
+    above our number and the catchphrases below it. Each group gets its own
+    shift, pulled toward zero by n/(n + 30) so a thin group barely moves."""
+    buckets: dict[str, list[tuple[float, int]]] = {}
+    for p, y, key in rows:
+        if key:
+            buckets.setdefault(key, []).append((p, y))
+    bias: dict[str, float] = {}
+    for key, values in buckets.items():
+        n = len(values)
+        if n < GROUP_BIAS_MIN_ROWS:
+            continue
+        mean_p = sum(clipped(p) for p, _ in values) / n
+        mean_y = sum(y for _, y in values) / n
+        # Laplace-smoothed outcome rate keeps a 0/1 group from exploding.
+        smoothed = (mean_y * n + 0.5) / (n + 1.0)
+        delta = math.log(clipped(smoothed) / (1 - clipped(smoothed))) - math.log(mean_p / (1 - mean_p))
+        delta *= n / (n + GROUP_BIAS_SHRINK)
+        delta = max(-GROUP_BIAS_MAX, min(GROUP_BIAS_MAX, delta))
+        if abs(delta) > 1e-4:
+            bias[key] = delta
+    return bias
+
+
+def group_adjusted_pairs(
+    rows: list[tuple[float, int, str]], bias: dict[str, float] | None
+) -> list[tuple[float, int]]:
+    if not bias:
+        return [(p, y) for p, y, _ in rows]
+    return [(apply_group_bias(p, key, bias), y) for p, y, key in rows]
+
+
+def group_holdout_mean(
+    per_holdout_rows: dict[str, list], holdout_order: list[str]
+) -> float | None:
+    """Each card scored with a bias fitted only on the cards before it."""
+    losses = []
+    for index, holdout in enumerate(holdout_order):
+        earlier = [row for prior in holdout_order[:index] for row in per_holdout_rows.get(prior, [])]
+        bias = fit_group_bias(earlier) if earlier else {}
+        loss = loss_from_pairs(group_adjusted_pairs(per_holdout_rows.get(holdout, []), bias))
+        if loss is not None:
+            losses.append(loss)
+    return sum(losses) / len(losses) if losses else None
+
+
+VARIANT_ORDER = ["v1", "v2", "v1+calib", "v2+calib", "v1+group", "v2+group"]
 
 
 def pick_best_variant(means: dict[str, float | None]) -> str:
@@ -166,6 +229,8 @@ def up_to_date(labels: pd.DataFrame) -> bool:
     return (
         int(report.get("labels_count", -1)) == len(labels)
         and report.get("cards") == sorted(labels["event_date"].astype(str).unique().tolist())
+        # A new contender means the old verdict no longer covers the field.
+        and report.get("variants_tested") == VARIANT_ORDER
     )
 
 
@@ -218,8 +283,9 @@ def main() -> None:
             )
             model.label_cutoff_date = holdout
             card_labels = labels.loc[labels["event_date"].astype(str) == holdout]
-            pairs = collect_card_pairs(model, card_labels)
-            pairs_by_card[holdout] = pairs
+            rows = collect_card_rows(model, card_labels)
+            pairs = [(prob, y) for prob, y, _ in rows]
+            pairs_by_card[holdout] = rows
             loss = loss_from_pairs(pairs)
             card_scores[holdout] = {"log_loss": loss, "scored": len(pairs)}
             print(f"  weight {weight:g} {feature_set} | holdout {holdout}: "
@@ -252,17 +318,27 @@ def main() -> None:
         "v2": v2_summary["mean_log_loss"],
         "v1+calib": calibrated_holdout_means(pairs_v1, holdouts),
         "v2+calib": calibrated_holdout_means(pairs_v2, holdouts),
+        "v1+group": group_holdout_mean(pairs_v1, holdouts),
+        "v2+group": group_holdout_mean(pairs_v2, holdouts),
     }
     best_variant = pick_best_variant(variant_means)
     chosen_feature_set = "v2" if best_variant.startswith("v2") else "v1"
     final_calibration = None
+    final_group_bias = None
+    winning_rows = pairs_v2 if chosen_feature_set == "v2" else pairs_v1
     if best_variant.endswith("+calib"):
-        winning_pairs = pairs_v2 if chosen_feature_set == "v2" else pairs_v1
         final_calibration = fit_platt([
-            pair for card_pairs in winning_pairs.values() for pair in card_pairs
+            (prob, y) for card_rows in winning_rows.values() for prob, y, _ in card_rows
         ])
         if final_calibration is None:
             best_variant = chosen_feature_set  # not enough data to fit for live use
+    elif best_variant.endswith("+group"):
+        # Fit the shipped bias on every settled card, the same shape the gate scored.
+        final_group_bias = fit_group_bias([
+            row for card_rows in winning_rows.values() for row in card_rows
+        ]) or None
+        if final_group_bias is None:
+            best_variant = chosen_feature_set
     for name in VARIANT_ORDER:
         mean = variant_means.get(name)
         marker = " <- chosen" if name == best_variant else ""
@@ -293,12 +369,16 @@ def main() -> None:
         "holdout_cards": holdouts,
         "variant_means": variant_means,
         "chosen_variant": best_variant,
+        "variants_tested": VARIANT_ORDER,
         "chosen_feature_set": chosen_feature_set,
         "calibration": final_calibration,
+        "group_bias": final_group_bias,
         "note": (
-            "v2 adds the event-tier feature; +calib recalibrates on settled-card "
-            "outcomes. Each holdout card is scored with a calibrator fitted only "
-            "on cards before it. A variant ships only when it beat plain v1 here."
+            "v2 adds the event-tier feature; +calib recalibrates globally on "
+            "settled-card outcomes; +group shifts each phrase group by its own "
+            "settled history, shrunk by sample size. Every holdout card is scored "
+            "with a correction fitted only on cards before it, and a variant ships "
+            "only when it beat plain v1 here."
         ),
     }
     GATE_REPORT_PATH.write_text(json.dumps(gate_report, indent=2) + "\n")
@@ -308,6 +388,7 @@ def main() -> None:
         "label_weight": chosen,
         "feature_set": chosen_feature_set,
         "calibration": final_calibration if best_variant.endswith("+calib") else None,
+        "group_bias": final_group_bias if best_variant.endswith("+group") else None,
         "chosen_variant": best_variant,
         "chosen_at": report["generated_at"],
         "basis": f"walk-forward over {len(holdouts)} held-out cards",

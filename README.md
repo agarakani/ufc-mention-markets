@@ -1,324 +1,185 @@
-# ufc-mention-markets
+# UFC Mention Markets
 
-Read-only tools for UFC Kalshi mention markets.
+**Prices the words, not the fight.**
 
-The goal is simple: for each listed fight, look at the exact phrase Kalshi is
-offering, estimate how likely that phrase is to be said during that fight, then
-compare that number with the live YES and NO buy prices.
+Kalshi runs markets on what the commentators will *say* during a UFC fight —
+"choke", "knockout", "Dana" — and this prices them. A model trained on 5,578
+fight transcripts estimates how likely each exact phrase is to be said during
+each listed fight, compares that with the live bid and ask, and flags the gap.
 
-This repo does not place trades.
+Every signal is paper-traded and settled against Kalshi's own results, so the
+record is public and honest.
 
-## What The App Does
+**Live board:** https://agarakani.github.io/ufc-mention-markets/
 
-1. Finds open Kalshi UFC mention markets.
-2. Reads the exact phrase rules, including grouped phrases like `Choke / Choked / Chokehold`.
-3. Builds a fight-level probability for that exact phrase and that exact fight.
-4. Compares the model's YES chance with the live YES buy price, and the model's NO chance with the live NO buy price.
-5. Marks a row `WATCH YES` or `WATCH NO` when that side clears the required edge.
-6. If fighter history is thin, the row can still be a watch, but it has to clear a bigger edge bar and is flagged as data-risk.
-7. Refuses to watch when the edge is too big. On settled cards, disagreements
-   with the market over 15 points were almost always the model's mistake, so
-   those rows are flagged `BIG GAP` and never paper-traded.
-8. Refuses to watch phrase groups that show no real skill in the old-fight
-   prediction test. Those can lean, nothing more.
+> Research tooling. It reads Kalshi and cannot place an order — the client has
+> no write path at all.
 
-Kalshi prices are not fed into the model. They are only used after the model has
-made its number.
+---
 
-## How To Use It
+## Where it stands
 
-The dashboard runs as a background service on this Mac — nothing to start,
-no terminal. Open it like a website:
+Four settled cards, replayed from recorded live snapshots against final Kalshi
+results. No hindsight prices, no fabricated fills.
 
-- Double-click **UFC Dashboard** on the Desktop, or
-- go to **http://127.0.0.1:8765** in any browser.
+| | trades | wins | P/L | return |
+|---|---|---|---|---|
+| Watch calls | 134 | 80 | +$9.33 | +13.2% |
+| Leans (below the bar) | 228 | 124 | −$3.07 | −2.4% |
 
-It refreshes Kalshi prices every 30 seconds on its own, paper-tracks every
-card automatically (one pretend contract per new WATCH row — it cannot spend
-real money), fills in outcomes when Kalshi posts results, and folds finished
-cards into the money backtest. It starts by itself when the Mac starts.
+**Read that carefully.** Three of the four cards lost money; the entire profit
+came from one night (Jul 11, +$13.24). Trades inside a card move together, so
+four cards is the real sample size, not 134 trades. This is not a proven edge.
 
-Set it up once (already done on this machine), or after moving to a new Mac:
+The model does beat guessing — 0.502 log loss against 0.595 for the base rate
+on the most recent card — but the market beat the model on that same card
+(0.129). Prices here still carry more information than the model does.
+
+---
+
+## How a number gets made
+
+1. **Find the markets.** Every open Kalshi UFC mention market, with its exact
+   resolution rules, including grouped phrases like `Choke / Choked / Chokehold`.
+2. **Price the phrase for that fight.** A model trained per phrase group on
+   historical transcripts, using pre-fight information only — records, reach,
+   stance, style, era, card tier.
+3. **Compare with the book.** Model YES against the live YES ask, model NO
+   against the NO ask.
+4. **Call it.** `WATCH` when a side clears the edge bar, `LEAN` when it is
+   positive but short of it, `PASS` otherwise.
+
+Kalshi prices never enter the model. They are used only after the number exists.
+
+### What the rule refuses to do
+
+Three guardrails, each added after losing money without it:
+
+- **Edge cap (0.15).** On settled cards, disagreements larger than 15 points
+  were almost always the model's mistake. Those are marked `BIG GAP` and never
+  traded.
+- **Phrase trust.** Groups that showed no real skill in the historical
+  prediction test can lean, never watch.
+- **Thin-data bar.** When a fighter's history is sparse, the row must clear a
+  larger edge and is flagged.
+
+---
+
+## The model improves itself
+
+Every settled Kalshi market is ground truth for exactly what the model predicts:
+was this phrase said in this fight, yes or no. Those answers are collected
+automatically after each card into `data/processed/kalshi_results_labels.csv`.
+
+A walk-forward gate re-runs whenever a settled card is missing from it. Each
+candidate is scored on cards it has never seen, and any correction is fitted
+only on cards *before* the one being scored:
+
+| candidate | what it changes |
+|---|---|
+| `v1` / `v2` | feature set — v2 adds event tier |
+| `+calib` | one global recalibration fitted on settled results |
+| `+group` | a per-phrase-group shift, shrunk by that group's own sample size |
+
+**A candidate ships only if it beats plain v1 on held-out cards.** The gate has
+already reversed itself once: it adopted a global calibration in July, then
+dropped it a week later when a third held-out card showed it was pushing every
+prediction too low. That reversal is the system working, not a bug.
+
+The current verdict lives in `model_outputs/walkforward_report.json`; the live
+model reads `data/processed/model_update_config.json`.
+
+---
+
+## Using it
+
+The dashboard runs as a background service. There is nothing to start.
+
+- **Desktop:** double-click **UFC Dashboard**
+- **Browser:** http://127.0.0.1:8765
+- **Anywhere else:** https://agarakani.github.io/ufc-mention-markets/
+
+It refreshes prices every 30 seconds, paper-trades new watch rows at the live
+price, fills in outcomes when Kalshi posts them, folds finished cards into the
+money record, and republishes the public site. It starts itself at login.
+
+On a new machine:
 
 ```bash
 pip install -r requirements.txt
 ./install_autostart.command
 ```
 
-To turn the background service off:
+Stop the service, or stop publishing:
 
 ```bash
 ./uninstall_autostart.command
+UFC_PUBLISH=0 ./install_autostart.command
 ```
 
-If you prefer running it by hand in a terminal instead, the old way still
-works (with optional PAPER_CARD="auto" or a custom card name):
+One honest limit: the public site is only as fresh as this Mac. Asleep or
+offline, the page stays up showing its last snapshot, timestamped in the corner.
+
+---
+
+## Reading the board
+
+**The stage** names the card, counts down to first bell, and shows the best edge
+on it.
+
+**The card** gives each fight a tile: its market count, its best edge, and the
+phrase driving it.
+
+**The disagreement grid** is the whole card at once — fights down, phrases
+across, each cell coloured by how far the model sits from the market. Green
+means we say more likely, red means less.
+
+**The book** is the detail. Each row draws one market on a shared logit price
+axis: brackets at the bid and the ask, the untraded space between them, and a
+white mark for the model's number. Logit rather than linear, because these
+markets live at 3–12¢ and 88–97¢ where a linear bar shows nothing.
+
+Click any row for a plain-English account of how that number was made.
+
+---
+
+## Commands
+
+All optional — the service does every one of these on its own.
 
 ```bash
-./start_live_dashboard.command
+python3 scripts/live/refresh_dashboard.py                  # one refresh
+python3 scripts/live/price_fight.py --event-ticker <TICKER> --show-all
+python3 scripts/model/backtest_pl.py                       # money record
+python3 scripts/model/backtest_context_model.py            # model on old fights
+python3 scripts/model/walkforward_update.py                # re-run the gate
+python3 scripts/data/build_match_csv.py                    # rebuild training data
 ```
 
-Refresh the live dashboard once:
-
-```bash
-python3 scripts/live/refresh_dashboard.py
-```
-
-Open:
+## Layout
 
 ```text
-http://127.0.0.1:8765/
+dashboard/           the board: index.html, app.js, styles.css, generated data.js
+ufc_mentions/        the library — model, Kalshi client, phrase matching, corpus
+scripts/live/        refresh prices, serve the board, publish the public site
+scripts/model/       backtests, the walk-forward gate, rule audits
+scripts/data/        rebuild training tables from transcripts and stats
+scripts/tracking/    paper card snapshots and settlement
+tests/               the test suite
+market_phrases.txt   phrase list used when rebuilding training data
 ```
 
-Keep it updating:
+Datasets and generated files are gitignored: `ufc_cleaned_export/`,
+`kaggle_data/`, `data/processed/`, `market_data/`, `model_outputs/`.
 
-```bash
-python3 scripts/live/refresh_dashboard.py --poll-seconds 30
-```
+## Credentials
 
-Keep it updating and paper-track live entries:
-
-```bash
-python3 scripts/live/refresh_dashboard.py \
-  --poll-seconds 30 \
-  --paper-card "UFC July 11 card"
-```
-
-Price one listed fight by event ticker:
-
-```bash
-python3 scripts/live/price_fight.py \
-  --event-ticker KXFIGHTMENTION-26JUN20KAPHOR \
-  --show-all
-```
-
-Or find the fight by names/date:
-
-```bash
-python3 scripts/live/price_fight.py \
-  --fighter-1 "Manel Kape" \
-  --fighter-2 "Kyoji Horiguchi" \
-  --date 2026-06-20 \
-  --show-all
-```
-
-## Sharing The Site
-
-The dashboard also publishes as a public website:
-
-  https://agarakani.github.io/ufc-mention-markets/
-
-That page is a read-only mirror anyone can open — no setup, no Mac required
-on their end. This machine's background service pushes a fresh snapshot every
-few minutes while it runs, and the page re-reads the data by itself. The
-public copy has no refresh button and, like everything else here, cannot
-place trades.
-
-Sharing is on by default. Turn it off (or back on) by reinstalling the
-service:
-
-```bash
-UFC_PUBLISH=0 ./install_autostart.command   # stop publishing
-UFC_PUBLISH=1 ./install_autostart.command   # start again
-```
-
-One honest limit: the public page is only as fresh as this Mac. If the Mac
-is asleep or offline, the site stays up but shows the last published
-snapshot, with its timestamp in the corner.
-
-## Testing The Model On A Fight Card
-
-The point of a live card is to find out whether the model's numbers hold up.
-Since the dashboard runs by itself and paper tracking is automatic, there is
-nothing to start. On fight weekend:
-
-1. Open the dashboard (Desktop shortcut or http://127.0.0.1:8765) any time
-   before or during the card. Every watch row is already being logged as one
-   pretend contract at the live price; leans are logged separately. Nothing
-   is bought for real.
-
-2. Look around. Click fights in the left list, click any row to see exactly
-   how its number was made, and check that the reasons make sense.
-
-3. After Kalshi posts results (usually within a day), everything settles by
-   itself: the tracker fills in yes/no outcomes and paper P/L, and the money
-   backtest folds the finished card in and updates Model health. There is
-   nothing to run by hand.
-
-Judge the model on that growing settled sample, not on any single fight.
-
-## How To Read The Dashboard
-
-- Cards are grouped by the fight-event date Kalshi publishes. If Kalshi has not
-  published a card name, the dashboard does not guess one.
-- Click a card folder to see the fights Kalshi has listed for that date.
-- Click a fight to see only that fight's mention-market prices.
-- `TBD odds` means Kalshi has listed the fight event, but no tradable mention
-  odds are available yet.
-- `Our %`: the fight-level model's YES probability for that phrase.
-- `YES price`: what buying YES currently costs.
-- `NO price`: what buying NO currently costs.
-- `Side`: the cheaper side according to our model.
-- `Edge`: model chance for that side minus that side's buy price.
-- `WATCH YES` / `WATCH NO`: research flag only. That side's edge cleared the
-  entry bar (spread + fee buffer, plus an extra buffer when data is thin).
-- `LEAN YES` / `LEAN NO`: positive edge, but under the entry bar — or a phrase
-  group the prediction test does not trust enough to watch.
-- `BIG GAP`: the edge is over the 15% cap. A disagreement that large was
-  almost always the model's mistake on settled cards, so it is flagged, not
-  traded.
-- `PASS`: no positive edge on either side.
-- `NO PRICES`: Kalshi has not posted a live YES/NO book yet.
-- `NO MODEL`: no fight-level model number; the row shows a rough history
-  average and can never become a watch.
-- A dashed `thin data` tag next to the call means fighter history is small.
-  Those rows must clear a higher bar, and a very large edge on a thin-data row
-  is more likely a model gap than free money.
-- Click any price row to expand "How this number was made": which model produced
-  the number, what it trained on, the fighter history behind it, the prices it
-  compared against, and the exact entry bar it had to clear.
-- The "Model health" section shows the old-fight prediction backtest (rows
-  tested, phrase groups that beat the simple baseline, weakest phrase) and the
-  money-backtest status. It says clearly when there are not enough settled
-  trades to claim anything about profit.
-
-## Backtesting
-
-There are two checks, and they answer different questions.
-
-1. Prediction quality — does the model guess better than a simple average?
-
-```bash
-python3 scripts/model/backtest_context_model.py --initial-train-frac 0.30
-```
-
-Latest result: 13 current Kalshi phrase groups, 43,784 old fight predictions,
-12 of 13 groups beat the simple baseline. This says nothing about profit.
-The same run grades each phrase group; groups that fail it, or show almost no
-ranking skill (AUC under 0.55), are barred from producing watch rows.
-
-2. Money backtest — would the watch rule have made paper money?
-
-```bash
-python3 scripts/model/backtest_pl.py
-```
-
-This replays the price snapshots the live refresher already saved, enters one
-paper contract at the first snapshot where the live rule said WATCH, then
-settles against the final Kalshi results (fetched read-only and cached).
-No hindsight prices, no fabricated fills.
-
-Latest result, two settled cards in: 97 recorded trades, 60 wins, +$10.99 on
-$49.01 staked. Today's tightened rule (edge cap + phrase trust) replayed on
-the same snapshots takes 54 trades, 39 wins, +$7.15. The 30-trade minimum is
-met, so the dashboard now says "enough sample to review" — but two cards is
-still a small number of independent events, and the first card lost money
-before the second one won more back. Judge it card by card as the sample
-grows. Both results show up in the dashboard's Model health section.
-
-## Learning From Settled Cards
-
-Every settled Kalshi mention market is a ground-truth answer to exactly what
-the model predicts: was this phrase group said during this fight. The
-refresher collects those answers automatically after each card and writes
-them to `data/processed/kalshi_results_labels.csv` (one row per settled
-market: date, fighters, phrase group, yes/no).
-
-This matters because the transcript corpus stops in the past, while these
-labels cover live cards and current broadcast teams. Retraining the model on
-them is the planned next step; today they are collected and reported but do
-not change live predictions yet. Broadcast transcripts themselves cannot be
-downloaded automatically (they are licensed recordings), so this is the
-honest automated path.
-
-## Project Layout
-
-```text
-.
-├── dashboard/          local browser dashboard
-├── data/processed/     generated CSVs, kept out of git
-├── scripts/
-│   ├── live/           refresh Kalshi prices and price one fight
-│   ├── model/          backtests and phrase-rule checks
-│   ├── data/           rebuild the training tables
-│   └── tracking/       weekly paper P/L tracker
-├── tracking/           how to track weekly results
-├── ufc_mentions/       reusable model, Kalshi, phrase, and transcript code
-├── tests/              focused checks for the current Kalshi flow
-├── market_phrases.txt  phrase list used when rebuilding training data
-└── start_live_dashboard.command
-```
-
-The main commands live in `scripts/`:
-
-- `scripts/live/refresh_dashboard.py`: refreshes all open Kalshi UFC fight markets.
-- `scripts/live/dashboard_server.py`: serves the dashboard and keeps it auto-updating.
-- `scripts/live/price_fight.py`: prices one fight.
-- `scripts/model/backtest_context_model.py`: checks the fight-level model on old fights.
-- `scripts/model/backtest_pl.py`: replays saved snapshots against final results for paper P/L.
-- `scripts/model/audit_grouped_rules.py`: checks grouped Kalshi phrases against transcripts.
-- `scripts/data/build_match_csv.py`: rebuilds `fight_mentions.csv` from transcripts.
-- `scripts/data/join_kaggle_outcomes.py`: joins transcript rows with UFC stats.
-- `scripts/tracking/snapshot_card.py`: saves the current board before a card starts.
-- `scripts/tracking/live_paper.py`: records live paper entries when WATCH rows appear.
-- `scripts/tracking/settle_card.py`: calculates paper P/L after results are filled in.
-
-## Weekly Tracking
-
-Before a card starts:
-
-```bash
-python3 scripts/live/refresh_dashboard.py
-python3 scripts/tracking/snapshot_card.py --card "UFC July 11 card"
-```
-
-For live paper entries instead, leave this running before the fights:
-
-```bash
-python3 scripts/live/refresh_dashboard.py \
-  --poll-seconds 30 \
-  --paper-card "UFC July 11 card"
-```
-
-The live tracker buys nothing for real. It logs one paper contract when a row
-first becomes `WATCH`, then ignores that same market on later refreshes.
-
-When Kalshi posts a final result, the tracker fills `yes` or `no` on its own.
-Rows show as `pending` when the fight date has passed but Kalshi has not posted
-the final result yet.
-
-The settlement command is still available if you need to recalculate manually:
-
-```bash
-python3 scripts/tracking/settle_card.py --card "UFC July 11 card"
-```
-
-This tracks two numbers:
-
-- `official`: only rows the model marked `WATCH`.
-- `leans`: rows where either YES or NO had positive model edge but did not clear the full watch bar.
-
-## Data
-
-Local data folders are gitignored:
-
-- `ufc_cleaned_export/`: fight transcript JSON files
-- `kaggle_data/ultimate_ufc_dataset/`: Kaggle UFC stats
-- `data/processed/`: generated CSVs used by the model
-- `data/tracking/`: generated weekly paper-trading files
-- `market_data/`: live Kalshi snapshots and price history
-- `model_outputs/`: model and backtest outputs
-
-## Limits
-
-The Kalshi client supports GET requests only. There is no order-placement method.
-
-Public Kalshi reads currently work without credentials. If authenticated reads
-are needed, put a read-only key in a gitignored `.env`:
+Public Kalshi reads work unauthenticated. For authenticated reads, put a
+read-only key in a gitignored `.env`:
 
 ```text
 KALSHI_KEY_ID=...
 KALSHI_PRIVATE_KEY_PATH=/absolute/path/to/private-key.pem
 ```
 
-Do not claim the model is trade-ready until there are enough resolved Kalshi cards in paper tracking.
+There is no order-placement code path, authenticated or otherwise.

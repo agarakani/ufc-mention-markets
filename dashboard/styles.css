@@ -1091,12 +1091,12 @@ td.empty, .tracking-empty { padding: 30px; text-align: center; color: var(--ink-
 
 .tracking-table tbody td { padding: 8px 12px; font-family: var(--num); font-size: 11.5px; }
 
-/* ================= model ================= */
-.health-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); border-top: 1px solid var(--edge-strong); }
+/* ================= health grid ================= */
+.health-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 12px; border-top: 1px solid var(--edge-strong); }
 .health-grid.two { border-top: 1px solid var(--edge-line); }
 .health-block { padding: 16px 20px 18px 0; border-bottom: 1px solid var(--edge-line); }
 .health-grid .health-block + .health-block { padding-left: 20px; border-left: 1px solid var(--edge-line); }
-.health-kicker { margin-bottom: 10px; }
+.health-kicker { margin-bottom: 10px; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-2); display: flex; align-items: center; gap: 8px; }
 .health-big { font-family: var(--num); font-size: 28px; font-weight: 500; line-height: 1.2; }
 .health-big span { display: block; margin-top: 3px; font-family: var(--prose); font-size: 12px; color: var(--ink-2); }
 .health-big.pos { color: var(--gain); }
@@ -1114,6 +1114,49 @@ td.empty, .tracking-empty { padding: 30px; text-align: center; color: var(--ink-
   text-transform: uppercase;
   color: var(--ink-2);
 }
+/* Calibration badge — shows ECE so the reader sees how well-calibrated the model is at a glance */
+.cal-ece {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 1px 6px;
+  border: 1px solid var(--edge-line);
+  font-family: var(--num);
+  font-size: 9.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+  border-radius: 0;
+}
+.cal-ece.good { border-color: rgba(91,209,160,0.4); color: var(--gain); }
+.cal-ece.warn { border-color: rgba(255,107,44,0.4); color: #ff8c5a; }
+.cal-ece.bad { border-color: rgba(242,105,95,0.4); color: var(--loss); }
+
+/* the bake-off: every candidate model and what it scored */
+.gate-board { margin: 10px 0 8px; border-top: 1px solid var(--edge-line); }
+.gate-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--edge-line);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.gate-row.is-chosen { color: var(--ink); }
+.gate-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gate-score { font-family: var(--num); font-size: 12px; }
+.gate-delta { font-family: var(--num); font-size: 10.5px; color: var(--ink-2); min-width: 56px; text-align: right; }
+.gate-row.is-chosen .gate-delta { color: #3ddc97; }
+.gate-flag {
+  padding: 1px 6px;
+  background: var(--white-hot);
+  color: var(--void);
+  font-family: var(--voice);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.gate-row:not(.is-chosen) .gate-flag { display: none; }
 
 .bar-chart { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
 .bar-row { display: flex; flex-direction: column; gap: 3px; }

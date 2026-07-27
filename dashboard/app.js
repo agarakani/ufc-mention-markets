@@ -1635,9 +1635,36 @@
     let gateBit = "";
     if (gate.available) {
       const chosen = String(gate.chosen_variant || "v1");
-      gateBit = chosen === "v1"
-        ? '<p class="health-note">Model upgrades (event-tier feature, settled-card calibration) were front-tested against the current model on held-out cards. None beat it yet, so the proven model stays. This recheck runs after every settled card.</p>'
-        : `<p class="health-note">Upgrade adopted: <strong>${escapeHtml(chosen)}</strong> scored best on held-out cards${gate.calibrated ? " and live predictions are recalibrated on settled results" : ""}.</p>`;
+      const means = gate.variant_means || {};
+      const LABELS = {
+        "v1": "Proven model",
+        "v2": "Event-tier feature",
+        "v1+calib": "Global recalibration",
+        "v2+calib": "Event tier + recalibration",
+        "v1+group": "Per-phrase correction",
+        "v2+group": "Event tier + per-phrase",
+      };
+      const scored = Object.entries(means)
+        .filter(([, value]) => parseNumber(value) !== null)
+        .sort((a, b) => a[1] - b[1]);
+      const best = scored.length ? scored[0][1] : null;
+      const board = scored.map(([name, value]) => {
+        const won = name === chosen;
+        const delta = best !== null && value !== best ? `+${(value - best).toFixed(4)}` : "best";
+        return `<div class="gate-row${won ? " is-chosen" : ""}">
+          <span class="gate-name">${escapeHtml(LABELS[name] || name)}</span>
+          <span class="gate-score">${value.toFixed(4)}</span>
+          <span class="gate-delta">${escapeHtml(delta)}</span>
+          ${won ? '<span class="gate-flag">live</span>' : ""}
+        </div>`;
+      }).join("");
+      const cards = (gate.holdout_cards || []).length;
+      gateBit = `
+        <p class="health-note">Every candidate is scored on ${cards ? `${formatInteger(cards)} card${plural(cards)} it has ` : "cards it has "}never seen, with any correction fitted only on earlier cards. Lower is better; only a winner ships.</p>
+        <div class="gate-board">${board}</div>
+        <p class="health-note quiet">${chosen === "v1"
+          ? "Nothing has beaten the proven model, so it stays."
+          : `Running <strong>${escapeHtml(LABELS[chosen] || chosen)}</strong>${gate.group_bias_groups ? ` across ${formatInteger(gate.group_bias_groups)} phrase groups` : ""}.`}</p>`;
     }
     const wf = health.walkforward || {};
     let wfBit = "";
@@ -1651,7 +1678,7 @@
     }
     els.healthGrid.innerHTML = `
       <article class="health-block">
-        <p class="health-kicker">Prediction test (old fights)</p>
+        <p class="health-kicker">Prediction test (old fights) <span class="cal-ece ${eceClass(prediction.ece)}">ECE ${formatDecimal3(prediction.ece)}</span></p>
         <p class="health-big">${formatInteger(prediction.groups_beating_base)}<span> of ${formatInteger(prediction.measured_groups)} phrase groups beat the simple average</span></p>
         <p class="health-note">${formatInteger(prediction.prediction_rows)} old fight predictions scored across ${formatInteger(prediction.folds)} time-ordered folds. This checks guessing quality only, not profit.</p>
         ${strongBit}

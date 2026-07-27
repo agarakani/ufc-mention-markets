@@ -501,6 +501,8 @@ def build_v2_gate(report: dict) -> dict:
             for name, value in (report.get("variant_means") or {}).items()
         },
         "calibrated": bool(report.get("calibration")),
+        "group_bias_groups": len(report.get("group_bias") or {}),
+        "holdout_cards": list(report.get("holdout_cards") or []),
         "generated_at": report.get("generated_at", ""),
     }
 

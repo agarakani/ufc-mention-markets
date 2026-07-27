@@ -60,7 +60,7 @@ def test_apply_live_calibration_identity_and_shift():
 
 def test_load_model_config_defaults_and_values(tmp_path):
     missing = load_model_config(tmp_path / "nope.json")
-    assert missing == {"label_weight": 0.0, "feature_set": "v1", "calibration": None}
+    assert missing == {"label_weight": 0.0, "feature_set": "v1", "calibration": None, "group_bias": None}
 
     path = tmp_path / "config.json"
     path.write_text(json.dumps({

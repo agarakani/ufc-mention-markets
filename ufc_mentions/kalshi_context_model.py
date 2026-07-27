@@ -169,7 +169,7 @@ def load_model_config(config_path: str | Path = UPDATE_CONFIG_DEFAULT) -> dict:
 
     feature_set and calibration only change from their defaults when the
     walk-forward gate showed they scored better on held-out cards."""
-    defaults = {"label_weight": 0.0, "feature_set": "v1", "calibration": None}
+    defaults = {"label_weight": 0.0, "feature_set": "v1", "calibration": None, "group_bias": None}
     path = Path(config_path)
     if not path.exists():
         return dict(defaults)
@@ -195,6 +195,17 @@ def load_model_config(config_path: str | Path = UPDATE_CONFIG_DEFAULT) -> dict:
             and math.isfinite(a) and math.isfinite(b)
         ):
             out["calibration"] = {"a": float(a), "b": float(b)}
+    bias = raw.get("group_bias")
+    if isinstance(bias, dict):
+        clean = {}
+        for key, value in bias.items():
+            try:
+                delta = float(value)
+            except (TypeError, ValueError):
+                continue
+            if math.isfinite(delta) and abs(delta) <= 4.0:
+                clean[str(key)] = delta
+        out["group_bias"] = clean or None
     return out
 
 
@@ -205,6 +216,31 @@ def apply_live_calibration(probability: float, calibration: dict | None) -> floa
     p = min(1 - 1e-6, max(1e-6, float(probability)))
     z = math.log(p / (1 - p))
     z = calibration["a"] * z + calibration["b"]
+    return 1.0 / (1.0 + math.exp(-z))
+
+
+def group_bias_key(phrase) -> str:
+    """Stable, JSON-safe key for a phrase group.
+
+    Keyed on the sorted word forms so "Blood / Bloody" and "Bloody | Blood"
+    are one group, and the key survives a round trip through the config file."""
+    return "|".join(sorted(normalize_forms(phrase)))
+
+
+def apply_group_bias(probability: float, phrase: str, group_bias: dict | None) -> float:
+    """Nudge one phrase group by how far it has run from its settled results.
+
+    Commentary vocabulary is not uniform: the physical-action words ("knockout",
+    "blood", "choke") have come in above our number, while catchphrases have come
+    in below. Each group's shift is fitted on earlier cards and shrunk toward
+    zero by its own sample size, so a thin group barely moves."""
+    if not group_bias:
+        return probability
+    delta = group_bias.get(group_bias_key(phrase))
+    if not delta:
+        return probability
+    p = min(1 - 1e-6, max(1e-6, float(probability)))
+    z = math.log(p / (1 - p)) + float(delta)
     return 1.0 / (1.0 + math.exp(-z))
 
 
@@ -224,6 +260,7 @@ class KalshiFightContextModel:
         min_training_rows: int = 500,
         feature_set: str = "v1",
         calibration: dict | None = None,
+        group_bias: dict | None = None,
     ):
         self.history = add_date_features(history.copy()).reset_index(drop=True)
         self.history.index = [f"h_{index}" for index in range(len(self.history))]
@@ -237,6 +274,7 @@ class KalshiFightContextModel:
         self.min_training_rows = min_training_rows
         self.feature_set = feature_set if feature_set in ("v1", "v2") else "v1"
         self.calibration = calibration
+        self.group_bias = group_bias
         self._target_cache: dict[tuple[str, ...], _TargetModel] = {}
         self._prediction_cache: dict[tuple[tuple[str, ...], str, str, str], ContextPrediction] = {}
         self._label_frame_cache: dict[tuple[str, str, str], pd.DataFrame | None] = {}
@@ -276,6 +314,7 @@ class KalshiFightContextModel:
             min_training_rows=min_training_rows,
             feature_set=config["feature_set"],
             calibration=config["calibration"],
+            group_bias=config["group_bias"],
         )
 
     def predict(
@@ -311,6 +350,9 @@ class KalshiFightContextModel:
             )
             probability = _clip_probability(float(calibrated[0]))
             probability = _clip_probability(apply_live_calibration(probability, self.calibration))
+            probability = _clip_probability(
+                apply_group_bias(probability, " / ".join(forms), self.group_bias)
+            )
         except Exception as exc:
             prediction = ContextPrediction(
                 probability=None,
@@ -623,17 +665,29 @@ class KalshiFightContextModel:
         fighter_2: str,
         event_date: str | None,
     ) -> pd.DataFrame:
-        frame = frame.copy()
-        frame["fighter_1"] = fighter_1
-        frame["fighter_2"] = fighter_2
-        frame["fighter_1_last"] = last_name(fighter_1)
-        frame["fighter_2_last"] = last_name(fighter_2)
-        frame["event_date"] = event_date or ""
-        frame["transcript_id"] = frame.get("transcript_id", self._future_id(fighter_1, fighter_2, event_date))
+        # Build every added column at once. Assigning them one at a time
+        # re-copies a very wide frame on each insert, which was the slowest
+        # step in pricing a card and what made a refresh outlive its own poll.
+        added = {
+            "fighter_1": fighter_1,
+            "fighter_2": fighter_2,
+            "fighter_1_last": last_name(fighter_1),
+            "fighter_2_last": last_name(fighter_2),
+            "event_date": event_date or "",
+        }
+        if "transcript_id" not in frame.columns:
+            added["transcript_id"] = self._future_id(fighter_1, fighter_2, event_date)
         for column in self.history.columns:
-            if column not in frame.columns and not column.startswith("mention_"):
-                frame[column] = ""
-        return add_date_features(frame)
+            if column not in frame.columns and column not in added and not column.startswith("mention_"):
+                added[column] = ""
+        # Concat appends where assignment overwrote, so clear any column we are
+        # about to supply — a duplicate here breaks every later lookup.
+        replaced = [column for column in added if column in frame.columns]
+        if replaced:
+            frame = frame.drop(columns=replaced)
+        padding = pd.DataFrame(added, index=frame.index)
+        frame = pd.concat([frame, padding], axis=1)
+        return add_date_features(frame.copy())
 
     def _latest_snapshot(self, fighter: str, event_date: str | None) -> tuple[pd.Series, str] | None:
         dates = pd.to_datetime(self.master["date"], errors="coerce")
