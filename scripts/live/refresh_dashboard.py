@@ -44,6 +44,8 @@ HISTORY_DEFAULT = ROOT / "market_data" / "kalshi_price_history.csv"
 META_DEFAULT = ROOT / "market_data" / "kalshi_live_meta.json"
 SETTLE_ATTEMPT_MARKER = ROOT / "model_outputs" / ".pl_settle_attempt"
 SETTLE_MIN_INTERVAL_SECONDS = 30 * 60
+WALKFORWARD_MARKER = ROOT / "model_outputs" / ".walkforward_attempt"
+WALKFORWARD_MIN_INTERVAL_SECONDS = 3 * 60 * 60
 UPCOMING_FETCH_MARKER = ROOT / "model_outputs" / ".upcoming_fetch_stamp"
 UPCOMING_FETCH_INTERVAL_SECONDS = 24 * 60 * 60
 
@@ -176,21 +178,68 @@ def maybe_settle_money_backtest(*, now: float | None = None) -> str:
     try:
         from scripts.model.build_results_labels import build as build_labels
         build_labels(offline=False, quiet=True)
-        import subprocess
-        subprocess.Popen(
-            [sys.executable, str(ROOT / "scripts" / "model" / "walkforward_update.py")],
-            stdout=open(ROOT / "model_outputs" / "walkforward.log", "a"),
-            stderr=subprocess.STDOUT,
-            start_new_session=True,
-        )
     except Exception:
-        pass  # labels and retraining are byproducts; never break the refresh
+        pass  # labels are a byproduct; never break the refresh
     official = summary.get("official") or {}
     return (
         f"settled {summary.get('markets_with_results', 0)} markets "
         f"through {summary.get('latest_settled_event_date') or '?'}; "
         f"paper trades now {official.get('trades', 0)}"
     )
+
+def cards_missing_from_walkforward() -> list[str]:
+    """Settled cards the walk-forward report has not scored yet."""
+    labels = ROOT / "data" / "processed" / "kalshi_results_labels.csv"
+    if not labels.exists():
+        return []
+    settled = {
+        str(row.get("event_date", "")).strip()
+        for row in read_csv(labels)
+        if str(row.get("event_date", "")).strip()
+    }
+    if not settled:
+        return []
+    report = ROOT / "model_outputs" / "walkforward_report.json"
+    scored: set[str] = set()
+    if report.exists():
+        try:
+            scored = set(json.loads(report.read_text(encoding="utf-8")).get("cards") or [])
+        except Exception:
+            scored = set()
+    return sorted(settled - scored)
+
+
+def maybe_retrain_walkforward(*, now: float | None = None) -> str:
+    """Re-run the walk-forward gate whenever a settled card is missing from it.
+
+    This is a self-healing check rather than a one-shot hook: the run takes
+    minutes, so a sleep or a restart can kill it, and firing once on settle
+    meant a card could sit unscored indefinitely."""
+    now = time.time() if now is None else now
+    missing = cards_missing_from_walkforward()
+    if not missing:
+        return "walk-forward up to date"
+    if WALKFORWARD_MARKER.exists():
+        age = now - WALKFORWARD_MARKER.stat().st_mtime
+        if age < WALKFORWARD_MIN_INTERVAL_SECONDS:
+            return f"retrain waiting ({int((WALKFORWARD_MIN_INTERVAL_SECONDS - age) // 60)}m)"
+    try:
+        import subprocess
+
+        WALKFORWARD_MARKER.parent.mkdir(parents=True, exist_ok=True)
+        WALKFORWARD_MARKER.touch()
+        log = open(ROOT / "model_outputs" / "walkforward.log", "a")
+        subprocess.Popen(
+            # -u so progress reaches the log even if the run is cut short
+            [sys.executable, "-u", str(ROOT / "scripts" / "model" / "walkforward_update.py")],
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
+    except Exception as exc:
+        return f"retrain could not start: {exc}"
+    return f"retrain started for {', '.join(missing)}"
+
 
 def maybe_fetch_upcoming(*, now: float | None = None) -> str:
     now = time.time() if now is None else now
@@ -621,6 +670,14 @@ def refresh_once(
     except Exception as exc:
         if verbose:
             print(f"  money backtest settle skipped: {exc}", flush=True)
+
+    try:
+        retrain_note = maybe_retrain_walkforward()
+        if verbose and "started" in retrain_note:
+            print(f"  model gate: {retrain_note}", flush=True)
+    except Exception as exc:
+        if verbose:
+            print(f"  model gate skipped: {exc}", flush=True)
 
     upcoming_note = maybe_fetch_upcoming()
     if verbose and "saved" in upcoming_note:
