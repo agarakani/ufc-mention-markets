@@ -18,6 +18,11 @@ import pandas as pd
 
 FEATURE_PREFIX = "fighter_history_"
 PRIOR_STRENGTH = 8.0
+# Minimum fights a fighter needs before their per-fighter rate is
+# trusted more than the global rate.  Below this, the prior dominates.
+PRIOR_FLOOR = 5
+# After this many fights the per-fighter rate is fully trusted.
+PRIOR_CEILING = 50
 
 
 def fighter_key(value) -> str:
@@ -37,6 +42,7 @@ def feature_names(target: str) -> list[str]:
         f"{FEATURE_PREFIX}{slug}_max_rate",
         f"{FEATURE_PREFIX}{slug}_max_fights",
         f"{FEATURE_PREFIX}{slug}_both_seen",
+        f"{FEATURE_PREFIX}{slug}_fighter_gap",
     ]
 
 
@@ -86,6 +92,13 @@ def add_prior_fighter_features(
     }
     global_stats = {target: [0, 0] for target in targets}
 
+    def _bounded_rate(positive, total, global_rate):
+        """Compute a Bayesian rate with floor/ceiling on fighter sample size."""
+        effective_total = max(total, PRIOR_FLOOR)
+        weight = min(effective_total, PRIOR_CEILING) / PRIOR_CEILING
+        fighter_rate = (positive + PRIOR_STRENGTH * global_rate * weight) / (total + PRIOR_STRENGTH * weight)
+        return float(fighter_rate)
+
     def assign(frame: pd.DataFrame, idx, target: str):
         positive, total = global_stats[target]
         global_rate = (positive + 1.0) / (total + 2.0)
@@ -94,9 +107,7 @@ def add_prior_fighter_features(
         for column in ("fighter_1", "fighter_2"):
             key = fighter_key(frame.at[idx, column])
             fighter_positive, fighter_total = fighter_stats[target][key]
-            rate = (
-                fighter_positive + prior_strength * global_rate
-            ) / (fighter_total + prior_strength)
+            rate = _bounded_rate(fighter_positive, fighter_total, global_rate)
             rates.append(rate)
             supports.append(fighter_total)
         names = feature_names(target)
@@ -104,6 +115,11 @@ def add_prior_fighter_features(
         frame.at[idx, names[1]] = float(max(rates))
         frame.at[idx, names[2]] = int(max(supports))
         frame.at[idx, names[3]] = int(min(supports) > 0)
+        # Fighter gap: how far apart the two fighters' rates are.
+        # A large gap means one fighter has a strong history and the
+        # other does not — useful signal for method-specific mentions.
+        if len(rates) == 2:
+            frame.at[idx, names[4]] = float(abs(rates[0] - rates[1]))
 
     for group in groups:
         indices = [idx for _key, idx in group]

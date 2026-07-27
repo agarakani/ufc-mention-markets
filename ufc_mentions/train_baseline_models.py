@@ -290,14 +290,72 @@ def logit(prob):
     return np.log(clipped / (1 - clipped)).reshape(-1, 1)
 
 
-def calibrate_from_validation(y_val, val_prob, test_prob):
-    """Platt-calibrate probabilities using only the inner validation window."""
+def calibrate_from_validation(y_val, val_prob, test_prob, temperature=1.0):
+    """Calibrate probabilities using the inner validation window.
+
+    Returns calibrated probabilities on the test set.  When the validation
+    set is too small for Platt scaling, falls back to temperature scaling
+    alone, which is more robust.
+
+    temperature -- optional fixed temperature; when supplied without a
+    trained Platt calibrator, divides log-odds by this value before
+    applying the sigmoid.  A temperature < 1 sharpens the distribution
+    (more confident); > 1 flattens it (more conservative).
+    """
     if len(set(y_val)) < 2:
+        # Not enough validation extremes for Platt; apply temperature
+        # scaling directly to the raw test probabilities.
+        if temperature != 1.0 and len(test_prob) > 0:
+            logit_vals = logit(test_prob)
+            scaled = 1.0 / (1.0 + np.exp(-logit_vals / temperature))
+            return scaled, False
         return test_prob, False
     calibrator = LogisticRegression(max_iter=1000, C=1_000_000.0, solver="lbfgs")
     calibrator.fit(logit(val_prob), y_val)
     calibrated = calibrator.predict_proba(logit(test_prob))[:, 1]
+    # If the Platt slope is extreme, re-normalize toward the base rate
+    # to avoid over-confidence after calibration.
+    slope = float(calibrator.coef_[0][0]) if hasattr(calibrator, "coef_") else 1.0
+    if abs(slope) > 5.0:
+        calibrated = 0.5 + 0.5 * (calibrated - 0.5) / max(abs(slope), 1.0)
+        calibrated = np.clip(calibrated, 1e-4, 1 - 1e-4)
     return calibrated, True
+
+
+def compute_calibration_bins(y_true, y_prob, n_bins=10):
+    """Compute calibration histogram with equal-width bins on probability.
+
+    Returns a DataFrame with columns: bin_left, bin_right, count, mean_pred, actual_rate.
+    """
+    if len(y_true) == 0:
+        return pd.DataFrame(columns=["bin_left", "bin_right", "count", "mean_pred", "actual_rate"])
+    probs = np.clip(np.asarray(y_prob), 1e-6, 1 - 1e-6)
+    actuals = np.asarray(y_true, dtype=int)
+    bin_edges = np.linspace(0, 1, n_bins + 1)
+    rows = []
+    for left, right in zip(bin_edges[:-1], bin_edges[1:]):
+        mask = (probs >= left) & (probs < right)
+        count = int(mask.sum())
+        if count == 0:
+            continue
+        rows.append({
+            "bin_left": left,
+            "bin_right": right,
+            "count": count,
+            "mean_pred": float(probs[mask].mean()),
+            "actual_rate": float(actuals[mask].mean()),
+        })
+    # Handle the rightmost edge explicitly
+    mask = probs >= bin_edges[-1]
+    if mask.any():
+        rows.append({
+            "bin_left": bin_edges[-1],
+            "bin_right": 1.0,
+            "count": int(mask.sum()),
+            "mean_pred": float(probs[mask].mean()),
+            "actual_rate": float(actuals[mask].mean()),
+        })
+    return pd.DataFrame(rows)
 
 
 def tune_c(x_fit, y_fit, x_val, y_val, numeric_cols, categorical_cols):
@@ -316,18 +374,23 @@ def tune_c(x_fit, y_fit, x_val, y_val, numeric_cols, categorical_cols):
     return best_c, best_loss
 
 
-def calibration_rows(profile, target, y_true, y_prob, bins=5):
+def calibration_rows(profile, target, y_true, y_prob, bins=10):
     df = pd.DataFrame({"actual": np.asarray(y_true), "pred": y_prob})
-    try:
-        df["bin"] = pd.qcut(df["pred"], q=bins, duplicates="drop")
-    except ValueError:
-        df["bin"] = "all"
+    # Equal-width bins on the probability scale — more stable than
+    # quantile bins when the distribution is skewed toward one tail.
+    df["bin_left"] = np.floor(df["pred"] * bins) / bins
+    df["bin_right"] = df["bin_left"] + 1.0 / bins
+    # Clip the last bin's right edge to 1.0 exactly.
+    df.loc[df["bin_right"] > 1.0, "bin_right"] = 1.0
     rows = []
-    for i, (_bin, part) in enumerate(df.groupby("bin", observed=False), start=1):
+    for (left, right), part in df.groupby(["bin_left", "bin_right"], observed=False):
+        if len(part) == 0:
+            continue
         rows.append({
             "profile": profile,
             "target": target,
-            "bin": i,
+            "bin_left": float(left),
+            "bin_right": float(right),
             "rows": len(part),
             "mean_predicted": part["pred"].mean(),
             "actual_rate": part["actual"].mean(),
@@ -335,10 +398,26 @@ def calibration_rows(profile, target, y_true, y_prob, bins=5):
     return rows
 
 
+def expected_calibration_error(y_true, y_prob, n_bins=10):
+    """Compute ECE — the weighted average of |acc - conf| across bins."""
+    if len(y_true) == 0:
+        return float("nan")
+    bins = compute_calibration_bins(y_true, y_prob, n_bins)
+    if bins.empty:
+        return float("nan")
+    total = len(y_true)
+    ece = sum(
+        (row["count"] / total) * abs(row["mean_pred"] - row["actual_rate"])
+        for _, row in bins.iterrows()
+    )
+    return ece
+
+
 def event_evaluation(predictions: pd.DataFrame, train: pd.DataFrame):
     """Evaluate the fight-to-event independence aggregation on held-out cards."""
     metric_rows = []
     calibration = []
+    ece_rows = []
     for profile, part in predictions.groupby("profile"):
         for target in TARGETS:
             actual_col = f"{target}_actual"
@@ -393,7 +472,13 @@ def event_evaluation(predictions: pd.DataFrame, train: pd.DataFrame):
                 "aggregation_method": "independence_baseline",
             })
             calibration.extend(calibration_rows(profile, target, y_true, y_prob))
-    return pd.DataFrame(metric_rows), pd.DataFrame(calibration)
+            ece_rows.append({
+                "profile": profile,
+                "target": target,
+                "label": TARGET_LABELS[target],
+                "ece": expected_calibration_error(y_true, y_prob),
+            })
+    return pd.DataFrame(metric_rows), pd.DataFrame(calibration), pd.DataFrame(ece_rows)
 
 
 def get_feature_names(pipe: Pipeline) -> np.ndarray:
@@ -486,6 +571,22 @@ def train_profile(df, train, test, profile, include_identity):
             val_prob = pipe.predict_proba(x_val)[:, 1]
             raw_prob = pipe.predict_proba(x_test)[:, 1]
             prob, calibrated = calibrate_from_validation(y_val, val_prob, raw_prob)
+            # Tune temperature on the validation set: pick the temperature
+            # that minimises validation log loss after calibration.
+            # Temperature scaling alone can help when Platt's slope
+            # overfits the tiny validation window.
+            best_temp_prob = prob
+            best_temp = 1.0
+            best_temp_loss = val_loss
+            for temp_candidate in [0.3, 0.5, 0.7, 1.0, 1.3, 1.6, 2.0]:
+                temp_calibrated, _ = calibrate_from_validation(y_val, val_prob, raw_prob, temperature=temp_candidate)
+                temp_log_loss = log_loss(y_val, temp_calibrated, labels=[0, 1])
+                if temp_log_loss < best_temp_loss - 1e-6:
+                    best_temp_loss = temp_log_loss
+                    best_temp_prob = temp_calibrated
+                    best_temp = temp_candidate
+            prob = best_temp_prob
+            calibrated = calibrated or best_temp != 1.0
 
         model_log_loss = log_loss(y_test, prob, labels=[0, 1])
         base_log_loss = log_loss(y_test, base_prob, labels=[0, 1])
@@ -674,7 +775,7 @@ def main():
     calibration = pd.concat(calibration_frames, ignore_index=True)
     coefficients = pd.concat(coefficient_frames, ignore_index=True)
     predictions = pd.concat(prediction_frames, ignore_index=True)
-    event_metrics, event_calibration = event_evaluation(predictions, train)
+    event_metrics, event_calibration, event_ece = event_evaluation(predictions, train)
 
     metrics.to_csv(out_dir / "baseline_metrics.csv", index=False, quoting=csv.QUOTE_MINIMAL)
     calibration.to_csv(out_dir / "baseline_calibration.csv", index=False, quoting=csv.QUOTE_MINIMAL)
