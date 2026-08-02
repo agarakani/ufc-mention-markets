@@ -129,3 +129,70 @@ def test_prefight_cutoff_excludes_in_fight_prices(tmp_path):
     pairs = collect_pairs(labels, history)
     assert len(pairs) == 1
     assert pairs[0]["market"] == 0.20   # the pre-fight mid, not the in-fight price
+
+
+def _fake_kalshi(dates):
+    class R:
+        def __init__(self, payload): self.payload = payload
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def read(self): return self.payload
+    import io, json as _json
+    def opener(url, timeout=None):
+        if "status=settled" in url:
+            events = [{"event_ticker": f"KXFIGHTMENTION-{d}XX"} for d in dates]
+        else:
+            events = []
+        return R(io.BytesIO(_json.dumps({"events": events}).encode()))
+    return opener
+
+
+def test_coverage_flags_a_card_kalshi_ran_that_we_did_not_record(tmp_path):
+    from scripts.live import coverage_report as cov
+
+    history = tmp_path / "history.csv"
+    history.write_text(
+        "snapshot_timestamp,ticker\n"
+        "2026-07-25T09:00:00+00:00,KXFIGHTMENTION-26JUL25AAA-BLOOD\n",
+        encoding="utf-8",
+    )
+    # Kalshi ran two cards; we only hold snapshots for the first.
+    report = cov.build(kalshi_dates={"2026-07-25", "2026-08-01"}, history_path=history)
+    assert report["cards_missed"] == 1
+    assert report["missed_dates"] == ["2026-08-01"]
+
+
+def test_coverage_is_clean_when_kalshi_ran_no_markets(tmp_path):
+    from scripts.live import coverage_report as cov
+
+    history = tmp_path / "history.csv"
+    history.write_text(
+        "snapshot_timestamp,ticker\n"
+        "2026-07-25T09:00:00+00:00,KXFIGHTMENTION-26JUL25AAA-BLOOD\n",
+        encoding="utf-8",
+    )
+    report = cov.build(kalshi_dates={"2026-07-25"}, history_path=history)
+    assert report["cards_missed"] == 0
+    assert report["cards_recorded"] == 1
+
+
+def test_cards_before_the_recorder_existed_are_not_misses(tmp_path):
+    from scripts.live import coverage_report as cov
+
+    history = tmp_path / "history.csv"
+    history.write_text(
+        "snapshot_timestamp,ticker\n"
+        "2026-07-25T09:00:00+00:00,KXFIGHTMENTION-26JUL25AAA-BLOOD\n",
+        encoding="utf-8",
+    )
+    report = cov.build(kalshi_dates={"2026-07-25", "2026-01-24"}, history_path=history)
+    assert report["cards_missed"] == 0
+    states = {c["date"]: c["state"] for c in report["cards"]}
+    assert states["2026-01-24"] == "before_recording"
+
+
+def test_date_from_ticker():
+    from scripts.live.coverage_report import date_from_ticker
+
+    assert date_from_ticker("KXFIGHTMENTION-26JUL25VAGIZA-BLOOD") == "2026-07-25"
+    assert date_from_ticker("nonsense") == ""

@@ -1129,6 +1129,25 @@ td.empty, .tracking-empty { padding: 30px; text-align: center; color: var(--ink-
 .cal-ece.warn { border-color: rgba(255,107,44,0.4); color: #ff8c5a; }
 .cal-ece.bad { border-color: rgba(242,105,95,0.4); color: var(--loss); }
 
+/* coverage: which cards we actually captured */
+.cov-table { margin: 12px 0 8px; }
+.cov-row {
+  display: grid;
+  grid-template-columns: 92px 108px 1fr;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--edge-line);
+  font-family: var(--num);
+  font-size: 11px;
+  color: var(--ink-2);
+}
+.cov-row b { font-family: var(--voice); font-size: 9.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.cov-row i { font-style: normal; font-size: 10px; color: var(--ink-3); }
+.cov-row.recorded b { color: #3ddc97; }
+.cov-row.missed b { color: var(--loss); }
+.cov-row.no_markets b { color: var(--ink-3); }
+
 /* head to head: our number against the market's, pre-fight */
 .h2h { margin: 16px 0 6px; padding-top: 14px; border-top: 1px solid var(--edge-strong); }
 .h2h-title {

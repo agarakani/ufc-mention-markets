@@ -1682,6 +1682,30 @@
         </article>`;
     }
 
+    // Coverage: a blank card means Kalshi ran no markets, or we were down.
+    // Never let those two look the same.
+    const cov = health.coverage || {};
+    let covBlock = "";
+    if (cov.available) {
+      const missed = cov.cards_missed || 0;
+      const rows = (cov.cards || []).map((card) => {
+        const label = card.state === "recorded" ? "recorded"
+          : card.state === "missed" ? "not recorded" : "no markets offered";
+        return `<div class="cov-row ${card.state}">
+          <span>${escapeHtml(formatDate(card.date) || card.date)}</span>
+          <b>${label}</b>
+          <i>${card.markets ? `${formatInteger(card.markets)} markets · ${formatInteger(card.snapshots)} snapshots` : "&mdash;"}</i>
+        </div>`;
+      }).join("");
+      covBlock = `
+        <article class="health-block">
+          <p class="health-kicker">Recording coverage</p>
+          <p class="health-big ${missed ? "bad" : "good"}">${formatInteger(cov.cards_recorded)}<span>of ${formatInteger(cov.cards_with_markets)} cards Kalshi ran since ${escapeHtml(formatDate(cov.recording_since) || cov.recording_since)}${missed ? ` · ${formatInteger(missed)} not recorded` : " · none missed"}</span></p>
+          <div class="cov-table">${rows}</div>
+          <p class="health-note">Checked against Kalshi's own event list. Kalshi does not open mention markets for every UFC card, so a card with none is not a gap in our recording.</p>
+        </article>`;
+    }
+
     const gate = health.v2_gate || {};
     let gateBit = "";
     if (gate.available) {
@@ -1745,6 +1769,7 @@
         <p class="health-warn">${enough ? "Enough sample to review" : "Still too small to trust"}</p>
         ${plBlock}
       </article>
+      ${covBlock}
       ${calBlock}`;
   }
 

@@ -44,6 +44,8 @@ HISTORY_DEFAULT = ROOT / "market_data" / "kalshi_price_history.csv"
 META_DEFAULT = ROOT / "market_data" / "kalshi_live_meta.json"
 SETTLE_ATTEMPT_MARKER = ROOT / "model_outputs" / ".pl_settle_attempt"
 SETTLE_MIN_INTERVAL_SECONDS = 30 * 60
+COVERAGE_MARKER = ROOT / "model_outputs" / ".coverage_attempt"
+COVERAGE_MIN_INTERVAL_SECONDS = 6 * 60 * 60
 WALKFORWARD_MARKER = ROOT / "model_outputs" / ".walkforward_attempt"
 WALKFORWARD_MIN_INTERVAL_SECONDS = 3 * 60 * 60
 UPCOMING_FETCH_MARKER = ROOT / "model_outputs" / ".upcoming_fetch_stamp"
@@ -196,6 +198,31 @@ def maybe_settle_money_backtest(*, now: float | None = None) -> str:
         f"through {summary.get('latest_settled_event_date') or '?'}; "
         f"paper trades now {official.get('trades', 0)}"
     )
+
+def maybe_check_coverage(*, now: float | None = None) -> str:
+    """Audit our snapshots against Kalshi's own event list.
+
+    Cheap and read-only, but it needs the network, so it is throttled and
+    never allowed to interrupt a refresh."""
+    now = time.time() if now is None else now
+    if COVERAGE_MARKER.exists():
+        age = now - COVERAGE_MARKER.stat().st_mtime
+        if age < COVERAGE_MIN_INTERVAL_SECONDS:
+            return "coverage checked recently"
+    try:
+        from scripts.live.coverage_report import build as build_coverage_report
+
+        COVERAGE_MARKER.parent.mkdir(parents=True, exist_ok=True)
+        COVERAGE_MARKER.touch()
+        report = build_coverage_report()
+        out = ROOT / "model_outputs" / "coverage_report.json"
+        out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    except Exception as exc:
+        return f"coverage check skipped: {exc}"
+    if report.get("cards_missed"):
+        return f"COVERAGE GAP: {', '.join(report.get('missed_dates') or [])}"
+    return f"coverage clean ({report.get('cards_recorded', 0)} cards)"
+
 
 def cards_missing_from_walkforward() -> list[str]:
     """Settled cards the walk-forward report has not scored yet."""
@@ -680,6 +707,14 @@ def refresh_once(
     except Exception as exc:
         if verbose:
             print(f"  money backtest settle skipped: {exc}", flush=True)
+
+    try:
+        coverage_note = maybe_check_coverage()
+        if verbose and ("GAP" in coverage_note or "clean" in coverage_note):
+            print(f"  coverage: {coverage_note}", flush=True)
+    except Exception as exc:
+        if verbose:
+            print(f"  coverage skipped: {exc}", flush=True)
 
     try:
         retrain_note = maybe_retrain_walkforward()

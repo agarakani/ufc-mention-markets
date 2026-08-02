@@ -31,6 +31,7 @@ PL_BACKTEST_TRADES = ROOT / "model_outputs" / "pl_backtest_trades.csv"
 WALKFORWARD_REPORT = ROOT / "model_outputs" / "walkforward_report.json"
 V2_GATE_REPORT = ROOT / "model_outputs" / "v2_gate_report.json"
 CALIBRATION_REPORT = ROOT / "model_outputs" / "calibration_report.json"
+COVERAGE_REPORT = ROOT / "model_outputs" / "coverage_report.json"
 FIGHTER_DIRECTORY = ROOT / "data" / "processed" / "fighter_directory.csv"
 UPCOMING_EVENTS = ROOT / "data" / "processed" / "upcoming_events.json"
 TRACKING_ROOT = ROOT / "data" / "tracking"
@@ -491,6 +492,31 @@ def build_walkforward(report: dict) -> dict:
     }
 
 
+def build_coverage(report: dict) -> dict:
+    """Every card Kalshi ran, and whether we captured it."""
+    if not report or not report.get("kalshi_reachable"):
+        return {"available": False}
+    return {
+        "available": True,
+        "recording_since": report.get("recording_since", ""),
+        "cards_with_markets": as_int(report.get("cards_with_markets")) or 0,
+        "cards_recorded": as_int(report.get("cards_recorded")) or 0,
+        "cards_missed": as_int(report.get("cards_missed")) or 0,
+        "missed_dates": list(report.get("missed_dates") or []),
+        "checked_at": report.get("generated_at", ""),
+        "cards": [
+            {
+                "date": card.get("date", ""),
+                "state": card.get("state", ""),
+                "markets": as_int(card.get("markets")) or 0,
+                "snapshots": as_int(card.get("snapshots")) or 0,
+            }
+            for card in (report.get("cards") or [])
+            if card.get("state") != "before_recording"
+        ][:8],
+    }
+
+
 def build_calibration(report: dict) -> dict:
     """Live calibration on settled markets: did the numbers hold up?"""
     if not report or report.get("ece") is None:
@@ -624,6 +650,7 @@ def build_model_health(
         "walkforward": walkforward or {"available": False},
         "v2_gate": build_v2_gate(read_json(V2_GATE_REPORT)),
         "calibration": build_calibration(read_json(CALIBRATION_REPORT)),
+        "coverage": build_coverage(read_json(COVERAGE_REPORT)),
     }
 
 
