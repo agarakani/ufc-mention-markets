@@ -22,6 +22,7 @@ except ImportError:  # pragma: no cover - direct script execution
 OUT_DEFAULT = ROOT / "dashboard" / "data.js"
 
 KALSHI_LIVE = ROOT / "market_data" / "kalshi_live_edges.csv"
+KALSHI_HISTORY = ROOT / "market_data" / "kalshi_price_history.csv"
 KALSHI_META = ROOT / "market_data" / "kalshi_live_meta.json"
 KALSHI_AUDIT_SUMMARY = ROOT / "model_outputs" / "kalshi_grouped_rule_audit_summary.json"
 KALSHI_CONTEXT_BACKTEST_SUMMARY = ROOT / "model_outputs" / "kalshi_context_model_backtest_summary.json"
@@ -163,6 +164,52 @@ def fight_marquee_score(fighter_1: str, fighter_2: str, fighters: dict[str, dict
         if ident:
             total += ident.get("marquee_score") or 0
     return total
+
+
+SPARK_POINTS = 24
+_spark_cache: dict = {"key": None, "value": {}}
+
+
+def build_price_tracks(tickers: set[str], history_path: Path = KALSHI_HISTORY) -> dict[str, list]:
+    """Downsampled price history per live market, for the row sparklines.
+
+    The history file is ~55MB and the payload rebuilds every 30 seconds, so
+    the parse is cached against the file's size and mtime and only the
+    markets currently on the board are kept."""
+    if not tickers or not history_path.exists():
+        return {}
+    stat = history_path.stat()
+    key = (stat.st_size, int(stat.st_mtime), len(tickers))
+    if _spark_cache["key"] == key:
+        return _spark_cache["value"]
+
+    series: dict[str, list] = {ticker: [] for ticker in tickers}
+    with history_path.open(newline="", encoding="utf-8-sig") as fh:
+        for row in csv.DictReader(fh):
+            ticker = str(row.get("ticker", "")).strip()
+            if ticker not in series:
+                continue
+            ask = number(row.get("yes_ask"))
+            model = number(row.get("model_probability"))
+            if ask is None:
+                continue
+            series[ticker].append((ask, model))
+
+    tracks: dict[str, list] = {}
+    for ticker, points in series.items():
+        if len(points) < 3:
+            continue
+        step = max(1, len(points) // SPARK_POINTS)
+        sampled = points[::step][-SPARK_POINTS:]
+        if sampled[-1] != points[-1]:
+            sampled[-1] = points[-1]
+        tracks[ticker] = [
+            [round(ask, 4), None if model is None else round(model, 4)]
+            for ask, model in sampled
+        ]
+    _spark_cache["key"] = key
+    _spark_cache["value"] = tracks
+    return tracks
 
 
 def build_kalshi_rows(rows: list[dict]) -> list[dict]:
@@ -940,6 +987,7 @@ def build_payload() -> dict:
     ]
     kalshi_rows = build_kalshi_rows(kalshi_source_rows)
     kalshi_cards = build_kalshi_cards(kalshi_meta, kalshi_rows, hidden_events)
+    price_tracks = build_price_tracks({str(r.get("ticker", "")) for r in kalshi_rows if r.get("ticker")})
     name_cards_from_schedule(kalshi_cards, build_upcoming_events())
     fighters = build_fighter_identities()
     for card in kalshi_cards:
@@ -975,6 +1023,7 @@ def build_payload() -> dict:
         "upcoming_events": build_upcoming_events(),
         "performance": build_performance(read_csv(PL_BACKTEST_TRADES)),
         "kalshi_cards": kalshi_cards,
+        "price_tracks": price_tracks,
         "kalshi_events": kalshi_events,
         "kalshi_meta": kalshi_meta,
         "kalshi_audit_summary": kalshi_audit_summary,

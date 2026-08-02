@@ -57,6 +57,7 @@
     populatePhraseFilter();
     setupRefreshButton();
     bindEvents();
+    bindTickerPause();
     renderAll();
     state.dataStamp = dataFingerprint();
     scheduleAutoUpdate();
@@ -232,7 +233,12 @@
       .filter((row) => parseNumber(row.edge) !== null)
       .sort((a, b) => (parseNumber(b.edge) || 0) - (parseNumber(a.edge) || 0))
       .slice(0, 18);
-    if (rows.length < 4) { holder.innerHTML = ""; holder.hidden = true; return; }
+    const emptyRail = document.getElementById("tickerRail");
+    if (rows.length < 4) {
+      if (emptyRail) emptyRail.innerHTML = "";
+      holder.hidden = true;
+      return;
+    }
     holder.hidden = false;
     const item = (row) => {
       const edge = parseNumber(row.edge);
@@ -244,7 +250,36 @@
       </span>`;
     };
     const strip = rows.map(item).join("");
-    holder.innerHTML = `<div class="ticker-rail"><div class="ticker-run">${strip}${strip}</div></div>`;
+    const rail = document.getElementById("tickerRail") || holder;
+    rail.innerHTML = `<div class="ticker-run">${strip}${strip}</div>`;
+    applyTickerPause();
+  }
+
+  const TICKER_PAUSE_KEY = "ufc_ticker_paused";
+
+  function tickerPaused() {
+    try { return localStorage.getItem(TICKER_PAUSE_KEY) === "1"; } catch (e) { return false; }
+  }
+
+  function applyTickerPause() {
+    const holder = document.getElementById("ticker");
+    const button = document.getElementById("tickerPause");
+    const paused = tickerPaused();
+    if (holder) holder.classList.toggle("is-paused", paused);
+    if (button) {
+      button.setAttribute("aria-pressed", paused ? "true" : "false");
+      button.setAttribute("aria-label", paused ? "Start the moving ticker" : "Pause the moving ticker");
+    }
+  }
+
+  function bindTickerPause() {
+    const button = document.getElementById("tickerPause");
+    if (!button || button.dataset.bound) return;
+    button.dataset.bound = "1";
+    button.addEventListener("click", () => {
+      try { localStorage.setItem(TICKER_PAUSE_KEY, tickerPaused() ? "0" : "1"); } catch (e) { /* private mode */ }
+      applyTickerPause();
+    });
   }
 
   function lastName(name) {
@@ -347,7 +382,7 @@
     }).join("");
 
     return `<section class="board-block">
-      <p class="block-title">Where we disagree with the market <span class="block-note">green = we say more likely · red = less</span></p>
+      <p class="block-title">Our disagreement with the market <span class="block-note">green = we say more likely · red = less</span></p>
       <div class="heat-wrap"><table class="heat">${head}${body}</table></div>
     </section>`;
   }
@@ -601,6 +636,12 @@
     const freshEnough = ts && (Date.now() - new Date(ts).getTime()) < 3 * 60 * 1000;
     const livePill = cardToday && freshEnough ? '<span class="live-pill">LIVE</span> · ' : "";
     els.status.innerHTML = `${livePill}${stale ? '<span class="stale">Stale</span> · ' : ""}updated ${escapeHtml(when)} · read-only${polling}`;
+    const pulse = document.getElementById("updatePulse");
+    if (pulse && state.lastQuoteMoves != null) {
+      pulse.textContent = state.lastQuoteMoves
+        ? `${state.lastQuoteMoves} quote${state.lastQuoteMoves === 1 ? "" : "s"} moved`
+        : "";
+    }
     if (els.footerStamp) {
       els.footerStamp.textContent = ts ? `Data updated ${formatTimestamp(ts)}` : "";
     }
@@ -698,7 +739,7 @@
     if (!cards.length) {
       const upcoming = data.upcoming_events || [];
       if (!upcoming.length) {
-        els.cardNav.innerHTML = '<div class="nav-empty">No Kalshi UFC mention markets are open right now. This page checks again automatically.</div>';
+        els.cardNav.innerHTML = '<div class="nav-empty">No Kalshi UFC mention markets are open right now. This page keeps checking on its own.</div>';
         return;
       }
       els.cardNav.innerHTML = upcoming.slice(0, 8).map((event, index) => `
@@ -803,11 +844,11 @@
               <span class="cd-colon">:</span>
               <span class="cd-group"><strong>${String(hours).padStart(2, "0")}</strong><span>HRS</span></span>
             </div>
-            <p class="fight-sub">${escapeHtml([next.name, next.venue, next.location].filter(Boolean).join(" · "))} · Mention markets usually open closer to fight night. This page checks on its own.</p>
+            <p class="fight-sub">${escapeHtml([next.name, next.venue, next.location].filter(Boolean).join(" · "))} · Mention markets tend to open closer to fight night. This page checks on its own.</p>
           </div>`;
         return;
       }
-      els.fightHeader.innerHTML = "<h2>No cards yet</h2><p class=\"fight-sub\">When Kalshi lists UFC mention markets, they show up here on their own.</p>";
+      els.fightHeader.innerHTML = "<h2>No cards yet</h2><p class=\"fight-sub\">Kalshi's UFC mention markets show up here on their own once they open.</p>";
       return;
     }
 
@@ -815,7 +856,7 @@
       const tbd = fight.odds_status === "tbd";
       const watch = Number(fight.watch_count || 0);
       const bits = tbd
-        ? ["Kalshi lists this fight, but mention odds are not posted yet."]
+        ? ["Kalshi lists this fight but has not posted mention odds yet."]
         : [
           `${formatInteger(fight.priced_count)} phrase markets with live prices`,
           `${formatInteger(fight.model_ready_count)} with a fight-level model number`,
@@ -967,8 +1008,8 @@
       { key: "call", label: "Call", type: "signal" },
       { key: "phrase", label: "Phrase", type: "phrase" },
       { key: "model_probability", label: "The book", type: "lane", className: "lane-col" },
-      { key: "yes_ask", label: "YES", type: "pct", className: "num optional" },
-      { key: "no_ask", label: "NO", type: "pct", className: "num optional" },
+      { key: "yes_ask", label: "YES", type: "price", className: "num optional" },
+      { key: "no_ask", label: "NO", type: "price", className: "num optional" },
       { key: "side", label: "Side", type: "side", className: "optional" },
       { key: "edge", label: "Edge", type: "pct", className: "num", badge: true, signed: true },
     ];
@@ -993,6 +1034,44 @@
   }
 
   const LANE_TICKS = [0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99];
+
+  /* Where this price came from. The market's ask is the solid line, our number
+     the dotted one, so a row shows at a glance whether the two have been
+     converging or pulling apart since we started watching. */
+  function sparkline(row) {
+    const track = (data.price_tracks || {})[String(row.ticker || "")];
+    if (!track || track.length < 3) return '<span class="spark is-thin" aria-hidden="true"></span>';
+    const asks = track.map((point) => point[0]).filter((v) => v !== null);
+    const models = track.map((point) => point[1]).filter((v) => v !== null && v !== undefined);
+    const all = asks.concat(models);
+    const low = Math.min.apply(null, all);
+    const high = Math.max.apply(null, all);
+    const span = (high - low) || 0.02;
+    const W = 54;
+    const H = 20;
+    const x = (i) => (i / (track.length - 1)) * W;
+    const y = (v) => H - 2 - ((v - low) / span) * (H - 4);
+    const path = (pick) => {
+      const points = [];
+      track.forEach((point, i) => {
+        const value = pick(point);
+        if (value === null || value === undefined) return;
+        points.push(`${x(i).toFixed(1)},${y(value).toFixed(1)}`);
+      });
+      return points.length > 1 ? `M ${points.join(" L ")}` : "";
+    };
+    const askPath = path((point) => point[0]);
+    const modelPath = path((point) => point[1]);
+    const lastAsk = asks[asks.length - 1];
+    const firstAsk = asks[0];
+    const drift = lastAsk > firstAsk ? "up" : lastAsk < firstAsk ? "down" : "flat";
+    return `<span class="spark ${drift}" role="img" aria-label="Price history, ${formatPlainPercent(firstAsk)} to ${formatPlainPercent(lastAsk)}">
+      <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" preserveAspectRatio="none" focusable="false">
+        ${modelPath ? `<path class="spark-model" d="${modelPath}"/>` : ""}
+        <path class="spark-ask" d="${askPath}"/>
+      </svg>
+    </span>`;
+  }
 
   function laneCell(row) {
     const model = parseNumber(row.model_probability);
@@ -1021,9 +1100,10 @@
       : "";
     const mark = `<b class="mark${row.watch ? " is-watch" : ""}" style="left:${laneX(model).toFixed(2)}%"></b>`;
 
-    const spread = bid !== null && ask !== null
-      ? `<span class="lane-quote">${formatPlainPercent(bid)}<i>–</i>${formatPlainPercent(ask)}</span>` : "";
-    return `<span class="lane-cell">
+    // The YES and NO columns already carry the quote, so the lane shows only
+    // our number and lets the columns do their job.
+    const spread = "";
+    return `<span class="lane-cell">${sparkline(row)}
       <span class="lane" role="img" aria-label="${escapeHtml(laneLabel(row, model, bid, ask))}">
         <i class="bed"></i>${ticks}${book}${baseTick}${hurdleTick}${mark}
       </span>
@@ -1051,7 +1131,7 @@
     rows = applyFilters(rows);
     rows = applySort(rows);
     const scope = state.signal === "watch" ? "watch row" : state.signal === "active" ? "active market" : "market";
-    els.tableMeta.textContent = `${formatInteger(rows.length)} ${scope}${plural(rows.length)} · click a row for the why`;
+    els.tableMeta.textContent = `${formatInteger(rows.length)} ${scope}${plural(rows.length)} · click a row for the math`;
     renderHeader(columns);
     renderBody(columns, rows);
   }
@@ -1086,10 +1166,10 @@
   function reasonForRow(row) {
     if (row.status === "error") return row.error || "This market could not be priced.";
     if (missingPrices(row)) {
-      return "No live YES/NO buy price is posted yet, so there is nothing to compare against.";
+      return "Kalshi has not posted a YES/NO buy price yet, so there is nothing to compare against.";
     }
     if (row.probability_source !== "fight_context_model") {
-      return "No fight-level model number was available here, so there is only a rough history average. Rows like this never become watches.";
+      return "This row has no fight-level model number, only a rough history average, so it cannot be a watch.";
     }
 
     const model = formatPlainPercent(row.model_probability);
@@ -1098,13 +1178,13 @@
     const edge = formatPlainPercent(row.edge, true);
     const hurdle = formatPlainPercent(row.hurdle);
     const cap = formatPlainPercent(row.edge_cap);
-    const thin = row.data_risk ? " Fighter history is thin here, so the bar was raised. It cleared anyway, but trust it less." : "";
+    const thin = row.data_risk ? " Fighter history is thin here, so we raised the bar. It cleared anyway, but trust it less." : "";
 
     if (row.watch) {
       return `Our model thinks YES is ${model}. Buying ${side} costs ${sidePrice}, so ${side} has ${edge} of edge. The entry bar is ${hurdle} and the cap is ${cap}, so this clears and becomes WATCH ${side}.${thin}`;
     }
     if (row.block_reason === "big_gap") {
-      return `Our model thinks YES is ${model}, a ${edge} disagreement with the market. On settled cards, gaps over ${cap} were almost always the model's mistake, not the market's, so this is flagged instead of traded.`;
+      return `Our model thinks YES is ${model}, a ${edge} disagreement with the market. On settled cards, most gaps over ${cap} came from the model, so we flag this row instead of trading it.`;
     }
     if (row.block_reason === "low_trust") {
       return `Our model thinks YES is ${model} and ${side} has ${edge} of edge, but ${row.trust_note || "this phrase group has not shown real skill on old fights"}.`;
@@ -1197,54 +1277,167 @@
     });
   }
 
+  /* ---------- the board ----------
+     Rows are keyed by ticker and mutated in place. Rebuilding the tbody on
+     every 30s poll threw away focus, scroll position and any open row, and it
+     made every price look like it had moved when the sort merely reordered.
+     Measured on real snapshots, the default sort moves a row on 20% of polls
+     at the median and 73% at p90, so position is not identity here. */
+
+  const rowNodes = new Map();
+
+  function rowClassFor(row, open) {
+    return [
+      row.watch ? "is-watch" : (row.call === "NO PRICES" || row.call === "NO MODEL") ? "is-quiet" : "",
+      "is-expandable",
+      open ? "is-open" : "",
+    ].filter(Boolean).join(" ");
+  }
+
+  function buildRow(columns, row) {
+    const tr = document.createElement("tr");
+    tr.dataset.expand = String(row.ticker || "");
+    tr.tabIndex = 0;
+    tr.setAttribute("role", "button");
+    columns.forEach((column) => {
+      const td = document.createElement("td");
+      td.className = column.className || "";
+      td.dataset.col = column.key;
+      tr.appendChild(td);
+    });
+    return tr;
+  }
+
+  function paintRow(tr, columns, row, open, animate) {
+    tr.className = rowClassFor(row, open);
+    tr.setAttribute("aria-expanded", open ? "true" : "false");
+    tr.setAttribute("aria-label", `${row.phrase || "market"}, ${row.fighter_1 || ""} versus ${row.fighter_2 || ""}. Opens the working behind this number.`);
+    columns.forEach((column, index) => {
+      const td = tr.children[index];
+      if (!td) return;
+      const html = formatCell(row[column.key], column, row);
+      if (column.type === "price") {
+        paintPrice(td, html, row, column, animate);
+        return;
+      }
+      if (td.dataset.html !== html) {
+        td.dataset.html = html;
+        td.innerHTML = html;
+      }
+    });
+  }
+
+  /* The flap fires only where a number actually moved. Prices change on about
+     10% of ticks; the model number and the call almost never do, so boarding
+     those would be a slot machine that reports nothing. */
+  function paintPrice(td, html, row, column, animate) {
+    const previous = td.dataset.value;
+    const value = String(row[column.key] === null || row[column.key] === undefined ? "" : row[column.key]);
+    if (td.dataset.html !== html) {
+      td.dataset.html = html;
+      td.innerHTML = html;
+    }
+    td.dataset.value = value;
+    if (!animate || previous === undefined || previous === value || !value || !previous) return;
+    state.quoteMoves = (state.quoteMoves || 0) + 1;
+    const rising = parseNumber(value) > parseNumber(previous);
+    td.classList.remove("flap-up", "flap-down");
+    void td.offsetWidth;
+    td.classList.add(rising ? "flap-up" : "flap-down");
+    window.setTimeout(() => td.classList.remove("flap-up", "flap-down"), 700);
+  }
+
   function renderBody(columns, rows) {
+    const body = els.tableBody;
     if (!rows.length) {
+      rowNodes.clear();
       const fight = getSelectedFight();
       const message = fight && fight.odds_status === "tbd"
-        ? "Kalshi lists this fight, but the mention odds are not posted yet. It will fill in on its own."
+        ? "Kalshi lists this fight. The mention odds are not posted yet, and this fills in on its own."
         : "No markets match those filters.";
-      els.tableBody.innerHTML = `<tr><td class="empty" colspan="${columns.length}">${escapeHtml(message)}</td></tr>`;
+      body.innerHTML = `<tr><td class="empty" colspan="${columns.length}">${escapeHtml(message)}</td></tr>`;
       return;
     }
+    if (body.querySelector("td.empty")) { body.innerHTML = ""; rowNodes.clear(); }
 
-    els.tableBody.innerHTML = rows.map((row) => {
+    const columnsChanged = state.paintedColumns !== columns.map((c) => c.key).join(",");
+    if (columnsChanged) { body.innerHTML = ""; rowNodes.clear(); }
+    state.paintedColumns = columns.map((c) => c.key).join(",");
+
+    state.quoteMoves = 0;
+    const seen = new Set();
+    let cursor = null;
+    rows.forEach((row) => {
       const key = String(row.ticker || "");
+      seen.add(key);
       const open = key && state.expanded.has(key);
-      const rowClass = [
-        row.watch ? "is-watch" : (row.call === "NO PRICES" || row.call === "NO MODEL") ? "is-quiet" : "",
-        "is-expandable",
-        open ? "is-open" : "",
-      ].filter(Boolean).join(" ");
-      const cells = columns.map((column) => (
-        `<td class="${column.className || ""}">${formatCell(row[column.key], column, row)}</td>`
-      )).join("");
-      const detail = open
-        ? `<tr class="detail-row"><td colspan="${columns.length}">${auditDetail(row)}</td></tr>`
-        : "";
-      return `<tr class="${rowClass}" data-expand="${escapeHtml(key)}" tabindex="0" role="button"`
-        + ` aria-expanded="${open ? "true" : "false"}"`
-        + ` aria-label="${escapeHtml(`${row.phrase || "market"}, ${row.fighter_1 || ""} vs ${row.fighter_2 || ""}. Show how this number was made.`)}">${cells}</tr>${detail}`;
-    }).join("");
+      let tr = rowNodes.get(key);
+      const fresh = !tr;
+      if (fresh) {
+        tr = buildRow(columns, row);
+        rowNodes.set(key, tr);
+      }
+      paintRow(tr, columns, row, open, !fresh && state.boardPainted);
 
+      const expected = cursor ? cursor.nextSibling : body.firstChild;
+      if (expected !== tr) body.insertBefore(tr, expected);
+      cursor = tr;
+
+      // the audit panel lives in its own row, right beneath its market
+      const detailId = `detail-${key}`;
+      let detail = document.getElementById(detailId);
+      if (open) {
+        if (!detail) {
+          detail = document.createElement("tr");
+          detail.id = detailId;
+          detail.className = "detail-row";
+          detail.innerHTML = `<td colspan="${columns.length}"></td>`;
+        }
+        const cell = detail.firstChild;
+        const html = auditDetail(row);
+        if (cell.dataset.html !== html) { cell.dataset.html = html; cell.innerHTML = html; }
+        if (cursor.nextSibling !== detail) body.insertBefore(detail, cursor.nextSibling);
+        cursor = detail;
+      } else if (detail) {
+        detail.remove();
+      }
+    });
+
+    rowNodes.forEach((tr, key) => {
+      if (seen.has(key)) return;
+      const detail = document.getElementById(`detail-${key}`);
+      if (detail) detail.remove();
+      tr.remove();
+      rowNodes.delete(key);
+    });
+
+    state.boardPainted = true;
+    state.lastQuoteMoves = state.quoteMoves;
+    bindRowHandlers();
+  }
+
+  function bindRowHandlers() {
+    if (state.rowsBound) return;
+    state.rowsBound = true;
     const toggle = (tr) => {
       const key = tr.dataset.expand;
       if (!key) return;
       if (state.expanded.has(key)) state.expanded.delete(key);
       else state.expanded.add(key);
       renderTable();
-      if (key) {
-        const next = els.tableBody.querySelector(`tr[data-expand="${CSS.escape(key)}"]`);
-        if (next) next.focus();
-      }
+      const next = els.tableBody.querySelector(`tr[data-expand="${CSS.escape(key)}"]`);
+      if (next) next.focus();
     };
-    els.tableBody.querySelectorAll("tr[data-expand]").forEach((tr) => {
-      tr.addEventListener("click", () => toggle(tr));
-      tr.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          toggle(tr);
-        }
-      });
+    els.tableBody.addEventListener("click", (event) => {
+      const tr = event.target.closest("tr[data-expand]");
+      if (tr) toggle(tr);
+    });
+    els.tableBody.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const tr = event.target.closest("tr[data-expand]");
+      if (!tr) return;
+      event.preventDefault();
+      toggle(tr);
     });
   }
 
@@ -1259,7 +1452,7 @@
     if (fightModel) {
       lines.push(["Number source", "Fight-specific model, trained on old fights and scored for this exact matchup and phrase."]);
     } else {
-      lines.push(["Number source", "Fallback only: fighter history average. No fight-specific model number, so this row can never be a watch."]);
+      lines.push(["Number source", "Fallback only: fighter history average. No fight-specific model number, so this row cannot be a watch."]);
     }
     if (row.context_note) lines.push(["Model note", String(row.context_note)]);
 
@@ -1285,7 +1478,7 @@
     }
 
     if (row.trust_ok === false) {
-      lines.push(["Phrase trust", `Low. ${row.trust_note || "This phrase group has not shown real skill in the old-fight prediction test."} It can lean but never watch.`]);
+      lines.push(["Phrase trust", `Low. ${row.trust_note || "This phrase group has not shown real skill in the old-fight prediction test."} It can lean, but it cannot be a watch.`]);
     } else if (row.trust_note) {
       lines.push(["Phrase trust", row.trust_note]);
     }
@@ -1305,7 +1498,7 @@
           parseNumber(row.data_buffer) ? `thin-data buffer ${formatPlainPercent(row.data_buffer)}` : "",
         ].filter(Boolean).join(" + ");
         const cap = parseNumber(row.edge_cap) !== null
-          ? ` Edge must also stay at or under the ${formatPlainPercent(row.edge_cap)} cap. Bigger gaps were usually model mistakes on settled cards.`
+          ? ` Edge must also stay at or under the ${formatPlainPercent(row.edge_cap)} cap. On settled cards, most bigger gaps came from the model.`
           : "";
         const verdict = row.watch
           ? "This one clears, so it is a watch row."
@@ -1320,7 +1513,7 @@
 
     return `<div class="audit">
       <p class="audit-reason">${escapeHtml(row.reason || "")}</p>
-      <p class="audit-title">How this number was made</p>
+      <p class="audit-title">Inside this number</p>
       ${lines.map(([label, text]) => `<div class="audit-line"><span>${escapeHtml(label)}</span><p>${escapeHtml(text)}</p></div>`).join("")}
     </div>`;
   }
@@ -1334,7 +1527,7 @@
       const tone = number > 0 ? "good" : number < 0 ? "bad" : "";
       return pill(formatPercent(value, column), tone);
     }
-    if (column.type === "pct") return formatPercent(value, column);
+    if (column.type === "pct" || column.type === "price") return formatPercent(value, column);
     if (column.type === "lane") return laneCell(row);
     if (column.type === "phrase") return cueBox(value, row);
     if (column.type === "signal") {
@@ -1538,7 +1731,7 @@
       <p class="fight-sub">${subBits}</p>
       ${liveRows.length ? '<h3 class="fight-section-title">Mention markets</h3>' : ""}
       ${fightMarketTable(liveRows)}
-      ${strips ? `<h3 class="fight-section-title">What these fighters bring</h3><div class="health-grid two">${strips}</div>` : ""}
+      ${strips ? `<h3 class="fight-section-title">Word history for both fighters</h3><div class="health-grid two">${strips}</div>` : ""}
       ${fightPositionsTable(positions)}`;
     bindFightPage();
   }
@@ -1596,7 +1789,7 @@
       .map((g) => g.phrase);
     const strongBit = (prediction.strongest || []).length
       ? `<p class="health-note">Strongest: ${escapeHtml((prediction.strongest || []).join(", "))}.${barred.length
-        ? ` Barred from watch calls (fails the baseline or scores under 0.55): ${escapeHtml(barred.join(", "))} — these can lean, never watch.`
+        ? ` We bar these from watch calls (they fail the baseline or score under 0.55): ${escapeHtml(barred.join(", "))}. They can lean, but not watch.`
         : ""}</p>`
       : "";
     const weakest = prediction.weakest_phrase
@@ -1618,20 +1811,20 @@
     const officialTrades = parseNumber(pl.official_trades) || 0;
     const needed = parseNumber(pl.minimum_trades_for_claim) || 30;
     const ruleBit = parseNumber(pl.current_rule_trades) !== null
-      ? `<p class="health-note">The entry rule was tightened after this card (edge cap + phrase trust). Replayed on the same snapshots, today's rule takes ${formatInteger(pl.current_rule_trades)} trades, ${formatInteger(pl.current_rule_wins)} wins, <span class="${toneClass(pl.current_rule_pnl)}">${formatMoney(pl.current_rule_pnl)}</span>. That number is in-sample. The next cards are the real test.</p>`
+      ? `<p class="health-note">We tightened the entry rule after this card (edge cap + phrase trust). Replaying the same snapshots, today's rule takes ${formatInteger(pl.current_rule_trades)} trades, ${formatInteger(pl.current_rule_wins)} wins, <span class="${toneClass(pl.current_rule_pnl)}">${formatMoney(pl.current_rule_pnl)}</span>. That number is in-sample, so only the next cards can confirm it.</p>`
       : "";
     const plBlock = pl.available
       ? `
         <p class="health-big ${toneClass(pl.official_pnl)}">${formatMoney(pl.official_pnl)}<span>watch-rule paper P/L: ${formatInteger(officialTrades)} trades, ${formatInteger(pl.official_wins)} wins, $${formatDecimal2(pl.official_staked)} staked</span></p>
         <p class="health-note">Looser leans (positive edge, below the bar): ${formatInteger(pl.lean_trades)} trades, ${formatInteger(pl.lean_wins)} wins, <span class="${toneClass(pl.lean_pnl)}">${formatMoney(pl.lean_pnl)}</span>.</p>
         ${ruleBit}
-        <p class="health-note">Everything here is from cards that already happened${settledThrough ? ` (latest: ${settledThrough})` : ""}: ${formatInteger(pl.markets_with_results)} settled markets, replayed from recorded live snapshots against final Kalshi results. Upcoming cards settle in on their own.</p>
+        <p class="health-note">These numbers come from cards that already happened${settledThrough ? ` (latest: ${settledThrough})` : ""}: we replayed ${formatInteger(pl.markets_with_results)} settled markets from recorded live snapshots against final Kalshi results. Upcoming cards settle in on their own.</p>
         <p class="health-note">${officialTrades >= needed
           ? `Past the ${formatInteger(needed)}-trade review bar, on ${formatInteger(officialTrades)} settled trades. Trades inside one card move together, so cards are the real sample: ${formatInteger(pl.resolved_card_count || 0)} so far, and results swing hard from card to card.`
           : `${formatInteger(officialTrades)} of the ${formatInteger(needed)} settled trades needed before this means anything.`}</p>`
       : '<p class="health-note">No settled markets replayed yet. This fills in by itself after a tracked card finishes.</p>';
 
-    // Did the numbers hold up? Settled markets, scored against the last
+    // Our numbers vs what happened Settled markets, scored against the last
     // prediction the board actually showed before each card.
     const cal = health.calibration || {};
     let calBlock = "";
@@ -1661,7 +1854,7 @@
       }).join("");
       calBlock = `
         <article class="health-block is-wide">
-          <p class="health-kicker">Did the numbers hold up?</p>
+          <p class="health-kicker">Our numbers vs what happened</p>
           <p class="health-big ${grade}">${formatDecimal3(ece)}<span>average gap between what we said and what happened, over ${formatInteger(cal.markets)} settled markets${marketEce !== null ? ` · the market itself scored ${formatDecimal3(marketEce)}` : ""}</span></p>
           <div class="cal-table">
             <div class="cal-row is-head"><span>we said</span><span>n</span><span></span><span>said</span><span>happened</span></div>
@@ -1677,7 +1870,7 @@
             <p class="health-note">Lower is better. We beat the market on ${formatInteger(h2h.cards_model_won)} of ${formatInteger(h2h.cards)} cards. AUC is ranking skill: the chance a market that happened was priced above one that did not.</p>
           </div>` : ""}
           ${worst ? `<p class="health-note">${Math.abs(worst.actual_rate - worst.mean_prediction) > 0.1
-            ? `Worst band: at ${formatPlainPercent(worst.mean_prediction)} the board was ${worst.actual_rate > worst.mean_prediction ? "too low" : "too high"} — those markets landed ${formatPlainPercent(worst.actual_rate)}.`
+            ? `Worst band: at ${formatPlainPercent(worst.mean_prediction)} the board was ${worst.actual_rate > worst.mean_prediction ? "too low" : "too high"}; those markets landed ${formatPlainPercent(worst.actual_rate)}.`
             : "No band is off by more than 10 points."}</p>` : ""}
         </article>`;
     }
@@ -1702,7 +1895,7 @@
           <p class="health-kicker">Recording coverage</p>
           <p class="health-big ${missed ? "bad" : "good"}">${formatInteger(cov.cards_recorded)}<span>of ${formatInteger(cov.cards_with_markets)} cards Kalshi ran since ${escapeHtml(formatDate(cov.recording_since) || cov.recording_since)}${missed ? ` · ${formatInteger(missed)} not recorded` : " · none missed"}</span></p>
           <div class="cov-table">${rows}</div>
-          <p class="health-note">Checked against Kalshi's own event list. Kalshi does not open mention markets for every UFC card, so a card with none is not a gap in our recording.</p>
+          <p class="health-note">We check this against Kalshi's own event list. Kalshi does not open mention markets for every UFC card, so a card with none is not a gap in our recording.</p>
         </article>`;
     }
 
@@ -1735,7 +1928,7 @@
       }).join("");
       const cards = (gate.holdout_cards || []).length;
       gateBit = `
-        <p class="health-note">Every candidate is scored on ${cards ? `${formatInteger(cards)} card${plural(cards)} it has ` : "cards it has "}never seen, with any correction fitted only on earlier cards. Lower is better; only a winner ships.</p>
+        <p class="health-note">We score each candidate on ${cards ? `${formatInteger(cards)} card${plural(cards)} it has ` : "cards it has "}not seen, fitting any correction on earlier cards. Lower is better, and we ship a candidate only if it wins.</p>
         <div class="gate-board">${board}</div>
         <p class="health-note quiet">${chosen === "v1"
           ? "Nothing has beaten the proven model, so it stays."
@@ -1749,13 +1942,13 @@
         && wf.chosen_log_loss < wf.baseline_log_loss;
       wfBit = chosen > 0
         ? `<p class="health-note">Weekly retrain: the model now trains on ${formatInteger(wf.labels_count)} settled-card results (weight ${chosen}). On held-out cards this scored ${formatDecimal3(wf.chosen_log_loss)} log loss vs ${formatDecimal3(wf.baseline_log_loss)} without them${better ? ", an improvement" : ""}.</p>`
-        : `<p class="health-note">Weekly retrain: ${formatInteger(wf.labels_count)} settled-card results were front-tested, but plain transcripts still scored better on held-out cards, so they are not used yet. This recheck runs after every card.</p>`;
+        : `<p class="health-note">Weekly retrain: we front-tested ${formatInteger(wf.labels_count)} settled-card results, but plain transcripts still scored better on held-out cards, so we leave them out for now. This recheck runs after every card.</p>`;
     }
     els.healthGrid.innerHTML = `
       <article class="health-block">
         <p class="health-kicker">Prediction test (old fights)</p>
         <p class="health-big">${formatInteger(prediction.groups_beating_base)}<span> of ${formatInteger(prediction.measured_groups)} phrase groups beat the simple average</span></p>
-        <p class="health-note">${formatInteger(prediction.prediction_rows)} old fight predictions scored across ${formatInteger(prediction.folds)} time-ordered folds. This checks guessing quality only, not profit.</p>
+        <p class="health-note">We scored ${formatInteger(prediction.prediction_rows)} old fight predictions across ${formatInteger(prediction.folds)} time-ordered folds. This measures guessing quality, not profit.</p>
         ${strongBit}
         ${wfBit}
         ${gateBit}
@@ -1780,10 +1973,10 @@
     const positions = data.tracking_positions || [];
 
     if (!cards.length) {
-      els.trackingSummary.textContent = "Nothing tracked yet. New watch rows get logged here on their own.";
+      els.trackingSummary.textContent = "Nothing tracked yet. The tracker logs new watch rows here on its own.";
       els.trackingCards.innerHTML = "";
       if (els.paperStats) els.paperStats.innerHTML = "";
-      els.trackingBody.innerHTML = '<tr><td class="tracking-empty" colspan="8">No paper entries logged yet. The tracker adds one pretend contract the first time a market becomes a watch.</td></tr>';
+      els.trackingBody.innerHTML = '<tr><td class="tracking-empty" colspan="8">The tracker has logged no paper entries yet. It adds one pretend contract the first time a market becomes a watch.</td></tr>';
       return;
     }
 

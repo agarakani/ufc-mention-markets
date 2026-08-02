@@ -39,3 +39,4 @@ venv/
 
 # Local scratch copies of backtest outputs
 Backtest items/
+dashboard/preview/

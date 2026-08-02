@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#090c10">
-    <meta name="description" content="Live research board for UFC announcer-mention markets: model probabilities vs Kalshi prices, paper-traded and honestly scored.">
+    <meta name="description" content="Live research board for UFC announcer-mention markets: model probabilities vs Kalshi prices, paper-traded and scored in public.">
     <title>UFC Mention Markets</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M6.5 1.5 L13.5 1.5 L18.5 6.5 L18.5 13.5 L13.5 18.5 L6.5 18.5 L1.5 13.5 L1.5 6.5 Z' fill='none' stroke='%2379a2ff' stroke-width='1.8'/%3E%3Cpath d='M7 10.8 L9.2 13 L13.6 7.4' fill='none' stroke='%23e1ad59' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
+    <a class="skip-link" href="#board">Skip to the board</a>
     <main class="shell">
       <header class="topbar">
         <div class="brand">
@@ -30,6 +31,7 @@
         <div class="status-wrap">
           <button class="portfolio-chip" id="portfolioChip" type="button" hidden></button>
           <div class="status" id="dataStatus">Loading local data</div>
+          <p class="visually-hidden" id="updatePulse" aria-live="polite"></p>
           <button class="refresh-button" id="refreshButton" type="button">Update now</button>
         </div>
       </header>
@@ -42,7 +44,12 @@
 
       <section class="tab-page" id="page-markets">
         <div id="eventStage"></div>
-        <div class="ticker" id="ticker" hidden></div>
+        <div class="ticker" id="ticker" hidden>
+          <button class="ticker-pause" id="tickerPause" type="button" aria-pressed="false" aria-label="Pause the moving ticker">
+            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.6" height="9" fill="currentColor"/><rect x="7.4" y="1.5" width="2.6" height="9" fill="currentColor"/></svg>
+          </button>
+          <div class="ticker-rail" id="tickerRail"></div>
+        </div>
         <div id="cardBoard"></div>
 
         <div class="layout">
@@ -68,11 +75,11 @@
               <span class="toolbar-meta" id="tableMeta"></span>
             </div>
 
-            <div class="panel">
-              <div class="table-wrap">
+            <div class="panel" id="board">
+              <div class="table-wrap" tabindex="0" role="region" aria-label="Market board, scrollable">
                 <table id="dataTable">
                   <thead id="tableHead"></thead>
-                  <tbody id="tableBody"></tbody>
+                  <tbody id="tableBody" aria-live="off"></tbody>
                 </table>
               </div>
             </div>
@@ -114,7 +121,7 @@
             </table>
           </div>
         </div>
-        <p class="page-note">One pretend contract per new watch row, entered at the live buy price at that moment. Nothing here uses real money, and entries are never edited after the fact. "Now" is the current bid for the side held.</p>
+        <p class="page-note">One pretend contract per new watch row, bought at the live price at that moment. Nothing here uses real money, and we do not edit entries after the fact. "Now" is the current bid for the side we hold.</p>
       </section>
 
       <section class="tab-page" id="page-model" hidden>

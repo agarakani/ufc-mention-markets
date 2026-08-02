@@ -86,3 +86,36 @@ def test_kalshi_card_title_is_never_overwritten():
     upcoming = [{"date": "2026-07-25", "name": "UFC Fight Night: Ankalaev vs. Guskov"}]
     bdd.name_cards_from_schedule(cards, upcoming)
     assert cards[0]["card_title"] == "Kalshi's own name"
+
+
+def test_price_tracks_downsample_and_cache(tmp_path, monkeypatch):
+    import csv as _csv
+    history = tmp_path / "history.csv"
+    with history.open("w", newline="", encoding="utf-8") as fh:
+        writer = _csv.DictWriter(fh, fieldnames=["ticker", "yes_ask", "model_probability"])
+        writer.writeheader()
+        for i in range(200):
+            writer.writerow({"ticker": "A", "yes_ask": 0.10 + i * 0.001, "model_probability": 0.2})
+        for i in range(2):
+            writer.writerow({"ticker": "B", "yes_ask": 0.4, "model_probability": 0.4})
+
+    bdd._spark_cache["key"] = None
+    tracks = bdd.build_price_tracks({"A", "B"}, history)
+    assert "A" in tracks
+    assert len(tracks["A"]) <= bdd.SPARK_POINTS
+    # the newest point is always kept, whatever the sampling stride
+    assert tracks["A"][-1][0] == round(0.10 + 199 * 0.001, 4)
+    # a market with almost no history gets no line rather than a misleading one
+    assert "B" not in tracks
+
+
+def test_price_tracks_ignore_unlisted_markets(tmp_path):
+    import csv as _csv
+    history = tmp_path / "history.csv"
+    with history.open("w", newline="", encoding="utf-8") as fh:
+        writer = _csv.DictWriter(fh, fieldnames=["ticker", "yes_ask", "model_probability"])
+        writer.writeheader()
+        for i in range(10):
+            writer.writerow({"ticker": "OLD", "yes_ask": 0.3, "model_probability": 0.3})
+    bdd._spark_cache["key"] = None
+    assert bdd.build_price_tracks({"LIVE"}, history) == {}
