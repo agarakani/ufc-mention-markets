@@ -89,3 +89,43 @@ def test_calibration_report_is_empty_without_data(tmp_path):
     report = build(tmp_path / "labels.csv", tmp_path / "history.csv")
     assert report["markets"] == 0
     assert report["ece"] is None
+
+
+def test_head_to_head_scores_model_against_market():
+    from scripts.model.calibration_report import head_to_head, discrimination
+
+    # Market is right every time; model is right but less confident.
+    pairs = [{"probability": 0.6, "market": 0.9, "outcome": 1, "event_date": "2026-01-01"} for _ in range(5)]
+    pairs += [{"probability": 0.4, "market": 0.1, "outcome": 0, "event_date": "2026-01-01"} for _ in range(5)]
+    h2h = head_to_head(pairs)
+    assert h2h["markets"] == 10
+    assert h2h["market_log_loss"] < h2h["model_log_loss"]
+    assert h2h["cards_model_won"] == 0
+    assert h2h["model_auc"] == 1.0
+
+
+def test_discrimination_is_half_when_ranking_is_random():
+    from scripts.model.calibration_report import discrimination
+
+    assert discrimination([(0.5, 1), (0.5, 0)]) == 0.5
+    assert discrimination([(0.9, 1), (0.1, 0)]) == 1.0
+    assert discrimination([(0.9, 1)]) is None
+
+
+def test_prefight_cutoff_excludes_in_fight_prices(tmp_path):
+    from scripts.model.calibration_report import collect_pairs
+
+    labels = tmp_path / "labels.csv"
+    labels.write_text(
+        "event_date,ticker,phrase,outcome\n2026-07-25,T1,Blood,yes\n", encoding="utf-8"
+    )
+    history = tmp_path / "history.csv"
+    history.write_text(
+        "snapshot_timestamp,ticker,model_probability,yes_ask,yes_bid\n"
+        "2026-07-25T09:00:00+00:00,T1,0.20,0.25,0.15\n"
+        "2026-07-25T19:00:00+00:00,T1,0.20,0.99,0.97\n",   # mid-fight, must be ignored
+        encoding="utf-8",
+    )
+    pairs = collect_pairs(labels, history)
+    assert len(pairs) == 1
+    assert pairs[0]["market"] == 0.20   # the pre-fight mid, not the in-fight price

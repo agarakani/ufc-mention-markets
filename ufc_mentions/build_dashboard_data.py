@@ -513,6 +513,16 @@ def build_calibration(report: dict) -> dict:
             }
             for row in (report.get("bins") or [])
         ],
+        "head_to_head": {
+            "markets": as_int((report.get("head_to_head") or {}).get("markets")),
+            "model_log_loss": number((report.get("head_to_head") or {}).get("model_log_loss")),
+            "market_log_loss": number((report.get("head_to_head") or {}).get("market_log_loss")),
+            "base_log_loss": number((report.get("head_to_head") or {}).get("base_log_loss")),
+            "model_auc": number((report.get("head_to_head") or {}).get("model_auc")),
+            "market_auc": number((report.get("head_to_head") or {}).get("market_auc")),
+            "cards_model_won": as_int((report.get("head_to_head") or {}).get("cards_model_won")),
+            "cards": len((report.get("head_to_head") or {}).get("cards") or {}),
+        } if (report.get("head_to_head") or {}).get("markets") else {},
         "generated_at": report.get("generated_at", ""),
     }
 

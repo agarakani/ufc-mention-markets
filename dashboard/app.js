@@ -1639,6 +1639,10 @@
       const ece = parseNumber(cal.ece);
       const marketEce = parseNumber(cal.market_ece);
       const grade = ece === null ? "" : ece < 0.05 ? "good" : ece < 0.10 ? "" : "bad";
+      const h2h = cal.head_to_head || {};
+      const modelWins = parseNumber(h2h.model_log_loss) !== null
+        && parseNumber(h2h.market_log_loss) !== null
+        && h2h.model_log_loss < h2h.market_log_loss;
       const bins = (cal.bins || []).filter((b) => b.count >= 5);
       const worst = bins.slice().sort((a, b) =>
         Math.abs(b.actual_rate - b.mean_prediction) - Math.abs(a.actual_rate - a.mean_prediction))[0];
@@ -1663,6 +1667,15 @@
             <div class="cal-row is-head"><span>we said</span><span>n</span><span></span><span>said</span><span>happened</span></div>
             ${rows}
           </div>
+          ${h2h.markets ? `<div class="h2h">
+            <p class="h2h-title">Against the market, on the same pre-fight prices</p>
+            <div class="h2h-rows">
+              <div class="h2h-row ${modelWins ? "wins" : ""}"><span>Our number</span><b>${formatDecimal3(h2h.model_log_loss)}</b><i>AUC ${formatDecimal3(h2h.model_auc)}</i></div>
+              <div class="h2h-row ${modelWins ? "" : "wins"}"><span>The market</span><b>${formatDecimal3(h2h.market_log_loss)}</b><i>AUC ${formatDecimal3(h2h.market_auc)}</i></div>
+              <div class="h2h-row quiet"><span>Guessing the average</span><b>${formatDecimal3(h2h.base_log_loss)}</b><i>AUC 0.500</i></div>
+            </div>
+            <p class="health-note">Lower is better. We beat the market on ${formatInteger(h2h.cards_model_won)} of ${formatInteger(h2h.cards)} cards. AUC is ranking skill: the chance a market that happened was priced above one that did not.</p>
+          </div>` : ""}
           ${worst ? `<p class="health-note">${Math.abs(worst.actual_rate - worst.mean_prediction) > 0.1
             ? `Worst band: at ${formatPlainPercent(worst.mean_prediction)} the board was ${worst.actual_rate > worst.mean_prediction ? "too low" : "too high"} — those markets landed ${formatPlainPercent(worst.actual_rate)}.`
             : "No band is off by more than 10 points."}</p>` : ""}

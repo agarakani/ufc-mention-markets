@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 import sys
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -33,6 +34,7 @@ HISTORY = ROOT / "market_data" / "kalshi_price_history.csv"
 OUT_PATH = ROOT / "model_outputs" / "calibration_report.json"
 
 BIN_EDGES = [0.0, 0.05, 0.10, 0.20, 0.30, 0.40, 0.60, 1.01]
+PREFIGHT_CUTOFF_UTC = "12:00:00+00:00"
 
 
 def _float(value):
@@ -41,6 +43,17 @@ def _float(value):
     except (TypeError, ValueError):
         return None
     return result if result == result else None
+
+
+def _mid(row) -> float | None:
+    """Mid of the book: the ask alone overstates what the market believes."""
+    ask = _float(row.get("yes_ask"))
+    bid = _float(row.get("yes_bid"))
+    if ask is None:
+        return bid
+    if bid is None:
+        return ask
+    return (ask + bid) / 2
 
 
 def collect_pairs(labels_path: Path = LABELS, history_path: Path = HISTORY) -> list[dict]:
@@ -55,6 +68,15 @@ def collect_pairs(labels_path: Path = LABELS, history_path: Path = HISTORY) -> l
             if ticker and outcome in ("yes", "no"):
                 labels[ticker] = row
 
+    # Only snapshots taken before the card started. Markets stay open during
+    # the fights, so a later price already knows whether the word was said —
+    # scoring against that would flatter the market with hindsight the model
+    # never had. Every card in this set starts after noon UTC on its date.
+    cutoffs = {
+        ticker: f"{str(row.get('event_date', '')).strip()}T{PREFIGHT_CUTOFF_UTC}"
+        for ticker, row in labels.items()
+    }
+
     latest: dict[str, tuple[str, dict]] = {}
     with history_path.open(newline="", encoding="utf-8-sig") as fh:
         for row in csv.DictReader(fh):
@@ -62,6 +84,9 @@ def collect_pairs(labels_path: Path = LABELS, history_path: Path = HISTORY) -> l
             if ticker not in labels:
                 continue
             stamp = str(row.get("snapshot_timestamp", ""))
+            cutoff = cutoffs.get(ticker)
+            if cutoff and stamp > cutoff:
+                continue
             if ticker not in latest or stamp > latest[ticker][0]:
                 latest[ticker] = (stamp, row)
 
@@ -77,7 +102,7 @@ def collect_pairs(labels_path: Path = LABELS, history_path: Path = HISTORY) -> l
             "event_date": label.get("event_date", ""),
             "probability": probability,
             "outcome": 1 if label.get("outcome", "").strip().lower() == "yes" else 0,
-            "market": _float(row.get("yes_ask")),
+            "market": _mid(row),
         })
     return pairs
 
@@ -110,6 +135,60 @@ def expected_calibration_error(bins: list[dict]) -> float | None:
     return sum(b["count"] * abs(b["actual_rate"] - b["mean_prediction"]) for b in bins) / total
 
 
+def log_loss(pairs: list[tuple[float, int]]) -> float | None:
+    """Mean log loss. Lower is better; guessing the base rate is the floor."""
+    if not pairs:
+        return None
+    total = 0.0
+    for probability, outcome in pairs:
+        clipped = min(max(probability, 1e-4), 1 - 1e-4)
+        total += -(outcome * math.log(clipped) + (1 - outcome) * math.log(1 - clipped))
+    return total / len(pairs)
+
+
+def discrimination(pairs: list[tuple[float, int]]) -> float | None:
+    """AUC: the chance a market that happened was priced above one that did not.
+    0.5 is a coin flip. This is ranking skill, separate from calibration."""
+    positives = [p for p, y in pairs if y == 1]
+    negatives = [p for p, y in pairs if y == 0]
+    if not positives or not negatives:
+        return None
+    wins = sum((a > b) + 0.5 * (a == b) for a in positives for b in negatives)
+    return wins / (len(positives) * len(negatives))
+
+
+def head_to_head(pairs: list[dict]) -> dict:
+    """The model against the market, on the same pre-fight markets."""
+    both = [p for p in pairs if p["market"] is not None]
+    if not both:
+        return {}
+    ours = [(p["probability"], p["outcome"]) for p in both]
+    theirs = [(p["market"], p["outcome"]) for p in both]
+    base_rate = sum(p["outcome"] for p in both) / len(both)
+    by_card = {}
+    for card in sorted({p["event_date"] for p in both if p["event_date"]}):
+        rows = [p for p in both if p["event_date"] == card]
+        by_card[card] = {
+            "markets": len(rows),
+            "model_log_loss": log_loss([(r["probability"], r["outcome"]) for r in rows]),
+            "market_log_loss": log_loss([(r["market"], r["outcome"]) for r in rows]),
+        }
+    return {
+        "markets": len(both),
+        "model_log_loss": log_loss(ours),
+        "market_log_loss": log_loss(theirs),
+        "base_log_loss": log_loss([(base_rate, y) for _, y in ours]),
+        "model_auc": discrimination(ours),
+        "market_auc": discrimination(theirs),
+        "cards_model_won": sum(
+            1 for c in by_card.values()
+            if c["model_log_loss"] is not None and c["market_log_loss"] is not None
+            and c["model_log_loss"] < c["market_log_loss"]
+        ),
+        "cards": by_card,
+    }
+
+
 def build(labels_path: Path = LABELS, history_path: Path = HISTORY) -> dict:
     pairs = collect_pairs(labels_path, history_path)
     bins = calibration_bins(pairs)
@@ -127,6 +206,7 @@ def build(labels_path: Path = LABELS, history_path: Path = HISTORY) -> dict:
         "mean_prediction": (sum(p["probability"] for p in pairs) / len(pairs)) if pairs else None,
         "actual_rate": (sum(p["outcome"] for p in pairs) / len(pairs)) if pairs else None,
         "bins": bins,
+        "head_to_head": head_to_head(pairs),
         "note": (
             "Each settled market scored against the last prediction the live "
             "board recorded before its card. ECE is the average gap between "

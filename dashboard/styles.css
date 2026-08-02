@@ -1129,6 +1129,34 @@ td.empty, .tracking-empty { padding: 30px; text-align: center; color: var(--ink-
 .cal-ece.warn { border-color: rgba(255,107,44,0.4); color: #ff8c5a; }
 .cal-ece.bad { border-color: rgba(242,105,95,0.4); color: var(--loss); }
 
+/* head to head: our number against the market's, pre-fight */
+.h2h { margin: 16px 0 6px; padding-top: 14px; border-top: 1px solid var(--edge-strong); }
+.h2h-title {
+  margin-bottom: 10px;
+  font-family: var(--voice);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.h2h-rows { max-width: 460px; }
+.h2h-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: 14px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--edge-line);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.h2h-row b { font-family: var(--num); font-size: 15px; font-weight: 500; color: var(--ink); }
+.h2h-row i { font-family: var(--num); font-style: normal; font-size: 10px; color: var(--ink-3); min-width: 74px; text-align: right; }
+.h2h-row.wins span { color: var(--ink); }
+.h2h-row.wins b { color: #3ddc97; }
+.h2h-row.quiet, .h2h-row.quiet b { color: var(--ink-3); }
+
 /* calibration: what we said against what happened */
 .health-block.is-wide { grid-column: 1 / -1; }
 .health-block.is-wide .cal-table { max-width: 680px; }
