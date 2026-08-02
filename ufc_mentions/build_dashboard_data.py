@@ -35,6 +35,7 @@ CALIBRATION_REPORT = ROOT / "model_outputs" / "calibration_report.json"
 COVERAGE_REPORT = ROOT / "model_outputs" / "coverage_report.json"
 FIGHTER_DIRECTORY = ROOT / "data" / "processed" / "fighter_directory.csv"
 UPCOMING_EVENTS = ROOT / "data" / "processed" / "upcoming_events.json"
+REPLAY_TAPE = ROOT / "data" / "processed" / "replay_tape.json"
 TRACKING_ROOT = ROOT / "data" / "tracking"
 TRACKING_WEEKLY_SUMMARY = TRACKING_ROOT / "weekly_summary.csv"
 TRACKING_HIDDEN_MARKERS = {".dashboard_hidden", ".practice_card"}
@@ -1024,6 +1025,7 @@ def build_payload() -> dict:
         "performance": build_performance(read_csv(PL_BACKTEST_TRADES)),
         "kalshi_cards": kalshi_cards,
         "price_tracks": price_tracks,
+        "replay": read_json(REPLAY_TAPE),
         "kalshi_events": kalshi_events,
         "kalshi_meta": kalshi_meta,
         "kalshi_audit_summary": kalshi_audit_summary,

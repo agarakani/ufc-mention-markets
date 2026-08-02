@@ -59,6 +59,11 @@
     bindEvents();
     bindTickerPause();
     renderAll();
+    // Nothing live means a dead page. Play a night we recorded instead, so the
+    // board shows what it does when money is moving.
+    if (!getRows().length && replayTape() && !prefersReducedMotion()) {
+      window.setTimeout(startReplay, 900);
+    }
     state.dataStamp = dataFingerprint();
     scheduleAutoUpdate();
     window.addEventListener("hashchange", () => {
@@ -97,12 +102,174 @@
     renderFightHeader();
     renderSignalFeed();
     renderTable();
+    paintReplayBar();
     renderFightPage();
     renderHealth();
     renderTracking();
     renderPerformance();
     if (state.tab === "markets") markSeen();
     window.requestAnimationFrame(() => fitNames(document));
+  }
+
+  /* ---------- replay ----------
+     Kalshi opens these markets a couple of nights a month. The rest of the
+     time the board sits still, which tells you nothing about how it behaves
+     when money is moving. This plays back a night we already recorded: real
+     asks, real model numbers, frame by frame. */
+
+  const replay = { frame: 0, timer: 0, playing: false, speed: 1 };
+
+  function prefersReducedMotion() {
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  function replayTape() {
+    const tape = data.replay;
+    return tape && tape.markets && tape.markets.length ? tape : null;
+  }
+
+  function replayRows() {
+    const tape = replayTape();
+    if (!tape) return [];
+    const frame = Math.min(replay.frame, tape.frames - 1);
+    return tape.markets.map((market) => {
+      const ask = market.ask[frame];
+      const bid = market.bid[frame];
+      const model = market.model[frame];
+      const edge = ask === null || model === null ? null : model - ask;
+      return {
+        ticker: market.ticker,
+        event_ticker: market.event_ticker,
+        event_date: market.event_date,
+        phrase: market.phrase,
+        forms: market.phrase,
+        fighter_1: market.fighter_1,
+        fighter_2: market.fighter_2,
+        matchup: `${market.fighter_1} vs ${market.fighter_2}`,
+        yes_ask: ask,
+        yes_bid: bid,
+        no_ask: ask === null ? null : Math.round((1 - ask) * 100) / 100 + 0.02,
+        model_probability: model,
+        edge,
+        side: edge !== null && edge > 0 ? "yes" : "no",
+        hurdle: 0.05,
+        league_rate: null,
+        watch: edge !== null && edge > 0.06,
+        status: "ok",
+        probability_source: "fight_context_model",
+        context_status: "ok",
+        trust_ok: true,
+        block_reason: "",
+        search_blob: `${market.phrase} ${market.fighter_1} ${market.fighter_2}`.toLowerCase(),
+      };
+    });
+  }
+
+  let replayIndex = null;
+
+  function replayMarket(ticker) {
+    const tape = replayTape();
+    if (!tape) return null;
+    if (!replayIndex) {
+      replayIndex = new Map();
+      tape.markets.forEach((market) => replayIndex.set(market.ticker, market));
+    }
+    return replayIndex.get(ticker) || null;
+  }
+
+  function replayStamp() {
+    const tape = replayTape();
+    if (!tape) return "";
+    const raw = tape.stamps[Math.min(replay.frame, tape.frames - 1)];
+    const date = new Date(raw);
+    if (Number.isNaN(date.getTime())) return raw;
+    return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+
+  function setReplayFrame(frame, animate) {
+    const tape = replayTape();
+    if (!tape) return;
+    // Scrubbing jumps the whole board at once. Flapping 90 cells together
+    // reads as noise and costs a frame, so only a playback step animates.
+    state.suppressFlap = !animate;
+    replay.frame = Math.max(0, Math.min(frame, tape.frames - 1));
+    renderTable();
+    state.suppressFlap = false;
+    paintReplayBar();
+  }
+
+  function stopReplay() {
+    replay.playing = false;
+    window.clearInterval(replay.timer);
+    replay.timer = 0;
+    paintReplayBar();
+  }
+
+  function startReplay() {
+    const tape = replayTape();
+    if (!tape) return;
+    replay.playing = true;
+    if (replay.frame >= tape.frames - 1) replay.frame = 0;
+    window.clearInterval(replay.timer);
+    replay.timer = window.setInterval(() => {
+      if (replay.frame >= tape.frames - 1) { stopReplay(); return; }
+      setReplayFrame(replay.frame + 1, true);
+    }, Math.round(900 / replay.speed));
+    paintReplayBar();
+  }
+
+  function paintReplayBar() {
+    const holder = document.getElementById("replayBar");
+    const tape = replayTape();
+    if (!holder) return;
+    if (!tape) { holder.hidden = true; holder.innerHTML = ""; return; }
+    holder.hidden = false;
+    const pct = tape.frames > 1 ? (replay.frame / (tape.frames - 1)) * 100 : 0;
+    const live = getRows().length > 0;
+    holder.innerHTML = `
+      <div class="replay-head">
+        <span class="replay-tag">${live ? "Replay" : "No markets open. Replaying"}</span>
+        <strong>${escapeHtml(formatDate(tape.event_date) || tape.card)}</strong>
+        <span class="replay-count">${formatInteger(tape.markets.length)} markets</span>
+      </div>
+      <div class="replay-transport">
+        <button class="replay-play" id="replayPlay" type="button" aria-label="${replay.playing ? "Pause replay" : "Play replay"}">
+          ${replay.playing
+            ? '<svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.6" height="9" fill="currentColor"/><rect x="7.4" y="1.5" width="2.6" height="9" fill="currentColor"/></svg>'
+            : '<svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.5 L10.5 6 L2.5 10.5 Z" fill="currentColor"/></svg>'}
+        </button>
+        <input class="replay-scrub" id="replayScrub" type="range" min="0" max="${tape.frames - 1}"
+          value="${replay.frame}" aria-label="Scrub through the card">
+        <span class="replay-clock">${escapeHtml(replayStamp())}</span>
+        <button class="replay-speed" id="replaySpeed" type="button" aria-label="Change replay speed">${replay.speed}x</button>
+      </div>
+      <div class="replay-progress" aria-hidden="true"><i style="width:${pct.toFixed(1)}%"></i></div>`;
+    bindReplay();
+  }
+
+  function bindReplay() {
+    const play = document.getElementById("replayPlay");
+    const scrub = document.getElementById("replayScrub");
+    const speed = document.getElementById("replaySpeed");
+    if (play && !play.dataset.bound) {
+      play.dataset.bound = "1";
+      play.addEventListener("click", () => (replay.playing ? stopReplay() : startReplay()));
+    }
+    if (scrub && !scrub.dataset.bound) {
+      scrub.dataset.bound = "1";
+      scrub.addEventListener("input", (event) => {
+        stopReplay();
+        setReplayFrame(Number(event.target.value), false);
+      });
+    }
+    if (speed && !speed.dataset.bound) {
+      speed.dataset.bound = "1";
+      speed.addEventListener("click", () => {
+        replay.speed = replay.speed === 1 ? 2 : replay.speed === 2 ? 4 : 1;
+        if (replay.playing) startReplay();
+        else paintReplayBar();
+      });
+    }
   }
 
   /* ---------- the stage ----------
@@ -133,15 +300,25 @@
     }
     const next = (data.upcoming_events || [])[0];
     if (!next) return null;
+    // With nothing live the stage still counts what the board is showing, so
+    // the header and the tape below it never disagree.
+    const tapeRows = replayTape() ? replayRows() : [];
+    const tapeFights = new Set(tapeRows.map((row) => row.event_ticker)).size;
     return {
       title: next.name, date: next.date, venue: next.venue || "",
-      location: next.location || "", fights: 0, markets: 0, live: false,
+      location: next.location || "",
+      fights: tapeFights, markets: tapeRows.length, live: false,
+      replaying: tapeRows.length > 0,
     };
+  }
+
+  function boardRows() {
+    return getRows().length ? getRows() : (replayTape() ? replayRows() : []);
   }
 
   function bestEdgeOnCard() {
     let best = null;
-    getRows().forEach((row) => {
+    boardRows().forEach((row) => {
       const edge = parseNumber(row.edge);
       if (edge !== null && (best === null || edge > best)) best = edge;
     });
@@ -188,6 +365,7 @@
           <div class="stage-meta">
             <div class="clock" id="stageClock" data-date="${escapeHtml(card.date || "")}"></div>
             <div class="stage-stats">
+              ${card.replaying ? '<span class="stage-replaying">Showing a replay of Jul 18</span>' : ""}
               <span><strong>${formatInteger(card.fights)}</strong>fights</span>
               <span><strong>${formatInteger(card.markets)}</strong>phrase markets</span>
               <span><strong class="${best !== null && best > 0 ? "hot" : ""}">${best === null ? "--" : formatPlainPercent(best, true)}</strong>best edge</span>
@@ -333,6 +511,16 @@
       </section>
       ${heatGrid(fights, rows)}`;
 
+    if (!prefersReducedMotion()) {
+      holder.querySelectorAll(".tile").forEach((tile, index) => {
+        tile.classList.add("deal-in");
+        tile.style.animationDelay = `${Math.min(index, 10) * 60}ms`;
+      });
+      holder.querySelectorAll(".heat .cell").forEach((cell, index) => {
+        cell.classList.add("deal-in");
+        cell.style.animationDelay = `${Math.min(index, 40) * 12}ms`;
+      });
+    }
     holder.querySelectorAll("[data-nav-fight]").forEach((el) => {
       el.addEventListener("click", () => {
         state.selectedEvent = el.dataset.navFight;
@@ -1039,7 +1227,20 @@
      the dotted one, so a row shows at a glance whether the two have been
      converging or pulling apart since we started watching. */
   function sparkline(row) {
-    const track = (data.price_tracks || {})[String(row.ticker || "")];
+    let track = (data.price_tracks || {})[String(row.ticker || "")];
+    // While a tape is playing, the line draws itself frame by frame instead of
+    // sitting there finished, so the row shows the move as it happened.
+    if (!track && replayTape()) {
+      const market = replayMarket(String(row.ticker || ""));
+      if (market) {
+        const upto = Math.min(replay.frame, market.ask.length - 1);
+        track = [];
+        for (let i = 0; i <= upto; i += 1) {
+          if (market.ask[i] === null || market.ask[i] === undefined) continue;
+          track.push([market.ask[i], market.model[i]]);
+        }
+      }
+    }
     if (!track || track.length < 3) return '<span class="spark is-thin" aria-hidden="true"></span>';
     const asks = track.map((point) => point[0]).filter((v) => v !== null);
     const models = track.map((point) => point[1]).filter((v) => v !== null && v !== undefined);
@@ -1122,12 +1323,13 @@
   function renderTable() {
     const marketSection = document.querySelector("#page-markets .content .toolbar");
     const tableWrap = document.querySelector("#page-markets .content .table-wrap");
-    const noLiveMarkets = !getRows().length && !getCards().length;
+    const noLiveMarkets = !getRows().length && !getCards().length && !replayTape();
     if (marketSection) marketSection.hidden = noLiveMarkets;
     if (tableWrap) tableWrap.hidden = noLiveMarkets;
     if (noLiveMarkets) { els.tableMeta.textContent = ""; return; }
     const columns = activeColumns();
-    let rows = getRows().map(deriveRow);
+    const usingReplay = !getRows().length && replayTape();
+    let rows = (usingReplay ? replayRows() : getRows()).map(deriveRow);
     rows = applyFilters(rows);
     rows = applySort(rows);
     const scope = state.signal === "watch" ? "watch row" : state.signal === "active" ? "active market" : "market";
@@ -1338,7 +1540,7 @@
       td.innerHTML = html;
     }
     td.dataset.value = value;
-    if (!animate || previous === undefined || previous === value || !value || !previous) return;
+    if (state.suppressFlap || !animate || previous === undefined || previous === value || !value || !previous) return;
     state.quoteMoves = (state.quoteMoves || 0) + 1;
     const rising = parseNumber(value) > parseNumber(previous);
     td.classList.remove("flap-up", "flap-down");
@@ -1365,6 +1567,7 @@
     state.paintedColumns = columns.map((c) => c.key).join(",");
 
     state.quoteMoves = 0;
+    let dealt = 0;
     const seen = new Set();
     let cursor = null;
     rows.forEach((row) => {
@@ -1376,6 +1579,11 @@
       if (fresh) {
         tr = buildRow(columns, row);
         rowNodes.set(key, tr);
+        if (!state.boardPainted && dealt < 14 && !prefersReducedMotion()) {
+          tr.classList.add("deal-in");
+          tr.style.animationDelay = `${dealt * 28}ms`;
+          dealt += 1;
+        }
       }
       paintRow(tr, columns, row, open, !fresh && state.boardPainted);
 

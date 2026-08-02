@@ -1487,3 +1487,127 @@ td.num.flap-down { animation: flap-fall 480ms var(--ease) 1; }
 .spark.up .spark-ask { stroke: var(--gain-bright); }
 .spark.down .spark-ask { stroke: var(--loss); }
 tbody tr:hover .spark { opacity: 1; }
+
+/* ================= replay =================
+   A recorded night played back, so the board can show what it does when
+   money is actually moving. */
+.replay-bar {
+  margin: 16px 0 0;
+  padding: 12px 14px 10px;
+  border: 1px solid var(--edge-control);
+  background: linear-gradient(180deg, var(--rail), var(--void));
+}
+
+.replay-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  font-family: var(--voice);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.replay-head strong { color: var(--ink); font-weight: 700; letter-spacing: 0.06em; }
+.replay-tag {
+  padding: 3px 8px;
+  background: var(--ink);
+  color: var(--ink-on-fill);
+  font-weight: 700;
+}
+.replay-count { margin-left: auto; font-family: var(--num); letter-spacing: 0; }
+
+.replay-transport { display: flex; align-items: center; gap: 12px; }
+
+.replay-play, .replay-speed {
+  flex: none;
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--edge-control);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--num);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 150ms var(--ease), border-color 150ms var(--ease);
+}
+.replay-play:hover, .replay-speed:hover { background: var(--lane); border-color: var(--ink); }
+
+.replay-scrub {
+  flex: 1;
+  height: 44px;
+  accent-color: var(--ink);
+  background: transparent;
+  cursor: pointer;
+}
+
+.replay-clock {
+  flex: none;
+  min-width: 74px;
+  font-family: var(--num);
+  font-size: 13px;
+  color: var(--ink);
+  text-align: right;
+}
+
+.replay-progress { height: 2px; margin-top: 8px; background: var(--lane); }
+.replay-progress i { display: block; height: 100%; background: var(--ink); transition: width 200ms linear; }
+
+@media (prefers-reduced-motion: reduce) {
+  .replay-progress i { transition: none; }
+}
+
+/* ================= entrance =================
+   The board deals itself in. Rows are capped at 14 so a long card never turns
+   into a three second wait, and the whole thing is skipped when a repaint is
+   only updating numbers. */
+tbody tr.deal-in { animation: deal 420ms var(--ease) both; }
+@keyframes deal {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.tile.deal-in { animation: deal-tile 520ms var(--ease) both; }
+@keyframes deal-tile {
+  from { opacity: 0; transform: translateY(16px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+.heat .cell.deal-in { animation: cell-in 340ms var(--ease) both; }
+@keyframes cell-in {
+  from { opacity: 0; transform: scale(0.86); }
+  to { opacity: 1; transform: none; }
+}
+
+/* a watch row is marked with a solid rule, not a pulse: dozens of
+   always-animating pseudo elements cost a compositor layer each */
+tbody tr.is-watch td:first-child { position: relative; }
+tbody tr.is-watch td:first-child::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--white-hot);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  tbody tr.deal-in, .tile.deal-in, .heat .cell.deal-in { animation: none; }
+}
+.stage-replaying {
+  align-self: center;
+  padding: 4px 9px;
+  border: 1px solid var(--edge-control);
+  color: var(--ink-2);
+  font-family: var(--voice);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
