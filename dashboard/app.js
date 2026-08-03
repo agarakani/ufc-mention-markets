@@ -1196,8 +1196,8 @@
       { key: "call", label: "Call", type: "signal" },
       { key: "phrase", label: "Phrase", type: "phrase" },
       { key: "model_probability", label: "The book", type: "lane", className: "lane-col" },
-      { key: "yes_ask", label: "YES", type: "price", className: "num optional" },
-      { key: "no_ask", label: "NO", type: "price", className: "num optional" },
+      { key: "yes_ask", label: "YES", type: "price", className: "num optional price-col" },
+      { key: "no_ask", label: "NO", type: "price", className: "num optional price-col" },
       { key: "side", label: "Side", type: "side", className: "optional" },
       { key: "edge", label: "Edge", type: "pct", className: "num", badge: true, signed: true },
     ];
@@ -1248,10 +1248,10 @@
     const low = Math.min.apply(null, all);
     const high = Math.max.apply(null, all);
     const span = (high - low) || 0.02;
-    const W = 54;
-    const H = 20;
+    const W = 116;
+    const H = 30;
     const x = (i) => (i / (track.length - 1)) * W;
-    const y = (v) => H - 2 - ((v - low) / span) * (H - 4);
+    const y = (v) => H - 3 - ((v - low) / span) * (H - 6);
     const path = (pick) => {
       const points = [];
       track.forEach((point, i) => {
@@ -1266,10 +1266,22 @@
     const lastAsk = asks[asks.length - 1];
     const firstAsk = asks[0];
     const drift = lastAsk > firstAsk ? "up" : lastAsk < firstAsk ? "down" : "flat";
+    // Area fill under the ask line plus an end dot: readable at a glance,
+    // and the drift class colors the whole mark.
+    const lastPoint = askPath ? askPath.split(" L ").pop() : "";
+    const [endX, endY] = lastPoint ? lastPoint.replace("M ", "").split(",") : [0, 0];
+    const area = askPath ? `${askPath} L ${W},${H} L 0,${H} Z` : "";
+    const gid = `sg${String(row.ticker || "").replace(/[^A-Za-z0-9]/g, "").slice(-8)}`;
     return `<span class="spark ${drift}" role="img" aria-label="Price history, ${formatPlainPercent(firstAsk)} to ${formatPlainPercent(lastAsk)}">
       <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" preserveAspectRatio="none" focusable="false">
+        <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="currentColor" stop-opacity="0.28"/>
+          <stop offset="1" stop-color="currentColor" stop-opacity="0"/>
+        </linearGradient></defs>
+        ${area ? `<path class="spark-area" fill="url(#${gid})" stroke="none" d="${area}"/>` : ""}
         ${modelPath ? `<path class="spark-model" d="${modelPath}"/>` : ""}
         <path class="spark-ask" d="${askPath}"/>
+        ${lastPoint ? `<circle class="spark-dot" cx="${endX}" cy="${endY}" r="2.4"/>` : ""}
       </svg>
     </span>`;
   }
@@ -1383,7 +1395,11 @@
     const thin = row.data_risk ? " Fighter history is thin here, so we raised the bar. It cleared anyway, but trust it less." : "";
 
     if (row.watch) {
-      return `Our model thinks YES is ${model}. Buying ${side} costs ${sidePrice}, so ${side} has ${edge} of edge. The entry bar is ${hurdle} and the cap is ${cap}, so this clears and becomes WATCH ${side}.${thin}`;
+      if (parseNumber(row.side_price) === null) {
+        return `Our model thinks YES is ${model} and the book has not printed a quote at this point of the night yet. The edge reads ${edge} against the last known level.${thin}`;
+      }
+      const capBit = parseNumber(row.edge_cap) !== null ? ` and the cap is ${cap}` : "";
+      return `Our model thinks YES is ${model}. Buying ${side} costs ${sidePrice}, so ${side} has ${edge} of edge. The entry bar is ${hurdle}${capBit}, so this clears and becomes WATCH ${side}.${thin}`;
     }
     if (row.block_reason === "big_gap") {
       return `Our model thinks YES is ${model}, a ${edge} disagreement with the market. On settled cards, most gaps over ${cap} came from the model, so we flag this row instead of trading it.`;
@@ -1619,6 +1635,7 @@
       rowNodes.delete(key);
     });
 
+    mountAuditCharts(body);
     state.boardPainted = true;
     state.lastQuoteMoves = state.quoteMoves;
     bindRowHandlers();
@@ -1721,9 +1738,52 @@
 
     return `<div class="audit">
       <p class="audit-reason">${escapeHtml(row.reason || "")}</p>
+      <div class="audit-chart" data-chart-ticker="${escapeHtml(String(row.ticker || ""))}"></div>
       <p class="audit-title">Inside this number</p>
       ${lines.map(([label, text]) => `<div class="audit-line"><span>${escapeHtml(label)}</span><p>${escapeHtml(text)}</p></div>`).join("")}
     </div>`;
+  }
+
+  /* The expanded row gets the full price chart: the whole night of quotes
+     against the model line, not just the 92px sketch in the table. */
+  function chartTrackFor(ticker) {
+    const stored = (data.price_tracks || {})[ticker];
+    if (stored && stored.length >= 3) {
+      return { pairs: stored.map((point) => [point[0], point[1]]), stamps: null, bid: null };
+    }
+    const market = replayMarket(ticker);
+    if (!market) return null;
+    const upto = replayTape() ? Math.min(replay.frame, market.ask.length - 1) : market.ask.length - 1;
+    const pairs = [];
+    const bid = [];
+    const stamps = [];
+    const tape = replayTape();
+    for (let i = 0; i <= upto; i += 1) {
+      pairs.push([market.ask[i], market.model[i]]);
+      bid.push(market.bid ? market.bid[i] : null);
+      stamps.push(tape && tape.stamps ? tape.stamps[i] : null);
+    }
+    return pairs.length >= 3 ? { pairs, bid, stamps } : null;
+  }
+
+  const auditChartsDrawn = new Set();
+
+  function mountAuditCharts(root) {
+    (root || document).querySelectorAll(".audit-chart").forEach((holder) => {
+      if (holder.dataset.mounted) return;
+      const ticker = holder.dataset.chartTicker || "";
+      const track = chartTrackFor(ticker);
+      if (!track) { holder.remove(); return; }
+      holder.dataset.mounted = "1";
+      mountPriceChart(holder, track.pairs, {
+        bid: track.bid || undefined,
+        stamps: track.stamps || undefined,
+        label: `Price history for ${ticker}`,
+        // the draw-in plays once per market, not on every replay frame
+        animate: !auditChartsDrawn.has(ticker),
+      });
+      auditChartsDrawn.add(ticker);
+    });
   }
 
   /* ---------- cell formatting ---------- */
@@ -2064,10 +2124,7 @@
         <article class="health-block is-wide">
           <p class="health-kicker">Our numbers vs what happened</p>
           <p class="health-big ${grade}">${formatDecimal3(ece)}<span>average gap between what we said and what happened, over ${formatInteger(cal.markets)} settled markets${marketEce !== null ? ` · the market itself scored ${formatDecimal3(marketEce)}` : ""}</span></p>
-          <div class="cal-table">
-            <div class="cal-row is-head"><span>we said</span><span>n</span><span></span><span>said</span><span>happened</span></div>
-            ${rows}
-          </div>
+          <div class="ce-reliability-holder" id="reliabilityChart"></div>
           ${h2h.markets ? `<div class="h2h">
             <p class="h2h-title">Against the market, on the same pre-fight prices</p>
             <div class="h2h-rows">
@@ -2172,6 +2229,8 @@
       </article>
       ${covBlock}
       ${calBlock}`;
+    const reliabilityHolder = document.getElementById("reliabilityChart");
+    if (reliabilityHolder) mountReliabilityChart(reliabilityHolder, cal);
   }
 
   /* ---------- paper tracking ---------- */
@@ -2347,11 +2406,15 @@
     const phraseBlock = phrases.length
       ? `<article class="health-block perf-block">
           <p class="health-kicker">P/L by phrase (settled trades · win rate)</p>
-          <div class="bar-chart">${phraseRows}</div>
+          <div id="phraseBars"></div>
         </article>`
       : "";
 
     holder.innerHTML = equityBlock + phraseBlock;
+    const phraseHolder = document.getElementById("phraseBars");
+    // The engine draws every phrase on one shared zero axis; pass the full
+    // list, not the head-and-tail slice the old bars needed.
+    if (phraseHolder) mountDivergingBars(phraseHolder, phrases);
   }
 
   /* Paper cards are stored as folder slugs ("ufc_card_2026-07-18"). Show the
@@ -2495,6 +2558,518 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
+  }
+
+/* ================= chart engine: price time series =================
+   mountPriceChart(container, pairs, opts)
+     container : block element the chart fills (width measured at mount)
+     pairs     : array of [ask, model] floats in 0..1 (null = no print)
+     opts      : {
+       bid: number[]        optional, same length as pairs, draws the spread band
+       stamps: string[]     optional ISO timestamps for clock labels + tooltip
+       label: string        accessible label for the figure
+       askName: string      legend copy override (default MARKET ASK)
+       modelName: string    legend copy override (default MODEL)
+       animate: boolean     false skips the one-shot draw-in (used on resize)
+     }
+   This block also defines the shared ce* helpers used by the reliability
+   diagram and the diverging bars, so it must sit above them in app.js.
+   Depends on escapeHtml() from app.js. All colors come from CSS tokens. */
+
+  let ceUid = 0;
+
+  function ceReducedMotion() {
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  function ceNum(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+  }
+
+  function ceCents(value) {
+    return value === null ? "--" : `${Math.round(value * 100)}¢`;
+  }
+
+  function ceSignedCents(value) {
+    if (value === null) return "--";
+    const cents = Math.round(value * 100);
+    return `${cents > 0 ? "+" : ""}${cents}¢`;
+  }
+
+  function ceMoney(value) {
+    const number = ceNum(value);
+    if (number === null) return "$0.00";
+    const sign = number > 0 ? "+" : number < 0 ? "-" : "";
+    return `${sign}$${Math.abs(number).toFixed(2)}`;
+  }
+
+  function ceClock(stamp) {
+    if (!stamp) return "";
+    const date = new Date(stamp);
+    if (Number.isNaN(date.getTime())) return String(stamp);
+    return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+
+  /* One-shot draw-in. Solid paths tagged data-draw sweep in via dasharray.
+     Dashed or filled layers tagged data-draw-fade fade in with a stagger
+     driven by the .ce-pre class so each lands on its own CSS opacity.
+     Inline styles are cleaned afterwards: nothing keeps animating. */
+  function ceAnimateIn(svg) {
+    if (ceReducedMotion()) return;
+    svg.querySelectorAll("[data-draw]").forEach((path) => {
+      if (!path.getAttribute("d")) return;
+      const length = path.getTotalLength ? path.getTotalLength() : 0;
+      if (!length) return;
+      path.style.strokeDasharray = String(length);
+      path.style.strokeDashoffset = String(length);
+      path.getBoundingClientRect();
+      path.style.transition = "stroke-dashoffset 450ms cubic-bezier(0.22, 1, 0.36, 1)";
+      path.style.strokeDashoffset = "0";
+      window.setTimeout(() => {
+        path.style.strokeDasharray = "";
+        path.style.strokeDashoffset = "";
+        path.style.transition = "";
+      }, 600);
+    });
+    const fades = svg.querySelectorAll("[data-draw-fade]");
+    if (fades.length) {
+      svg.classList.add("ce-pre");
+      fades.forEach((node, index) => { node.style.transitionDelay = `${120 + index * 60}ms`; });
+      svg.getBoundingClientRect();
+      svg.classList.remove("ce-pre");
+      window.setTimeout(() => { fades.forEach((node) => { node.style.transitionDelay = ""; }); }, 1400);
+    }
+  }
+
+  function mountPriceChart(container, pairs, opts = {}) {
+    if (container.__ceRO) { container.__ceRO.disconnect(); container.__ceRO = null; }
+
+    const bids = Array.isArray(opts.bid) ? opts.bid : null;
+    const stamps = Array.isArray(opts.stamps) ? opts.stamps : null;
+    let points = (pairs || []).map((pair, i) => ({
+      ask: ceNum(pair && pair[0]),
+      model: ceNum(pair && pair[1]),
+      bid: bids ? ceNum(bids[i]) : null,
+      stamp: stamps ? stamps[i] : null,
+    }));
+    // Cap the DOM cost: 480 kept points is denser than any screen can show.
+    if (points.length > 480) {
+      const step = points.length / 480;
+      const kept = [];
+      for (let k = 0; k < 480; k += 1) kept.push(points[Math.floor(k * step)]);
+      kept[kept.length - 1] = points[points.length - 1];
+      points = kept;
+    }
+    const n = points.length;
+    const alive = points.some((p) => p.ask !== null || p.model !== null);
+    if (!alive) {
+      container.innerHTML = `<div class="ce-empty">
+        <span class="ce-empty-mark">--¢</span>
+        <strong>No price history</strong>
+        <span>Points land here the next time this market prints.</span>
+      </div>`;
+      return;
+    }
+
+    const uid = ++ceUid;
+    const width = Math.max(320, Math.round(container.getBoundingClientRect().width) || 960);
+    const height = Math.max(150, Math.round(width * 5 / 16));
+    const pad = { top: 14, right: 78, bottom: 26, left: 48 };
+    const plotW = width - pad.left - pad.right;
+    const plotH = height - pad.top - pad.bottom;
+    const floorY = pad.top + plotH;
+
+    const vals = [];
+    points.forEach((p) => {
+      if (p.ask !== null) vals.push(p.ask);
+      if (p.bid !== null) vals.push(p.bid);
+      if (p.model !== null) vals.push(p.model);
+    });
+    let lo = Math.min(...vals);
+    let hi = Math.max(...vals);
+    const breathe = Math.max(0.03, (hi - lo) * 0.12);
+    lo = Math.max(0, lo - breathe);
+    hi = Math.min(1, hi + breathe);
+    if (hi - lo < 0.06) {
+      const mid = (hi + lo) / 2;
+      lo = Math.max(0, mid - 0.04);
+      hi = Math.min(1, mid + 0.04);
+    }
+
+    const x = (i) => (n === 1 ? pad.left + plotW / 2 : pad.left + (i / (n - 1)) * plotW);
+    const y = (v) => pad.top + (1 - (v - lo) / (hi - lo)) * plotH;
+
+    // Pen-up line building: null values break the stroke instead of lying
+    // across the gap with an interpolated segment.
+    const linePath = (key) => {
+      let d = "";
+      let pen = false;
+      for (let i = 0; i < n; i += 1) {
+        const v = points[i][key];
+        if (v === null) { pen = false; continue; }
+        d += `${pen ? "L" : "M"}${x(i).toFixed(1)} ${y(v).toFixed(1)} `;
+        pen = true;
+      }
+      return d.trim();
+    };
+
+    const runsOf = (test) => {
+      const runs = [];
+      let run = [];
+      for (let i = 0; i < n; i += 1) {
+        if (test(points[i])) run.push(i);
+        else if (run.length) { runs.push(run); run = []; }
+      }
+      if (run.length) runs.push(run);
+      return runs;
+    };
+
+    const areaPath = runsOf((p) => p.ask !== null).filter((r) => r.length > 1).map((run) => {
+      const top = run.map((i) => `${x(i).toFixed(1)} ${y(points[i].ask).toFixed(1)}`).join(" L");
+      return `M${x(run[0]).toFixed(1)} ${floorY} L${top} L${x(run[run.length - 1]).toFixed(1)} ${floorY} Z`;
+    }).join(" ");
+
+    const bandPath = runsOf((p) => p.ask !== null && p.bid !== null).filter((r) => r.length > 1).map((run) => {
+      const fwd = run.map((i) => `${x(i).toFixed(1)} ${y(points[i].ask).toFixed(1)}`).join(" L");
+      const back = run.slice().reverse().map((i) => `${x(i).toFixed(1)} ${y(points[i].bid).toFixed(1)}`).join(" L");
+      return `M${fwd} L${back} Z`;
+    }).join(" ");
+
+    // A point with null neighbors draws no stroke, so give it a dot.
+    const lonely = (key) => points.map((p, i) => {
+      if (p[key] === null) return "";
+      const before = i > 0 ? points[i - 1][key] : null;
+      const after = i < n - 1 ? points[i + 1][key] : null;
+      if (before !== null || after !== null) return "";
+      return `<circle cx="${x(i).toFixed(1)}" cy="${y(p[key]).toFixed(1)}" r="3" fill="${key === "ask" ? "var(--acid)" : "var(--ink)"}"/>`;
+    }).join("");
+
+    const ticks = [0, 1, 2, 3].map((step) => {
+      const v = lo + ((hi - lo) * step) / 3;
+      const ty = y(v);
+      return `<line x1="${pad.left}" y1="${ty.toFixed(1)}" x2="${width - pad.right}" y2="${ty.toFixed(1)}" class="ce-grid"/>
+        <text x="${pad.left - 8}" y="${(ty + 3.5).toFixed(1)}" class="ce-tick" text-anchor="end">${Math.round(v * 100)}¢</text>`;
+    }).join("");
+
+    let lastAskIndex = -1;
+    for (let i = n - 1; i >= 0; i -= 1) { if (points[i].ask !== null) { lastAskIndex = i; break; } }
+    let flag = "";
+    if (lastAskIndex >= 0) {
+      const fy = y(points[lastAskIndex].ask);
+      const flagY = Math.max(pad.top + 12, Math.min(floorY - 12, fy));
+      flag = `<g data-draw-fade>
+        <line x1="${x(lastAskIndex).toFixed(1)}" y1="${fy.toFixed(1)}" x2="${width - pad.right + 6}" y2="${flagY.toFixed(1)}" class="ce-leader"/>
+        <g class="ce-flag">
+          <rect x="${width - pad.right + 6}" y="${(flagY - 12).toFixed(1)}" width="60" height="24"/>
+          <text x="${width - pad.right + 36}" y="${(flagY + 4.5).toFixed(1)}" text-anchor="middle">${ceCents(points[lastAskIndex].ask)}</text>
+        </g>
+      </g>`;
+    }
+
+    const firstStamp = points[0].stamp ? ceClock(points[0].stamp) : "";
+    const lastStamp = points[n - 1].stamp ? ceClock(points[n - 1].stamp) : "";
+
+    container.classList.add("ce-host");
+    container.innerHTML = `
+      <figure class="ce-wrap" tabindex="0" role="group"
+        aria-label="${escapeHtml(opts.label || "Price history: market ask against model probability. Arrow keys step the crosshair.")}">
+        <svg viewBox="0 0 ${width} ${height}" class="ce-svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="ceFill${uid}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="var(--acid)" stop-opacity="0.22"/>
+              <stop offset="1" stop-color="var(--acid)" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          ${ticks}
+          ${bandPath ? `<path d="${bandPath}" class="ce-band" data-draw-fade/>` : ""}
+          ${areaPath ? `<path d="${areaPath}" fill="url(#ceFill${uid})" class="ce-area" data-draw-fade/>` : ""}
+          <path d="${linePath("model")}" class="ce-line ce-line-model" data-draw-fade/>
+          <path d="${linePath("ask")}" class="ce-line ce-line-ask" data-draw/>
+          ${lonely("model")}${lonely("ask")}
+          ${flag}
+          <g class="ce-cross" data-cross opacity="0">
+            <line y1="${pad.top}" y2="${floorY}" class="ce-cross-line"/>
+            <circle r="4.5" class="ce-dot-model"/>
+            <circle r="4.5" class="ce-dot-ask"/>
+          </g>
+          ${firstStamp ? `<text x="${pad.left}" y="${height - 7}" class="ce-tick">${escapeHtml(firstStamp)}</text>` : ""}
+          ${lastStamp ? `<text x="${width - pad.right}" y="${height - 7}" class="ce-tick" text-anchor="end">${escapeHtml(lastStamp)}</text>` : ""}
+        </svg>
+        <div class="ce-tip" hidden></div>
+        <figcaption class="ce-legend">
+          <span><i class="ce-key ce-key-ask"></i>${escapeHtml(opts.askName || "Market ask")}</span>
+          <span><i class="ce-key ce-key-model"></i>${escapeHtml(opts.modelName || "Model")}</span>
+          ${bandPath ? '<span><i class="ce-key ce-key-band"></i>Bid/ask spread</span>' : ""}
+        </figcaption>
+      </figure>`;
+
+    const wrap = container.querySelector(".ce-wrap");
+    const svg = container.querySelector(".ce-svg");
+    const cross = container.querySelector("[data-cross]");
+    const crossLine = cross.querySelector("line");
+    const dotAsk = cross.querySelector(".ce-dot-ask");
+    const dotModel = cross.querySelector(".ce-dot-model");
+    const tip = container.querySelector(".ce-tip");
+    let cursor = -1;
+
+    const showIndex = (index) => {
+      cursor = index;
+      const p = points[index];
+      const cx = x(index);
+      cross.setAttribute("opacity", "1");
+      crossLine.setAttribute("x1", cx);
+      crossLine.setAttribute("x2", cx);
+      if (p.ask !== null) {
+        dotAsk.setAttribute("cx", cx);
+        dotAsk.setAttribute("cy", y(p.ask));
+        dotAsk.setAttribute("opacity", "1");
+      } else dotAsk.setAttribute("opacity", "0");
+      if (p.model !== null) {
+        dotModel.setAttribute("cx", cx);
+        dotModel.setAttribute("cy", y(p.model));
+        dotModel.setAttribute("opacity", "1");
+      } else dotModel.setAttribute("opacity", "0");
+      const edge = p.ask !== null && p.model !== null ? p.model - p.ask : null;
+      tip.innerHTML = `
+        <strong>${escapeHtml(p.stamp ? ceClock(p.stamp) : `PT ${index + 1}/${n}`)}</strong>
+        <span>ASK <b>${ceCents(p.ask)}</b></span>
+        ${p.bid !== null ? `<span>BID <b>${ceCents(p.bid)}</b></span>` : ""}
+        <span>MODEL <b>${ceCents(p.model)}</b></span>
+        ${edge !== null ? `<span>EDGE <b class="${edge >= 0 ? "ce-up" : "ce-down"}">${ceSignedCents(edge)}</b></span>` : ""}`;
+      tip.hidden = false;
+      tip.style.left = `${(cx / width) * 100}%`;
+      tip.classList.toggle("ce-tip-flip", cx > width * 0.6);
+    };
+
+    const hideCross = () => {
+      cursor = -1;
+      cross.setAttribute("opacity", "0");
+      tip.hidden = true;
+    };
+
+    // One delegated pointer handler per chart. clientX is rescaled into
+    // viewBox space so the map survives any responsive resize of the SVG.
+    svg.addEventListener("pointermove", (event) => {
+      const rect = svg.getBoundingClientRect();
+      if (!rect.width) return;
+      const px = ((event.clientX - rect.left) / rect.width) * width;
+      const frac = plotW > 0 ? (px - pad.left) / plotW : 0;
+      showIndex(Math.max(0, Math.min(n - 1, Math.round(frac * (n - 1)))));
+    });
+    svg.addEventListener("pointerleave", hideCross);
+    wrap.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+        event.preventDefault();
+        const step = event.key === "ArrowLeft" ? -1 : 1;
+        showIndex(Math.max(0, Math.min(n - 1, (cursor < 0 ? n - 1 : cursor) + step)));
+      } else if (event.key === "Escape") {
+        hideCross();
+      }
+    });
+    wrap.addEventListener("blur", hideCross);
+
+    if (opts.animate !== false) ceAnimateIn(svg);
+
+    // Re-render (without replaying the entrance) when the container width
+    // actually changes; small jitters are ignored.
+    if (window.ResizeObserver) {
+      let lastWidth = width;
+      let timer = 0;
+      const observer = new ResizeObserver(() => {
+        const w = Math.round(container.getBoundingClientRect().width);
+        if (!w || Math.abs(w - lastWidth) < 12) return;
+        lastWidth = w;
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => {
+          mountPriceChart(container, pairs, Object.assign({}, opts, { animate: false }));
+        }, 120);
+      });
+      observer.observe(container);
+      container.__ceRO = observer;
+    }
+  }
+/* ================= chart engine: reliability diagram =================
+   mountReliabilityChart(container, calibration)
+     calibration : data.model_health.calibration
+       { bins: [{ low, high, count, mean_prediction, actual_rate }],
+         ece, market_ece, markets }  (extras optional)
+   Square plot, diagonal = perfect calibration, one dot per non-empty bin,
+   dot area scaled by bin count, stem shows the miss distance to the
+   diagonal. Dots within 5 cents of the line read as gain, misses as loss,
+   so color is never the only channel: the stem length carries it too.
+   Hovering a dot rewrites the readout strip below (delegated handler);
+   native <title> is the fallback. Needs the ce* helpers from the price
+   chart block above it. */
+
+  function mountReliabilityChart(container, calibration) {
+    const source = calibration || {};
+    const bins = (source.bins || []).filter((bin) => (ceNum(bin.count) || 0) > 0);
+    if (!bins.length) {
+      container.innerHTML = `<div class="ce-empty">
+        <span class="ce-empty-mark">0/0</span>
+        <strong>No calibration data</strong>
+        <span>Bins appear after the first settled card.</span>
+      </div>`;
+      return;
+    }
+
+    const width = Math.max(280, Math.round(container.getBoundingClientRect().width) || 420);
+    const size = Math.min(width, 460);
+    const pad = { top: 14, right: 16, bottom: 42, left: 46 };
+    const plot = size - pad.left - pad.right;
+    const height = pad.top + plot + pad.bottom;
+    const x = (v) => pad.left + v * plot;
+    const y = (v) => pad.top + (1 - v) * plot;
+    const clamp01 = (v) => Math.max(0, Math.min(1, v));
+    const maxCount = Math.max(...bins.map((bin) => bin.count));
+
+    const grid = [0.25, 0.5, 0.75].map((v) => `
+      <line x1="${x(v).toFixed(1)}" y1="${y(0).toFixed(1)}" x2="${x(v).toFixed(1)}" y2="${y(1).toFixed(1)}" class="ce-grid"/>
+      <line x1="${x(0).toFixed(1)}" y1="${y(v).toFixed(1)}" x2="${x(1).toFixed(1)}" y2="${y(v).toFixed(1)}" class="ce-grid"/>`).join("");
+
+    const axisTicks = [0, 0.5, 1].map((v) => `
+      <text x="${x(v).toFixed(1)}" y="${(y(0) + 16).toFixed(1)}" class="ce-tick" text-anchor="middle">${Math.round(v * 100)}</text>
+      <text x="${pad.left - 8}" y="${(y(v) + 3.5).toFixed(1)}" class="ce-tick" text-anchor="end">${Math.round(v * 100)}</text>`).join("");
+
+    const dots = bins.map((bin, i) => {
+      const px = x(clamp01(bin.mean_prediction));
+      const py = y(clamp01(bin.actual_rate));
+      const diagY = y(clamp01(bin.mean_prediction));
+      const gap = bin.actual_rate - bin.mean_prediction;
+      const r = 5 + Math.sqrt(bin.count / maxCount) * 11;
+      const tone = Math.abs(gap) <= 0.05 ? "ce-cal-good" : "ce-cal-off";
+      return `<g data-draw-fade>
+        <line x1="${px.toFixed(1)}" y1="${py.toFixed(1)}" x2="${px.toFixed(1)}" y2="${diagY.toFixed(1)}" class="ce-cal-stem"/>
+        <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${r.toFixed(1)}" class="ce-cal-dot ${tone}" data-cal="${i}">
+          <title>${Math.round(bin.low * 100)}-${Math.round(bin.high * 100)}¢ bin: model ${ceCents(bin.mean_prediction)}, actual ${ceCents(bin.actual_rate)}, n=${bin.count}</title>
+        </circle>
+      </g>`;
+    }).join("");
+
+    const ece = ceNum(source.ece);
+    const marketEce = ceNum(source.market_ece);
+    const markets = ceNum(source.markets);
+    const baseReadout = [
+      ece !== null ? `MODEL ECE ${(ece * 100).toFixed(1)}` : "",
+      marketEce !== null ? `MARKET ECE ${(marketEce * 100).toFixed(1)}` : "",
+      markets !== null ? `${markets} MARKETS SCORED` : "",
+      "DOT SIZE = BIN COUNT",
+    ].filter(Boolean).join(" · ");
+
+    container.classList.add("ce-host");
+    container.innerHTML = `
+      <figure class="ce-wrap" tabindex="0" role="group"
+        aria-label="Reliability diagram. Model predicted probability on the horizontal axis, realized rate on the vertical axis. Dots on the diagonal are perfectly calibrated. Dot size shows how many markets fell in each bin.">
+        <svg viewBox="0 0 ${size} ${height}" class="ce-svg ce-svg-cal" aria-hidden="true">
+          ${grid}
+          <rect x="${pad.left}" y="${pad.top}" width="${plot}" height="${plot}" class="ce-frame"/>
+          <line x1="${x(0).toFixed(1)}" y1="${y(0).toFixed(1)}" x2="${x(1).toFixed(1)}" y2="${y(1).toFixed(1)}" class="ce-diag" data-draw-fade/>
+          ${dots}
+          ${axisTicks}
+          <text x="${x(0.5).toFixed(1)}" y="${height - 8}" class="ce-axis" text-anchor="middle">MODEL SAID (¢)</text>
+          <text x="12" y="${y(0.5).toFixed(1)}" class="ce-axis" text-anchor="middle" transform="rotate(-90 12 ${y(0.5).toFixed(1)})">IT HAPPENED (%)</text>
+        </svg>
+        <figcaption class="ce-readout" data-readout>${baseReadout}</figcaption>
+      </figure>`;
+
+    const svg = container.querySelector(".ce-svg");
+    const readout = container.querySelector("[data-readout]");
+    const rest = readout.innerHTML;
+    svg.addEventListener("pointerover", (event) => {
+      const target = event.target.closest ? event.target.closest("[data-cal]") : null;
+      if (!target) return;
+      const bin = bins[Number(target.dataset.cal)];
+      if (!bin) return;
+      const gap = bin.actual_rate - bin.mean_prediction;
+      readout.innerHTML = `<b>${Math.round(bin.low * 100)}-${Math.round(bin.high * 100)}¢ BIN</b>` +
+        ` · N=${bin.count}` +
+        ` · MODEL ${ceCents(bin.mean_prediction)}` +
+        ` · ACTUAL ${ceCents(bin.actual_rate)}` +
+        ` · GAP <b class="${Math.abs(gap) <= 0.05 ? "ce-up" : "ce-down"}">${ceSignedCents(gap)}</b>`;
+    });
+    svg.addEventListener("pointerout", (event) => {
+      if (event.target.closest && event.target.closest("[data-cal]")) readout.innerHTML = rest;
+    });
+
+    ceAnimateIn(svg);
+  }
+/* ================= chart engine: diverging phrase bars =================
+   mountDivergingBars(container, rows)
+     rows : data.performance.by_phrase, [{ phrase, trades, wins, pnl }],
+            already sorted by P/L descending upstream.
+   Horizontal bars diverge from a shared zero axis. The axis sits where the
+   data puts it (maxNeg / span) so both sides use the same dollars-per-pixel
+   scale: no side is visually inflated. Values and win rates are always
+   visible in fixed columns, per the skill's bar guidance. Bars animate
+   width once on mount via a class flip; reduced motion renders instantly.
+   Needs the ce* helpers from the price chart block above it, plus
+   escapeHtml() from app.js. */
+
+  function mountDivergingBars(container, rows) {
+    const items = (rows || []).filter((row) => ceNum(row.pnl) !== null);
+    if (!items.length) {
+      container.innerHTML = `<div class="ce-empty">
+        <span class="ce-empty-mark">$0.00</span>
+        <strong>No settled trades</strong>
+        <span>Phrase P/L shows up after the first card settles.</span>
+      </div>`;
+      return;
+    }
+
+    const maxPos = Math.max(0, ...items.map((row) => ceNum(row.pnl)));
+    const maxNeg = Math.max(0, ...items.map((row) => -ceNum(row.pnl)));
+    const span = (maxPos + maxNeg) || 1;
+    const zero = maxNeg / span;
+    const reduce = ceReducedMotion();
+
+    const bars = items.map((row, i) => {
+      const pnl = ceNum(row.pnl) || 0;
+      const trades = ceNum(row.trades) || 0;
+      const wins = ceNum(row.wins) || 0;
+      const widthPct = Math.max(0.6, (Math.abs(pnl) / span) * 100);
+      const pos = pnl >= 0;
+      const rate = trades ? Math.round((wins / trades) * 100) : 0;
+      const anchor = pos ? "left:var(--dv-zero)" : "right:calc(100% - var(--dv-zero))";
+      return `<div class="dv-row" title="${escapeHtml(row.phrase)}: ${trades} trades, ${rate}% wins, ${escapeHtml(ceMoney(pnl))}">
+        <span class="dv-phrase">${escapeHtml(row.phrase)}</span>
+        <span class="dv-track">
+          <i class="dv-zero"></i>
+          <i class="dv-bar ${pos ? "dv-pos" : "dv-neg"}" style="${anchor};--dv-w:${widthPct.toFixed(2)}%;transition-delay:${reduce ? 0 : i * 35}ms"></i>
+        </span>
+        <span class="dv-val ${pos ? "ce-up" : "ce-down"}">${escapeHtml(ceMoney(pnl))}</span>
+        <span class="dv-meta">${trades} TR · ${rate}%</span>
+      </div>`;
+    }).join("");
+
+    const scale = `<div class="dv-row dv-scale-row" aria-hidden="true">
+      <span class="dv-lead"></span>
+      <span class="dv-track dv-scale">
+        ${maxNeg > 0 ? `<span class="dv-scale-min">-$${maxNeg.toFixed(2)}</span>` : ""}
+        <span class="dv-scale-zero">$0</span>
+        ${maxPos > 0 ? `<span class="dv-scale-max">+$${maxPos.toFixed(2)}</span>` : ""}
+      </span>
+      <span></span>
+      <span></span>
+    </div>`;
+
+    container.classList.add("ce-host");
+    container.innerHTML = `<div class="dv-chart" style="--dv-zero:${(zero * 100).toFixed(2)}%"
+      role="group" aria-label="Paper profit and loss by phrase. Bars right of the zero axis are profitable, bars left of it are losses. Exact values are printed beside each bar.">
+      ${bars}
+      ${scale}
+    </div>`;
+
+    const chart = container.querySelector(".dv-chart");
+    if (reduce) {
+      chart.classList.add("dv-in");
+    } else {
+      // Double rAF: first frame paints the zero-width bars, second flips
+      // the class so every bar transitions from a committed initial state.
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => chart.classList.add("dv-in"));
+      });
+    }
   }
 
   init();

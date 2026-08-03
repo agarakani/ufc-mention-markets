@@ -1,69 +1,75 @@
-/* DEAD AIR
-   This product prices words a commentator may or may not say, and most of
-   these books are untraded: our number usually sits inside a very wide
-   bid/ask. That empty space is the subject — "dead air" in a broadcast truck,
-   an untraded book on a desk — so the market row IS the design: one shared
-   logit axis per market, the quote blocks at each end, and our number as the
-   only pure white object on the page.
+/* FLOODLIGHT
+   Kinetic Brutalism, applied from the ui-ux-pro-max design system rather than
+   invented: near-black navy ground, hard 2px borders, zero radius, oversized
+   uppercase display type, and one acid flood that inverts whatever the user
+   touches. Charts are the product here, drawn big with gradient fills.
 
    Rules of the system:
-   - The accent is luminance, not hue. #fff means "our number". Nothing else.
+   - The acid flood means "interactive, and you are on it". Nothing else is acid.
    - Red/blue mean fighter corners, never market sides. Sides are words.
-   - Green/red are text-only, and only ever on signed money.
-   - --ink-3 is a STROKE color. It never carries text (it would fail contrast).
-   - Radius 0 everywhere: captions and order-book blocks are hard-edged. */
+   - Green/red carry signed money and edge, as text or chart ink only.
+   - Permanent animation lives only in small strips; everything else is
+     one-shot, triggered by entry or by data changing. */
 
 :root {
   color-scheme: dark;
 
-  /* video black, never warm paper */
-  --void: #06080b;
-  --rail: #0a0d12;
-  --lane: #0e1219;
-  --lane-hover: #131923;
+  /* ground, from the skill's dark trading palette */
+  --bg: #020617;
+  --surface: #0f172a;
+  --surface-2: #1e293b;
   --cue-box: #000000;
 
-  /* Rules. --edge-line and --edge-strong are decorative separators only.
-     Anything that marks the edge of a control uses --edge-control, which
-     clears the 3:1 floor that WCAG 1.4.11 sets for interface boundaries. */
-  --edge-line: #1b212b;
-  --edge-strong: #2c3542;
-  --edge-control: #64748b;   /* 4.24:1 on --void */
+  /* borders: decorative separators vs control boundaries (WCAG 1.4.11) */
+  --border: #334155;
+  --border-strong: #475569;
+  --edge-control: #64748b;
 
-  --ink: #eef1f5;
-  --ink-2: #98a1ae;
-  --ink-3: #5f6976;      /* strokes only, never text: 3.6:1 fails the floor */
+  --ink: #f8fafc;
+  --ink-2: #94a3b8;
+  --ink-3: #64748b;      /* strokes and axis text at 14px+, never body copy */
   --white-hot: #ffffff;
-  --ink-on-fill: #06080b; /* ink for filled green or red chips */
+  --ink-on-fill: #020617;
+
+  /* the flood: Kinetic Brutalism's inversion accent */
+  --acid: #dfe104;
+  --on-acid: #000000;
 
   /* the sport's corners — fighters only */
-  --red-corner: #d8453e;
-  --blue-corner: #5a93e0;
+  --red-corner: #f43f5e;
+  --blue-corner: #60a5fa;
 
-  /* money — text only, always signed */
-  --gain: #5bd1a0;
-  --gain-bright: #3ddc97;   /* 9.0:1 on --void */
-  --loss: #f2695f;
+  /* money and edge */
+  --gain: #22c55e;
+  --gain-bright: #4ade80;
+  --loss: #f87171;
   --tally: #ff2d1f;
-  --select: #24303f;
-  --ticker-bed: #090c12;
-  --tile-wash: #0c1017;
-  --row-watch: #10161f;
-  --lane-bed: #12171f;
-  --lane-tick: #1e2531;
-  --lane-dead: #212a37;
+  --select: #1e293b;
+  --ticker-bed: #000000;
+  --tile-wash: #0b1120;
+  --row-watch: #0f172a;
+  --lane-bed: #16213a;
+  --lane-tick: #24304d;
+  --lane-dead: #2b3a5c;
 
-  --voice: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --voice: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --num: "Spline Sans Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --prose: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --prose: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
   --ease: cubic-bezier(0.2, 0, 0, 1);
+  --snap: 100ms;   /* the brutalist color snap */
 
-  /* legacy aliases still referenced by generated markup */
+  /* aliases that older generated markup still reads */
+  --void: var(--bg);
+  --rail: var(--surface);
+  --lane: var(--lane-bed);
+  --lane-hover: var(--surface-2);
+  --edge-line: var(--border);
+  --edge-strong: var(--border-strong);
   --pos: var(--gain);
   --neg: var(--loss);
   --muted: var(--ink-2);
-  --hairline: var(--edge-line);
+  --hairline: var(--border);
 
   font-family: var(--prose);
   font-variant-numeric: tabular-nums slashed-zero;
@@ -1479,14 +1485,14 @@ td.num.flap-down { animation: flap-fall 480ms var(--ease) 1; }
 }
 
 /* ================= where the price came from ================= */
-.spark { flex: none; display: block; width: 54px; height: 20px; opacity: 0.9; }
-.spark svg { display: block; width: 54px; height: 20px; overflow: visible; }
-.spark.is-thin { border-bottom: 1px dotted var(--ink-3); height: 20px; }
-.spark-ask { fill: none; stroke: var(--ink-2); stroke-width: 1.25; vector-effect: non-scaling-stroke; }
-.spark-model { fill: none; stroke: var(--white-hot); stroke-width: 1; stroke-dasharray: 2 2; opacity: 0.55; vector-effect: non-scaling-stroke; }
-.spark.up .spark-ask { stroke: var(--gain-bright); }
-.spark.down .spark-ask { stroke: var(--loss); }
-tbody tr:hover .spark { opacity: 1; }
+.spark { flex: none; display: block; width: 116px; height: 30px; color: var(--ink-2); }
+.spark svg { display: block; width: 116px; height: 30px; overflow: visible; }
+.spark.is-thin { border-bottom: 1px dotted var(--ink-3); height: 30px; }
+.spark-ask { fill: none; stroke: currentColor; stroke-width: 1.6; vector-effect: non-scaling-stroke; }
+.spark-model { fill: none; stroke: var(--white-hot); stroke-width: 1; stroke-dasharray: 2 3; opacity: 0.6; vector-effect: non-scaling-stroke; }
+.spark-dot { fill: currentColor; stroke: none; }
+.spark.up { color: var(--gain-bright); }
+.spark.down { color: var(--loss); }
 
 /* ================= replay =================
    A recorded night played back, so the board can show what it does when
@@ -1610,4 +1616,326 @@ tbody tr.is-watch td:first-child::before {
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+/* ================= FLOODLIGHT kinetic layer =================
+   Appended last so it wins the cascade. The acid flood marks whatever the
+   pointer or keyboard is on; it snaps in fast and leaves fast. */
+
+h1, .stage-title, .page-head h2, .tab, .tile-name, .block-title {
+  font-family: var(--voice);
+}
+
+.stage-title {
+  font-weight: 900;
+  font-size: clamp(34px, 5vw, 72px);
+  letter-spacing: -0.03em;
+  line-height: 0.92;
+}
+
+.stage-kicker { font-weight: 800; }
+
+.tab {
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  border: 2px solid var(--border);
+  transition: background var(--snap) linear, color var(--snap) linear, border-color var(--snap) linear;
+}
+.tab:hover, .tab:focus-visible { background: var(--acid); color: var(--on-acid); border-color: var(--acid); }
+.tab:hover .tab-badge, .tab:focus-visible .tab-badge { border-color: var(--on-acid); color: var(--on-acid); }
+.tab.is-active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.tab.is-active .tab-badge { border-color: var(--bg); color: var(--bg); }
+.tab.is-active::after { display: none; }
+
+.segment {
+  border: 0;
+  font-weight: 800;
+  transition: background var(--snap) linear, color var(--snap) linear;
+}
+.segment:hover, .segment:focus-visible { background: var(--acid); color: var(--on-acid); }
+.segment.is-active { background: var(--ink); color: var(--bg); }
+
+.refresh-button {
+  border-width: 2px;
+  font-weight: 800;
+  transition: background var(--snap) linear, color var(--snap) linear, border-color var(--snap) linear;
+}
+.refresh-button:hover, .refresh-button:focus-visible {
+  background: var(--acid);
+  color: var(--on-acid);
+  border-color: var(--acid);
+}
+
+.tile { border-width: 2px; transition: background var(--snap) linear, border-color var(--snap) linear, transform 180ms var(--ease); }
+.tile:hover, .tile:focus-visible {
+  background: var(--acid);
+  border-color: var(--acid);
+  transform: translateY(-3px);
+}
+.tile:hover *, .tile:focus-visible * { color: var(--on-acid) !important; }
+.tile:hover .tile-bar, .tile:focus-visible .tile-bar { background: var(--on-acid); }
+.tile:hover::after, .tile:focus-visible::after { border-color: var(--on-acid); }
+
+.nav-fight { transition: background var(--snap) linear, color var(--snap) linear; }
+.nav-fight:hover, .nav-fight:focus-visible { background: var(--acid); color: var(--on-acid); box-shadow: none; }
+.nav-fight:hover *, .nav-fight:focus-visible * { color: var(--on-acid) !important; border-color: var(--on-acid) !important; }
+
+.nav-card-head { transition: background var(--snap) linear; }
+.nav-card-head:hover { background: var(--surface-2); }
+
+/* market rows: an acid rail and a lift, full flood stays off the data */
+tbody tr.is-expandable { transition: background var(--snap) linear; }
+tbody tr.is-expandable:hover td, tbody tr.is-expandable:focus-visible td { background: var(--surface-2); }
+tbody tr.is-expandable:hover td:first-child, tbody tr.is-expandable:focus-visible td:first-child { box-shadow: inset 4px 0 0 var(--acid); }
+
+/* the watch call is always flooded: it is the product's strongest word */
+.pill.warn { background: var(--acid); color: var(--on-acid); border-color: var(--acid); font-weight: 700; }
+tbody tr.is-watch td:first-child::before { background: var(--acid); }
+.lane .mark.is-watch { box-shadow: 0 0 0 3px rgba(223, 225, 4, 0.35); }
+
+/* ticker: a black strip with 2px rails, the one permanent motion on the page */
+.ticker { border-top: 2px solid var(--border); border-bottom: 2px solid var(--border); background: var(--ticker-bed); }
+.tick-item b { color: var(--acid); }
+.tick-item em.up { color: var(--gain-bright); }
+
+/* heat grid: bigger, hard-edged, acid ring on watch */
+.heat .cell { width: 74px; height: 42px; font-size: 11.5px; transition: transform 140ms var(--ease), outline-color var(--snap) linear; }
+.heat .cell.is-watch { box-shadow: inset 0 0 0 2px var(--acid); }
+.heat .cell:hover { transform: scale(1.12); outline: 2px solid var(--ink); z-index: 2; position: relative; }
+.heat .row-head { font-weight: 800; }
+
+/* sparklines grow up: area fill, end dot */
+.spark { width: 116px; height: 30px; }
+.spark svg { width: 116px; height: 30px; }
+
+/* stage: acid slab under the countdown label, harder borders */
+.stage { border: 2px solid var(--border); }
+.stage-replaying { border: 2px solid var(--acid); color: var(--acid); font-weight: 800; }
+.replay-bar { border: 2px solid var(--border); border-bottom: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tile:hover, .tile:focus-visible { transform: none; }
+  .heat .cell:hover { transform: none; }
+}
+
+/* Under 1440 the lane already prints model and bid to ask, so the separate
+   price columns are duplicates; dropping them keeps the table on one screen. */
+@media (max-width: 1439px) {
+  .price-col { display: none; }
+  .spark, .spark svg { width: 92px; }
+  .lane-col { min-width: 224px; }
+}
+/* ================= chart engine ================= */
+/* Tokens consumed: --bg --ink --acid --gain --loss --border --surface.
+   0px radius everywhere, 2px structural borders, tabular numerals on every
+   figure, 100ms color transitions, one-shot 300-450ms entrances. */
+
+.ce-host { position: relative; }
+.ce-wrap { position: relative; margin: 0; }
+.ce-wrap:focus-visible { outline: 2px solid var(--acid); outline-offset: 3px; }
+.ce-svg { display: block; width: 100%; height: auto; }
+.ce-svg-cal { max-width: 460px; }
+
+/* scaffolding */
+.ce-grid { stroke: var(--border); stroke-width: 1; stroke-dasharray: 1 4; }
+.ce-frame { fill: none; stroke: var(--border); stroke-width: 2; }
+.ce-tick,
+.ce-axis {
+  fill: var(--ink);
+  opacity: 0.72;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+.ce-axis { font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; }
+
+/* series */
+.ce-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: square; transition: stroke 100ms linear; }
+.ce-line-ask { stroke: var(--acid); }
+.ce-line-model { stroke: var(--ink); stroke-dasharray: 6 4; opacity: 0.85; }
+.ce-band { fill: var(--acid); opacity: 0.1; }
+.ce-area { pointer-events: none; }
+
+/* last-value flag: acid flood, ink pressed to the page background */
+.ce-leader { stroke: var(--border); stroke-width: 1; stroke-dasharray: 2 3; }
+.ce-flag rect { fill: var(--acid); }
+.ce-flag text {
+  fill: var(--bg);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* crosshair */
+.ce-cross { pointer-events: none; }
+.ce-cross-line { stroke: var(--ink); stroke-width: 1; opacity: 0.5; }
+.ce-dot-ask { fill: var(--acid); stroke: var(--bg); stroke-width: 2; }
+.ce-dot-model { fill: var(--ink); stroke: var(--bg); stroke-width: 2; }
+
+/* tooltip */
+.ce-tip {
+  position: absolute;
+  top: 8px;
+  transform: translateX(12px);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 132px;
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 0;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  pointer-events: none;
+  z-index: 3;
+}
+.ce-tip-flip { transform: translateX(calc(-100% - 12px)); }
+.ce-tip strong { font-size: 10px; letter-spacing: 0.14em; opacity: 0.72; }
+.ce-tip span { display: flex; justify-content: space-between; gap: 12px; }
+.ce-tip b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.ce-up { color: var(--gain); }
+.ce-down { color: var(--loss); }
+
+/* legend */
+.ce-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 8px;
+  color: var(--ink);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.ce-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.ce-key { width: 14px; height: 0; border-top: 2px solid var(--acid); }
+.ce-key-model { border-top-style: dashed; border-top-color: var(--ink); }
+.ce-key-band { width: 14px; height: 8px; border: 0; background: var(--acid); opacity: 0.18; }
+
+/* empty state */
+.ce-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 150px;
+  padding: 24px;
+  text-align: center;
+  border: 2px dashed var(--border);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--ink);
+}
+.ce-empty-mark { font-size: 28px; font-weight: 800; color: var(--acid); font-variant-numeric: tabular-nums; }
+.ce-empty strong { font-size: 13px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; }
+.ce-empty span:last-child { font-size: 12px; opacity: 0.72; }
+
+/* reliability diagram */
+.ce-diag { stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 5 4; opacity: 0.5; }
+.ce-cal-stem { stroke: var(--border); stroke-width: 2; }
+.ce-cal-dot { stroke: var(--bg); stroke-width: 2; cursor: crosshair; transition: opacity 100ms linear, fill 100ms linear; }
+.ce-cal-good { fill: var(--gain); }
+.ce-cal-off { fill: var(--loss); }
+.ce-cal-dot:hover { opacity: 0.8; }
+.ce-readout {
+  min-height: 20px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 2px solid var(--border);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.ce-readout b { font-weight: 800; }
+
+/* diverging phrase bars */
+.dv-chart { display: flex; flex-direction: column; gap: 6px; }
+.dv-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr) 78px 86px;
+  align-items: center;
+  gap: 10px;
+  min-height: 28px;
+}
+.dv-phrase {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dv-track { position: relative; height: 18px; background: var(--surface); border: 1px solid var(--border); }
+.dv-zero { position: absolute; top: -3px; bottom: -3px; left: var(--dv-zero); width: 2px; background: var(--ink); }
+.dv-bar {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  width: 0;
+  transition: width 450ms cubic-bezier(0.22, 1, 0.36, 1), background-color 100ms linear;
+}
+.dv-in .dv-bar { width: var(--dv-w); }
+.dv-pos { background: var(--gain); }
+.dv-neg { background: var(--loss); }
+.dv-val { font-size: 12px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+.dv-meta {
+  color: var(--ink);
+  opacity: 0.66;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-align: right;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.dv-scale-row { min-height: 16px; }
+.dv-scale { height: 14px; background: none; border: 0; }
+.dv-scale span {
+  position: absolute;
+  top: 0;
+  color: var(--ink);
+  opacity: 0.6;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+.dv-scale-min { left: 0; }
+.dv-scale-zero { left: var(--dv-zero); transform: translateX(-50%); }
+.dv-scale-max { right: 0; }
+
+/* entrance choreography: .ce-pre holds fade layers at 0 until the class
+   is dropped one frame later; each element then rises to its own opacity */
+[data-draw-fade] { transition: opacity 300ms ease; }
+.ce-pre [data-draw-fade] { opacity: 0 !important; }
+
+/* motion off means everything lands instantly */
+@media (prefers-reduced-motion: reduce) {
+  [data-draw-fade],
+  .dv-bar,
+  .ce-cal-dot,
+  .ce-line { transition: none !important; }
+}
+
+/* breakpoints */
+@media (max-width: 640px) {
+  .dv-row { grid-template-columns: minmax(0, 1fr) 70px 76px; }
+  .dv-phrase { grid-column: 1 / -1; margin-bottom: -2px; }
+  .dv-lead { display: none; }
+  .ce-tip { min-width: 116px; font-size: 10px; }
 }

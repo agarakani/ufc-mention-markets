@@ -113,6 +113,24 @@ def build(frames: int = DEFAULT_FRAMES, history_path: Path = HISTORY) -> dict:
     if len(card) == 7 and card[2:5].upper() in months:
         card_date = f"20{card[:2]}-{months[card[2:5].upper()]}-{card[5:7]}"
 
+    # The price history never carried fighter names; the settled-results
+    # labels do. Join them in so the replay can name its fights.
+    names: dict[str, tuple[str, str]] = {}
+    labels_path = ROOT / "data" / "processed" / "kalshi_results_labels.csv"
+    if labels_path.exists():
+        with labels_path.open(newline="", encoding="utf-8-sig") as fh:
+            for row in csv.DictReader(fh):
+                event = str(row.get("event_ticker", "")).strip()
+                f1 = str(row.get("fighter_1", "")).strip()
+                f2 = str(row.get("fighter_2", "")).strip()
+                if event and f1 and f2 and event not in names:
+                    names[event] = (f1, f2)
+    for entry in markets.values():
+        if not entry["fighter_1"]:
+            f1, f2 = names.get(entry["event_ticker"], ("", ""))
+            entry["fighter_1"] = f1
+            entry["fighter_2"] = f2
+
     usable = [m for m in markets.values() if m["ask"][-1] is not None and m["model"][-1] is not None]
     usable.sort(key=lambda m: -(abs((m["model"][-1] or 0) - (m["ask"][-1] or 0))))
     return {
