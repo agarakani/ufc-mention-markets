@@ -14,50 +14,60 @@
 :root {
   color-scheme: dark;
 
-  /* ground, from the skill's dark trading palette */
-  --bg: #020617;
-  --surface: #0f172a;
-  --surface-2: #1e293b;
-  --cue-box: #000000;
+  /* THE WORD EXCHANGE — obsidian ground with a violet cast */
+  --bg: #0b0b11;
+  --bg-deep: #08080d;
+  --surface: #14141d;
+  --surface-2: #1b1c28;
+  --cue-box: #0d0d15;
 
   /* borders: decorative separators vs control boundaries (WCAG 1.4.11) */
-  --border: #334155;
-  --border-strong: #475569;
-  --edge-control: #64748b;
+  --border: #2a2b3a;
+  --border-strong: #3a3c52;
+  --edge-control: #6a6d8f;
 
-  --ink: #f8fafc;
-  --ink-2: #94a3b8;
-  --ink-3: #64748b;      /* strokes and axis text at 14px+, never body copy */
+  --ink: #f2efe9;        /* warm off-white */
+  --ink-2: #a7a4b8;
+  --ink-3: #6f6c84;      /* strokes and axis text at 14px+, never body copy */
   --white-hot: #ffffff;
-  --ink-on-fill: #020617;
+  --ink-on-fill: #0b0b11;
 
-  /* the flood: Kinetic Brutalism's inversion accent */
-  --acid: #dfe104;
-  --on-acid: #000000;
+  /* the exchange accents */
+  --violet: #8b7bff;     /* primary: selection, watch, focus, live line */
+  --periwinkle: #aab4ff;
+  --cyan: #56c8ff;       /* informational: links, scrub, crosshair */
+  --coral: #ff6a55;      /* urgency: NEW, replay badge, expiring */
+  --acid: var(--violet); /* legacy alias: every old flood rule now lands violet */
+  --on-acid: #0b0b11;
 
   /* the sport's corners — fighters only */
-  --red-corner: #f43f5e;
-  --blue-corner: #60a5fa;
+  --red-corner: #e5484d;
+  --blue-corner: #5a9df0;
 
-  /* money and edge */
-  --gain: #22c55e;
-  --gain-bright: #4ade80;
-  --loss: #f87171;
-  --tally: #ff2d1f;
-  --select: #1e293b;
-  --ticker-bed: #000000;
-  --tile-wash: #0b1120;
-  --row-watch: #0f172a;
-  --lane-bed: #16213a;
-  --lane-tick: #24304d;
-  --lane-dead: #2b3a5c;
+  /* money: emerald strictly for positive, muted red for negative */
+  --gain: #2fbf83;
+  --gain-bright: #43d698;
+  --loss: #f0655f;
+  --tally: #ff4d3d;
+  --select: #232438;
+  --ticker-bed: #08080d;
+  --tile-wash: #12121b;
+  --row-watch: #161623;
+  --lane-bed: #1a1b29;
+  --lane-tick: #262740;
+  --lane-dead: #303252;
 
+  --radius: 10px;
+  --radius-sm: 6px;
+
+  --display: "Bricolage Grotesque", "Inter", Helvetica, Arial, sans-serif;
   --voice: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --num: "Spline Sans Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --prose: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
   --ease: cubic-bezier(0.2, 0, 0, 1);
-  --snap: 100ms;   /* the brutalist color snap */
+  --pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --snap: 130ms;
 
   /* aliases that older generated markup still reads */
   --void: var(--bg);
@@ -1938,4 +1948,508 @@ tbody tr.is-watch td:first-child::before { background: var(--acid); }
   .dv-phrase { grid-column: 1 / -1; margin-bottom: -2px; }
   .dv-lead { display: none; }
   .ce-tip { min-width: 116px; font-size: 10px; }
+}
+/* ================= THE WORD EXCHANGE material layer =================
+   Appended last so it wins the cascade. Retires the acid flood: interaction
+   now reads as lift and light, watch reads as a violet rail, urgency is
+   coral, and the geometry rounds off. */
+
+h1, .stage-title, .page-head h2, .tile-name, .mcard-phrase, .nav-card h2,
+.tape-name, .matchup-hero { font-family: var(--display); }
+
+.tab, .segment, .refresh-button, .tile, .nav-card-head, .pill, .caveat,
+.chip-new, #phraseFilter, #searchInput, .stat-tile, .health-block,
+.tracking-card, .stage, .replay-bar, .heat .cell, .audit, .cue {
+  border-radius: var(--radius-sm);
+}
+.tile, .stage, .replay-bar, .health-block, .tracking-card { border-radius: var(--radius); }
+
+/* navigation: violet location, no inversion flash */
+.tab { border-width: 1px; font-weight: 700; letter-spacing: 0.1em; }
+.tab:hover, .tab:focus-visible { background: var(--surface-2); color: var(--ink); border-color: var(--edge-control); }
+.tab:hover .tab-badge, .tab:focus-visible .tab-badge { border-color: var(--edge-control); color: var(--ink); }
+.tab.is-active { background: var(--violet); color: var(--ink-on-fill); border-color: var(--violet); }
+.tab.is-active .tab-badge { border-color: var(--ink-on-fill); color: var(--ink-on-fill); }
+
+.segment:hover, .segment:focus-visible { background: var(--surface-2); color: var(--ink); }
+.segment.is-active { background: var(--violet); color: var(--ink-on-fill); }
+
+.refresh-button:hover, .refresh-button:focus-visible {
+  background: var(--surface-2); color: var(--ink); border-color: var(--edge-control);
+}
+
+/* tiles: lift and edge light, never a flood */
+.tile:hover, .tile:focus-visible {
+  background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 16%, var(--surface)), var(--surface) 70%);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  transform: translateY(-3px);
+}
+.tile:hover *, .tile:focus-visible * { color: var(--ink) !important; }
+.tile:hover .tile-bar, .tile:focus-visible .tile-bar { background: var(--accent); }
+.tile:hover::after, .tile:focus-visible::after { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+
+.nav-fight:hover, .nav-fight:focus-visible { background: var(--surface-2); color: var(--ink); }
+.nav-fight:hover *, .nav-fight:focus-visible * { color: var(--ink) !important; }
+
+/* the watch call: violet, luminous, unmistakable */
+.pill.warn { background: var(--violet); color: var(--ink-on-fill); border-color: var(--violet); }
+tbody tr.is-watch td:first-child::before { background: var(--violet); }
+tbody tr.is-expandable:hover td:first-child,
+tbody tr.is-expandable:focus-visible td:first-child { box-shadow: inset 3px 0 0 var(--violet); }
+.lane .mark.is-watch { box-shadow: 0 0 0 3px rgba(139, 123, 255, 0.35); }
+.heat .cell.is-watch { box-shadow: inset 0 0 0 2px var(--violet); }
+
+/* urgency is coral */
+.chip-new { border-color: var(--coral); color: var(--coral); }
+.signal-new { border-color: var(--coral); background: rgba(255, 106, 85, 0.12); color: var(--coral); }
+.stage-replaying { border: 1px solid var(--coral); color: var(--coral); border-radius: var(--radius-sm); }
+.live-pill::before { background: var(--tally); }
+
+/* ticker text: periwinkle phrases on the black tape */
+.tick-item b { color: var(--periwinkle); }
+
+/* stage: violet-cast arena light replaces the orange wash */
+.stage {
+  background:
+    radial-gradient(120% 140% at 18% -30%, rgba(139, 123, 255, 0.16), transparent 58%),
+    radial-gradient(80% 120% at 88% 110%, rgba(86, 200, 255, 0.10), transparent 60%),
+    linear-gradient(180deg, #12121c, var(--bg-deep) 72%);
+  border: 1px solid var(--border);
+}
+.stage.is-tonight {
+  background:
+    radial-gradient(120% 140% at 18% -30%, rgba(255, 77, 61, 0.20), transparent 58%),
+    radial-gradient(80% 120% at 88% 110%, rgba(139, 123, 255, 0.12), transparent 60%),
+    linear-gradient(180deg, #171019, var(--bg-deep) 72%);
+}
+.stage-title { font-weight: 800; letter-spacing: -0.02em; }
+.stage-stats strong.hot { color: var(--gain-bright); }
+
+/* cards and blocks: layered material with inner stroke */
+.tile, .health-block, .tracking-card, .stat-tiles, .panel {
+  box-shadow: inset 0 0 0 1px rgba(242, 239, 233, 0.03);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile:hover, .tile:focus-visible { transform: none; }
+}
+
+/* mode identity: one badge always names the state of everything below it */
+.mode-badge {
+  padding: 3px 9px;
+  border-radius: var(--radius-sm);
+  font-family: var(--voice);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.mode-badge--live { background: rgba(255, 77, 61, 0.15); color: var(--tally); border: 1px solid rgba(255, 77, 61, 0.4); }
+.mode-badge--next { background: rgba(86, 200, 255, 0.12); color: var(--cyan); border: 1px solid rgba(86, 200, 255, 0.35); }
+.mode-badge--replay { background: rgba(255, 106, 85, 0.14); color: var(--coral); border: 1px solid rgba(255, 106, 85, 0.4); }
+
+.stage.is-replay {
+  background:
+    radial-gradient(120% 140% at 18% -30%, rgba(255, 106, 85, 0.14), transparent 58%),
+    radial-gradient(80% 120% at 88% 110%, rgba(139, 123, 255, 0.10), transparent 60%),
+    linear-gradient(180deg, #14101a, var(--bg-deep) 72%);
+}
+
+.tape-invite {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 20px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: linear-gradient(160deg, rgba(139, 123, 255, 0.12), var(--surface) 70%);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 180ms var(--ease), border-color var(--snap) linear, background var(--snap) linear;
+}
+.tape-invite:hover, .tape-invite:focus-visible {
+  transform: translateY(-2px);
+  border-color: var(--violet);
+}
+.tape-invite-kicker { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--periwinkle); }
+.tape-invite-title { font-family: var(--display); font-size: 20px; font-weight: 800; }
+.tape-invite-sub { font-size: 12px; color: var(--ink-2); }
+
+.stage-exit {
+  align-self: flex-end;
+  padding: 10px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color var(--snap) linear, border-color var(--snap) linear;
+}
+.stage-exit:hover, .stage-exit:focus-visible { color: var(--ink); border-color: var(--edge-control); }
+/* ---------- Replay Timeline (rtl-) ----------
+   Consumes shell tokens: --bg-deep --surface --surface-2 --border --border-strong
+   --edge-control --ink --ink-2 --ink-3 --violet --periwinkle --cyan --coral */
+
+.rtl {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 64px;
+  padding: 0 14px;
+  background:
+    radial-gradient(130% 200% at 10% 0%, rgba(139, 123, 255, 0.07), transparent 55%),
+    linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 1px 0 rgba(242, 239, 233, 0.045),
+    0 10px 28px rgba(8, 8, 13, 0.45);
+  color: var(--ink);
+  font-family: Inter, system-ui, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* clusters */
+.rtl-cluster { display: flex; align-items: center; gap: 8px; flex: none; }
+.rtl-cluster--right { gap: 12px; }
+
+/* buttons */
+.rtl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  min-width: 36px;
+  padding: 0 8px;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  color: var(--ink-2);
+  cursor: pointer;
+  font: 600 12px/1 "Spline Sans Mono", ui-monospace, monospace;
+  letter-spacing: 0.04em;
+  transition:
+    transform 150ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 150ms cubic-bezier(0.2, 0, 0, 1);
+}
+.rtl-btn:hover { color: var(--ink); border-color: var(--edge-control); }
+.rtl-btn:active { transform: scale(0.94); }
+.rtl-btn:focus-visible { outline: 2px solid var(--violet); outline-offset: 2px; }
+
+.rtl-play { width: 36px; height: 36px; min-width: 36px; padding: 0; }
+.rtl-play svg { width: 15px; height: 15px; fill: currentColor; }
+.rtl-ic-pause { display: none; }
+.rtl--playing .rtl-ic-play { display: none; }
+.rtl--playing .rtl-ic-pause { display: initial; }
+.rtl--playing .rtl-play {
+  color: var(--violet);
+  border-color: var(--violet);
+  box-shadow:
+    inset 0 0 0 1px rgba(139, 123, 255, 0.25),
+    0 0 14px rgba(139, 123, 255, 0.30);
+}
+
+/* track */
+.rtl-track {
+  position: relative;
+  flex: 1 1 auto;
+  align-self: stretch;
+  margin: 12px 0;
+  min-width: 160px;
+  background: linear-gradient(180deg, rgba(8, 8, 13, 0.92), rgba(8, 8, 13, 0.55));
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px var(--border);
+  cursor: pointer;
+  touch-action: none; /* pointer-capture drag on touch */
+}
+.rtl--dragging, .rtl--dragging .rtl-track { cursor: grabbing; }
+
+/* activity bars: base layer in ink-3, periwinkle layer revealed by clip-path.
+   paint() mutates only the clip-path inset — one style write per frame. */
+.rtl-bars {
+  position: absolute;
+  inset: 6px 3px;
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  pointer-events: none;
+}
+.rtl-bar {
+  flex: 1 1 0;
+  min-width: 1px;
+  background: var(--ink-3);
+  opacity: 0.55;
+  border-radius: 1px 1px 0 0;
+}
+.rtl-bars--lit { will-change: clip-path; }
+.rtl-bars--lit .rtl-bar { background: var(--periwinkle); opacity: 0.9; }
+
+/* markers */
+.rtl-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  margin-left: -5px;
+  z-index: 1;
+}
+.rtl-marker::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 50%;
+  width: 1px;
+  margin-left: -0.5px;
+  background: var(--edge-control);
+}
+.rtl-marker-tip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translate(-50%, 4px);
+  opacity: 0;
+  padding: 4px 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  box-shadow: 0 6px 16px rgba(8, 8, 13, 0.55);
+  font: 500 11px/1.2 Inter, system-ui, sans-serif;
+  color: var(--ink-2);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 3;
+  transition:
+    opacity 180ms cubic-bezier(0.2, 0, 0, 1),
+    transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.rtl-marker:hover .rtl-marker-tip { opacity: 1; transform: translate(-50%, 0); }
+
+/* playhead */
+.rtl-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.rtl-playhead::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: -1px;
+  width: 2px;
+  background: var(--cyan);
+  box-shadow: 0 0 8px rgba(86, 200, 255, 0.55);
+}
+.rtl-knob {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 18px;
+  height: 18px;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--cyan);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 1px rgba(8, 8, 13, 0.85),
+    0 0 10px rgba(86, 200, 255, 0.35);
+  cursor: grab;
+  pointer-events: auto; /* shows grab cursor; pointerdown bubbles to the track */
+}
+.rtl--dragging .rtl-knob { cursor: grabbing; }
+.rtl-track:focus-visible { outline: none; }
+.rtl-track:focus-visible .rtl-knob {
+  box-shadow:
+    0 0 0 3px rgba(139, 123, 255, 0.55),
+    0 0 14px rgba(86, 200, 255, 0.45);
+}
+
+/* right cluster */
+.rtl-timecode {
+  font: 700 20px/1 "Spline Sans Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  min-width: 9ch;      /* absorbs h:mm:ss vs hh:mm:ss so the cluster never jitters */
+  text-align: right;
+}
+.rtl-count {
+  font: 500 11px/1 "Spline Sans Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+  color: var(--ink-2);
+}
+.rtl-badge {
+  padding: 4px 7px 3px;
+  font: 800 10px/1 "Bricolage Grotesque", Inter, system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--coral);
+  background: rgba(255, 106, 85, 0.08);
+  border: 1px solid rgba(255, 106, 85, 0.45);
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rtl *,
+  .rtl *::before,
+  .rtl *::after {
+    transition: none !important;
+  }
+}/* ============================================================
+   AMBIENT LAYER — cinematic ground behind the entire app.
+   One fixed, inert layer. No JS. Readability first.
+   ============================================================ */
+
+.ambient-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;              /* behind all in-flow app content */
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  contain: strict;
+}
+
+/* ---- 1) Drifting light fields ------------------------------
+   Each field is its own small(ish) transform-only element.
+   The animation lives HERE, never on a full-viewport layer. */
+
+.amb-light {
+  position: absolute;
+  width: 62vmax;
+  height: 62vmax;
+  border-radius: 50%;
+  opacity: 0.10;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
+.amb-light--violet {
+  top: -26vmax;
+  left: -20vmax;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in srgb, var(--violet, #8b7bff) 90%, transparent) 0%,
+    color-mix(in srgb, var(--violet, #8b7bff) 35%, transparent) 38%,
+    transparent 70%
+  );
+  animation: amb-drift-a 150s ease-in-out infinite;
+}
+
+.amb-light--cyan {
+  bottom: -28vmax;
+  right: -22vmax;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in srgb, var(--cyan, #56c8ff) 85%, transparent) 0%,
+    color-mix(in srgb, var(--cyan, #56c8ff) 30%, transparent) 38%,
+    transparent 70%
+  );
+  animation: amb-drift-b 180s ease-in-out infinite;
+}
+
+@keyframes amb-drift-a {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(5vw, 3vh, 0) scale(1.07); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes amb-drift-b {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(-4vw, -4vh, 0) scale(1.05); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+/* ---- 2) Ghosted phrase band --------------------------------
+   Host fills .amb-phrase textContent at runtime; ships empty.
+   Stroke-only display type, barely-there, bleeding off edges. */
+
+.amb-phrases {
+  position: absolute;
+  inset: 0;
+}
+
+.amb-phrase {
+  position: absolute;
+  font-family: "Bricolage Grotesque", Inter, system-ui, sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 0.85;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 1px color-mix(in srgb, var(--ink, #f2efe9) 5%, transparent);
+}
+
+.amb-phrase--1 {
+  top: 4vh;
+  left: -6vw;
+  font-size: clamp(9rem, 22vw, 24rem);
+  transform: rotate(-7deg);
+  transform-origin: left top;
+}
+
+.amb-phrase--2 {
+  top: 44vh;
+  right: -10vw;
+  font-size: clamp(8rem, 19vw, 21rem);
+  transform: rotate(5deg);
+  transform-origin: right top;
+}
+
+.amb-phrase--3 {
+  bottom: -3vh;
+  left: 8vw;
+  font-size: clamp(9rem, 21vw, 23rem);
+  transform: rotate(-4deg);
+  transform-origin: left bottom;
+}
+
+/* ---- 3) Broadcast scanlines (static) ----------------------- */
+
+.amb-scanlines {
+  position: absolute;
+  inset: 0;
+  opacity: 0.015;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--ink, #f2efe9) 0px,
+    var(--ink, #f2efe9) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* ---- 4) Film grain (static, tiled inline SVG) -------------- */
+
+.amb-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 160px 160px;
+}
+
+/* ---- Motion kill-switches ---------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .amb-light {
+    animation: none;
+    will-change: auto;
+  }
+}
+
+html[data-perf="capture"] .amb-light {
+  animation-play-state: paused;
 }

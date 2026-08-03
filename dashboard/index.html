@@ -9,10 +9,21 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M6.5 1.5 L13.5 1.5 L18.5 6.5 L18.5 13.5 L13.5 18.5 L6.5 18.5 L1.5 13.5 L1.5 6.5 Z' fill='none' stroke='%2379a2ff' stroke-width='1.8'/%3E%3Cpath d='M7 10.8 L9.2 13 L13.6 7.4' fill='none' stroke='%23e1ad59' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800;900&family=Spline+Sans+Mono:wght@300;400;500;600&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600;700&family=Spline+Sans+Mono:wght@300;400;500;600&display=swap">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
+<div class="ambient-layer" aria-hidden="true">
+  <div class="amb-light amb-light--violet"></div>
+  <div class="amb-light amb-light--cyan"></div>
+  <div class="amb-phrases">
+    <span class="amb-phrase amb-phrase--1"></span>
+    <span class="amb-phrase amb-phrase--2"></span>
+    <span class="amb-phrase amb-phrase--3"></span>
+  </div>
+  <div class="amb-scanlines"></div>
+  <div class="amb-grain"></div>
+</div>
     <a class="skip-link" href="#board">Skip to the board</a>
     <main class="shell">
       <header class="topbar">
@@ -38,6 +49,7 @@
 
       <nav class="tabs" id="tabBar" aria-label="Sections">
         <button class="tab is-active" data-tab="markets" type="button">Markets</button>
+        <button class="tab" data-tab="replay" type="button">Replay</button>
         <button class="tab" data-tab="paper" type="button">Paper trades <span class="tab-badge" id="paperBadge" hidden></span></button>
         <button class="tab" data-tab="model" type="button">Model</button>
       </nav>

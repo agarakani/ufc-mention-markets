@@ -1,7 +1,220 @@
+/* Replay Timeline — signature scrub bar for UFC Mention Markets.
+   window.mountTimeline(container, opts) -> { update({ frame, playing, speed }) }
+   Built once via innerHTML; every later repaint mutates styles/text only. */
+(function () {
+  const SPEEDS = [1, 2, 4];
+  const PAD_MIN = 2;
+
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function formatStamp(raw) {
+    const date = new Date(raw);
+    if (Number.isNaN(date.getTime())) return raw ? String(raw) : "--:--:--";
+    return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" });
+  }
+
+  function mountTimeline(container, opts) {
+    const frames = Math.max(1, Math.floor(Number(opts.frames) || (opts.stamps ? opts.stamps.length : 0) || 1));
+    const activity = opts.activity || [];
+    const markers = opts.markers || [];
+    const cb = {
+      onSeek: typeof opts.onSeek === "function" ? opts.onSeek : function () {},
+      onPlayPause: typeof opts.onPlayPause === "function" ? opts.onPlayPause : function () {},
+      onSpeed: typeof opts.onSpeed === "function" ? opts.onSpeed : function () {},
+    };
+
+    function clampFrame(frame) {
+      frame = Math.round(Number(frame) || 0);
+      return Math.max(0, Math.min(frame, frames - 1));
+    }
+
+    // Precompute per-frame labels once so paint() never touches Date at 60fps.
+    const stampLabels = [];
+    for (let i = 0; i < frames; i++) stampLabels.push(formatStamp(opts.stamps && opts.stamps[i]));
+
+    const pad = Math.max(PAD_MIN, String(frames).length);
+    const framesLabel = String(frames).padStart(pad, "0");
+
+    const state = {
+      frame: clampFrame(opts.frame),
+      playing: !!opts.playing,
+      speed: SPEEDS.indexOf(opts.speed) === -1 ? 1 : opts.speed,
+    };
+
+    /* ---------- build (once) ---------- */
+
+    const bars = [];
+    for (let i = 0; i < frames; i++) {
+      const level = Math.max(0, Math.min(1, Number(activity[i]) || 0));
+      // 8% floor so silent frames still read as tape, not gaps.
+      bars.push(`<span class="rtl-bar" style="height:${(8 + level * 92).toFixed(1)}%"></span>`);
+    }
+    const barsHtml = bars.join("");
+
+    const markersHtml = markers
+      .filter((marker) => marker && marker.frame >= 0 && marker.frame < frames)
+      .map((marker) => {
+        const left = (((marker.frame + 0.5) / frames) * 100).toFixed(3);
+        return `<span class="rtl-marker" style="left:${left}%" aria-hidden="true">` +
+          `<span class="rtl-marker-tip">${escapeHtml(marker.label)}</span></span>`;
+      })
+      .join("");
+
+    container.innerHTML = `
+      <div class="rtl">
+        <div class="rtl-cluster">
+          <button type="button" class="rtl-btn rtl-play" data-act="play" aria-label="Play replay">
+            <svg viewBox="0 0 16 16" focusable="false" aria-hidden="true">
+              <path class="rtl-ic-play" d="M4.6 2.7 13.2 8 4.6 13.3z"/>
+              <g class="rtl-ic-pause"><rect x="3.4" y="2.9" width="3.5" height="10.2" rx="1"/><rect x="9.1" y="2.9" width="3.5" height="10.2" rx="1"/></g>
+            </svg>
+          </button>
+          <button type="button" class="rtl-btn rtl-speed" data-act="speed" aria-label="Playback speed"></button>
+        </div>
+        <div class="rtl-track" role="slider" tabindex="0" aria-label="Replay position"
+             aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="${frames - 1}" aria-valuenow="0">
+          <div class="rtl-bars">${barsHtml}</div>
+          <div class="rtl-bars rtl-bars--lit" aria-hidden="true">${barsHtml}</div>
+          ${markersHtml}
+          <div class="rtl-playhead" aria-hidden="true"><span class="rtl-knob"></span></div>
+        </div>
+        <div class="rtl-cluster rtl-cluster--right">
+          <span class="rtl-timecode"></span>
+          <span class="rtl-count"></span>
+          <span class="rtl-badge">Replay</span>
+        </div>
+      </div>`;
+
+    const root = container.querySelector(".rtl");
+    const track = container.querySelector(".rtl-track");
+    const litBars = container.querySelector(".rtl-bars--lit");
+    const playhead = container.querySelector(".rtl-playhead");
+    const playBtn = container.querySelector(".rtl-play");
+    const speedBtn = container.querySelector(".rtl-speed");
+    const timecode = container.querySelector(".rtl-timecode");
+    const count = container.querySelector(".rtl-count");
+
+    /* ---------- paint (style + text mutations only) ---------- */
+
+    const painted = { frame: -1, playing: null, speed: 0 };
+
+    function paint() {
+      if (painted.frame !== state.frame) {
+        const centerPct = (((state.frame + 0.5) / frames) * 100).toFixed(4);
+        const litPct = (100 - ((state.frame + 1) / frames) * 100).toFixed(4);
+        playhead.style.left = `${centerPct}%`;
+        litBars.style.clipPath = `inset(0 ${litPct}% 0 0)`;
+        timecode.textContent = stampLabels[state.frame];
+        count.textContent = `${String(state.frame + 1).padStart(pad, "0")} / ${framesLabel}`;
+        track.setAttribute("aria-valuenow", String(state.frame));
+        track.setAttribute("aria-valuetext", `${stampLabels[state.frame]}, frame ${state.frame + 1} of ${frames}`);
+        painted.frame = state.frame;
+      }
+      if (painted.playing !== state.playing) {
+        root.classList.toggle("rtl--playing", state.playing);
+        playBtn.setAttribute("aria-label", state.playing ? "Pause replay" : "Play replay");
+        painted.playing = state.playing;
+      }
+      if (painted.speed !== state.speed) {
+        speedBtn.textContent = `${state.speed}×`;
+        speedBtn.setAttribute("aria-label", `Playback speed ${state.speed}x`);
+        painted.speed = state.speed;
+      }
+    }
+
+    /* ---------- interaction (delegated on root/track) ---------- */
+
+    root.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-act]");
+      if (!button || !root.contains(button)) return;
+      if (button.dataset.act === "play") {
+        cb.onPlayPause();
+      } else if (button.dataset.act === "speed") {
+        cb.onSpeed(SPEEDS[(SPEEDS.indexOf(state.speed) + 1) % SPEEDS.length]);
+      }
+    });
+
+    let dragRect = null;
+
+    function frameFromX(clientX) {
+      const rect = dragRect || track.getBoundingClientRect();
+      const ratio = (clientX - rect.left) / (rect.width || 1);
+      return clampFrame(Math.floor(ratio * frames));
+    }
+
+    function seek(frame) {
+      frame = clampFrame(frame);
+      if (frame === state.frame) return;
+      state.frame = frame;
+      paint(); // optimistic local paint; the host's update() with the same frame is a no-op
+      cb.onSeek(frame);
+    }
+
+    function endDrag() {
+      dragRect = null;
+      root.classList.remove("rtl--dragging");
+    }
+
+    track.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      event.preventDefault(); // no text selection / scroll-start
+      try { track.setPointerCapture(event.pointerId); } catch (err) { /* stale pointer id */ }
+      track.focus({ preventScroll: true }); // arrows work right after a click; ring stays :focus-visible only
+      dragRect = track.getBoundingClientRect();
+      root.classList.add("rtl--dragging");
+      seek(frameFromX(event.clientX));
+    });
+    track.addEventListener("pointermove", (event) => {
+      if (dragRect) seek(frameFromX(event.clientX));
+    });
+    track.addEventListener("pointerup", endDrag);
+    track.addEventListener("pointercancel", endDrag);
+
+    track.addEventListener("keydown", (event) => {
+      if (event.key === " " || event.key === "Enter") {
+        event.preventDefault();
+        cb.onPlayPause();
+        return;
+      }
+      const step = event.shiftKey ? 10 : 1;
+      let next = null;
+      if (event.key === "ArrowLeft") next = state.frame - step;
+      else if (event.key === "ArrowRight") next = state.frame + step;
+      else if (event.key === "Home") next = 0;
+      else if (event.key === "End") next = frames - 1;
+      if (next === null) return;
+      event.preventDefault();
+      seek(next);
+    });
+
+    paint();
+
+    return {
+      update(next) {
+        if (!next) return;
+        if (next.frame !== undefined) state.frame = clampFrame(next.frame);
+        if (next.playing !== undefined) state.playing = !!next.playing;
+        if (next.speed !== undefined && SPEEDS.indexOf(next.speed) !== -1) state.speed = next.speed;
+        paint();
+      },
+    };
+  }
+
+  window.mountTimeline = mountTimeline;
+})();
+
 (function () {
   let data = window.UFC_MENTION_DASHBOARD_DATA;
   const state = {
     tab: "markets",
+    mode: "next",          // "live" | "next" | "replay" — one mode owns the page
     signal: "watch",
     signalUserSet: false,
     selectedCard: "",
@@ -58,12 +271,10 @@
     setupRefreshButton();
     bindEvents();
     bindTickerPause();
+    deriveMode();
+    seedAmbientPhrases();
+    if (state.routedFrame !== null && replayTape()) enterReplay(state.routedFrame, { autoplay: false });
     renderAll();
-    // Nothing live means a dead page. Play a night we recorded instead, so the
-    // board shows what it does when money is moving.
-    if (!getRows().length && replayTape() && !prefersReducedMotion()) {
-      window.setTimeout(startReplay, 900);
-    }
     state.dataStamp = dataFingerprint();
     scheduleAutoUpdate();
     window.addEventListener("hashchange", () => {
@@ -80,15 +291,66 @@
     });
   }
 
+  const ROUTES = {
+    "": "markets", desk: "markets", replay: "markets",
+    ledger: "paper", paper: "paper", lab: "model", model: "model",
+  };
+
   function readRoute() {
-    const match = window.location.hash.match(/^#fight\/(.+)$/);
-    state.fightRoute = match ? decodeURIComponent(match[1]) : "";
-    if (state.fightRoute) state.tab = "fight";
-    else if (state.tab === "fight") state.tab = "markets";
+    const raw = window.location.hash.replace(/^#\/?/, "");
+    const legacyFight = raw.match(/^fight\/(.+)$/);
+    const parts = raw.split("/").map(decodeURIComponent);
+    state.fightRoute = "";
+    state.routedMarket = "";
+    state.routedFrame = null;
+    if (legacyFight) {
+      state.fightRoute = legacyFight[1];
+      state.tab = "fight";
+      return;
+    }
+    const head = parts[0] || "";
+    if (head === "fight" && parts[1]) {
+      state.fightRoute = parts[1];
+      state.tab = "fight";
+      return;
+    }
+    state.tab = ROUTES[head] || "markets";
+    if (head === "replay") {
+      const tape = replayTape();
+      state.mode = tape ? "replay" : state.mode;
+      if (parts[1] !== undefined && parts[1] !== "") {
+        const frame = Number(parts[1]);
+        if (Number.isFinite(frame)) state.routedFrame = frame;
+      }
+      // A shared or history-navigated frame seeks the tape directly
+      if (tape && state.routedFrame !== null) {
+        replay.frame = Math.max(0, Math.min(tape.frames - 1, state.routedFrame));
+      }
+    } else if (state.mode === "replay" && head !== "replay") {
+      // leaving the tape by navigation pauses it; state stays consistent
+      stopReplay();
+      state.mode = getRows().length ? "live" : "next";
+    }
+    if (head === "desk" && parts[1] === "m" && parts[2]) {
+      state.routedMarket = parts[2];
+      state.expanded = new Set([state.routedMarket]);
+    }
+  }
+
+  function routeTo(hash, { replaceState = false } = {}) {
+    const target = hash.startsWith("#") ? hash : `#${hash}`;
+    if (window.location.hash === target) return;
+    if (replaceState) {
+      window.history.replaceState(null, "", target);
+      readRoute();
+      renderAll();
+    } else {
+      window.location.hash = target;   // hashchange listener does the rest
+    }
   }
 
   function openFight(eventTicker) {
-    window.location.hash = `#fight/${encodeURIComponent(eventTicker)}`;
+    routeTo(`/fight/${encodeURIComponent(eventTicker)}`);
   }
 
   function renderAll() {
@@ -198,6 +460,40 @@
     paintReplayBar();
   }
 
+  function seedAmbientPhrases() {
+    const phrases = [];
+    boardRows().concat(replayTape() ? replayRows() : []).forEach((row) => {
+      const head = String(row.phrase || "").split(/\s*\/\s*/)[0].trim();
+      if (head && !phrases.includes(head)) phrases.push(head);
+    });
+    const picks = phrases.length ? phrases : ["Knockout", "Decision", "What a fight"];
+    document.querySelectorAll(".amb-phrase").forEach((el, i) => {
+      el.textContent = (picks[i % picks.length] || "").toUpperCase();
+    });
+  }
+
+  function deriveMode() {
+    if (state.mode === "replay") return;
+    state.mode = getRows().length ? "live" : "next";
+  }
+
+  function enterReplay(frame, { autoplay = true } = {}) {
+    const tape = replayTape();
+    if (!tape) return;
+    state.mode = "replay";
+    replay.frame = Math.max(0, Math.min(tape.frames - 1, Number(frame) || 0));
+    if (autoplay && !prefersReducedMotion()) startReplay();
+    if (!window.location.hash.startsWith("#/replay")) {
+      window.history.replaceState(null, "", `#/replay/${replay.frame}`);
+    }
+  }
+
+  function exitReplay() {
+    stopReplay();
+    state.mode = getRows().length ? "live" : "next";
+    routeTo("/desk", { replaceState: true });
+  }
+
   function stopReplay() {
     replay.playing = false;
     window.clearInterval(replay.timer);
@@ -218,58 +514,77 @@
     paintReplayBar();
   }
 
+  /* Frame-to-frame board movement drives the timeline's activity strip:
+     the strip literally shows when the night moved. */
+  let tapeActivityCache = null;
+
+  function tapeActivity() {
+    if (tapeActivityCache) return tapeActivityCache;
+    const tape = replayTape();
+    if (!tape) return [];
+    const out = new Array(tape.frames).fill(0);
+    for (let f = 1; f < tape.frames; f += 1) {
+      let moved = 0;
+      tape.markets.forEach((market) => {
+        const a = market.ask[f];
+        const b = market.ask[f - 1];
+        if (a !== null && b !== null && a !== undefined && b !== undefined) moved += Math.abs(a - b);
+      });
+      out[f] = moved;
+    }
+    const peak = Math.max(...out, 0.001);
+    tapeActivityCache = out.map((v) => v / peak);
+    return tapeActivityCache;
+  }
+
+  function tapeMarkers() {
+    const activity = tapeActivity();
+    if (!activity.length) return [];
+    let bigFrame = 0;
+    activity.forEach((v, i) => { if (v > activity[bigFrame]) bigFrame = i; });
+    return [{ frame: bigFrame, label: "Biggest move" }];
+  }
+
+  let timelineHandle = null;
+
   function paintReplayBar() {
     const holder = document.getElementById("replayBar");
     const tape = replayTape();
     if (!holder) return;
-    if (!tape) { holder.hidden = true; holder.innerHTML = ""; return; }
+    if (!tape || state.mode !== "replay") {
+      holder.hidden = true;
+      holder.innerHTML = "";
+      timelineHandle = null;
+      return;
+    }
     holder.hidden = false;
-    const pct = tape.frames > 1 ? (replay.frame / (tape.frames - 1)) * 100 : 0;
-    const live = getRows().length > 0;
-    holder.innerHTML = `
-      <div class="replay-head">
-        <span class="replay-tag">${live ? "Replay" : "No markets open. Replaying"}</span>
-        <strong>${escapeHtml(formatDate(tape.event_date) || tape.card)}</strong>
-        <span class="replay-count">${formatInteger(tape.markets.length)} markets</span>
-      </div>
-      <div class="replay-transport">
-        <button class="replay-play" id="replayPlay" type="button" aria-label="${replay.playing ? "Pause replay" : "Play replay"}">
-          ${replay.playing
-            ? '<svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.6" height="9" fill="currentColor"/><rect x="7.4" y="1.5" width="2.6" height="9" fill="currentColor"/></svg>'
-            : '<svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.5 L10.5 6 L2.5 10.5 Z" fill="currentColor"/></svg>'}
-        </button>
-        <input class="replay-scrub" id="replayScrub" type="range" min="0" max="${tape.frames - 1}"
-          value="${replay.frame}" aria-label="Scrub through the card">
-        <span class="replay-clock">${escapeHtml(replayStamp())}</span>
-        <button class="replay-speed" id="replaySpeed" type="button" aria-label="Change replay speed">${replay.speed}x</button>
-      </div>
-      <div class="replay-progress" aria-hidden="true"><i style="width:${pct.toFixed(1)}%"></i></div>`;
-    bindReplay();
+    if (!timelineHandle || !holder.firstChild) {
+      timelineHandle = mountTimeline(holder, {
+        frames: tape.frames,
+        frame: replay.frame,
+        stamps: tape.stamps,
+        activity: tapeActivity(),
+        markers: tapeMarkers(),
+        playing: replay.playing,
+        speed: replay.speed,
+        onSeek: (frame) => { stopReplay(); setReplayFrame(frame, false); syncReplayRoute(); },
+        onPlayPause: () => { replay.playing ? stopReplay() : startReplay(); paintReplayBar(); },
+        onSpeed: (next) => { replay.speed = next; if (replay.playing) startReplay(); paintReplayBar(); },
+      });
+    } else {
+      timelineHandle.update({ frame: replay.frame, playing: replay.playing, speed: replay.speed });
+    }
   }
 
-  function bindReplay() {
-    const play = document.getElementById("replayPlay");
-    const scrub = document.getElementById("replayScrub");
-    const speed = document.getElementById("replaySpeed");
-    if (play && !play.dataset.bound) {
-      play.dataset.bound = "1";
-      play.addEventListener("click", () => (replay.playing ? stopReplay() : startReplay()));
-    }
-    if (scrub && !scrub.dataset.bound) {
-      scrub.dataset.bound = "1";
-      scrub.addEventListener("input", (event) => {
-        stopReplay();
-        setReplayFrame(Number(event.target.value), false);
-      });
-    }
-    if (speed && !speed.dataset.bound) {
-      speed.dataset.bound = "1";
-      speed.addEventListener("click", () => {
-        replay.speed = replay.speed === 1 ? 2 : replay.speed === 2 ? 4 : 1;
-        if (replay.playing) startReplay();
-        else paintReplayBar();
-      });
-    }
+  let routeSyncTimer = 0;
+
+  function syncReplayRoute() {
+    window.clearTimeout(routeSyncTimer);
+    routeSyncTimer = window.setTimeout(() => {
+      if (state.mode === "replay") {
+        window.history.replaceState(null, "", `#/replay/${replay.frame}`);
+      }
+    }, 300);
   }
 
   /* ---------- the stage ----------
@@ -286,8 +601,22 @@
   }
 
   function stageCard() {
+    // One mode owns the stage. The numbers on it always describe the same
+    // event as the board below it.
+    if (state.mode === "replay" && replayTape()) {
+      const tape = replayTape();
+      const rows = replayRows();
+      return {
+        title: `The ${formatDate(tape.event_date) || tape.card} tape`,
+        date: tape.event_date,
+        venue: "Recorded card", location: "",
+        fights: new Set(rows.map((row) => row.event_ticker)).size,
+        markets: rows.length,
+        mode: "replay",
+      };
+    }
     const live = getSelectedCard() || getCards()[0];
-    if (live) {
+    if (getRows().length && live) {
       return {
         title: live.card_title || "UFC card",
         date: live.event_date,
@@ -295,25 +624,25 @@
         location: live.card_location || "",
         fights: live.fight_count || (live.fights || []).length,
         markets: live.phrase_count || 0,
-        live: true,
+        mode: "live",
       };
     }
     const next = (data.upcoming_events || [])[0];
     if (!next) return null;
-    // With nothing live the stage still counts what the board is showing, so
-    // the header and the tape below it never disagree.
-    const tapeRows = replayTape() ? replayRows() : [];
-    const tapeFights = new Set(tapeRows.map((row) => row.event_ticker)).size;
     return {
       title: next.name, date: next.date, venue: next.venue || "",
       location: next.location || "",
-      fights: tapeFights, markets: tapeRows.length, live: false,
-      replaying: tapeRows.length > 0,
+      fights: 0, markets: 0,
+      mode: "next",
+      hasTape: Boolean(replayTape()),
+      tapeDate: replayTape() ? replayTape().event_date : "",
     };
   }
 
   function boardRows() {
-    return getRows().length ? getRows() : (replayTape() ? replayRows() : []);
+    if (getRows().length) return getRows();
+    if (state.mode === "replay" && replayTape()) return replayRows();
+    return [];
   }
 
   function bestEdgeOnCard() {
@@ -350,30 +679,62 @@
     holder.hidden = false;
     const best = bestEdgeOnCard();
     const where = [card.venue, card.location].filter(Boolean).join(" · ");
-    const tonight = card.date === todayLocal();
+    const tonight = card.mode === "live" && card.date === todayLocal();
+    const isReplay = card.mode === "replay";
+
+    const modeBadge = isReplay
+      ? '<span class="mode-badge mode-badge--replay">Replay</span>'
+      : card.mode === "live"
+        ? '<span class="mode-badge mode-badge--live">Live</span>'
+        : '<span class="mode-badge mode-badge--next">Next event</span>';
+
+    const rightRail = isReplay
+      ? `<button class="stage-exit" id="exitReplay" type="button">Leave the tape</button>`
+      : "";
+
+    // NEXT mode: the board is empty on purpose; the tape is an invitation,
+    // not a default. One clear entry, no historical numbers in the hero.
+    const tapeInvite = card.mode === "next" && card.hasTape
+      ? `<button class="tape-invite" id="launchReplay" type="button">
+          <span class="tape-invite-kicker">While you wait</span>
+          <span class="tape-invite-title">Play the ${escapeHtml(formatDate(card.tapeDate) || "last")} card back</span>
+          <span class="tape-invite-sub">Every price and signal, exactly as the board saw it</span>
+        </button>`
+      : "";
+
+    const stats = card.mode === "next"
+      ? ""
+      : `<div class="stage-stats">
+          <span><strong>${formatInteger(card.fights)}</strong>fights</span>
+          <span><strong>${formatInteger(card.markets)}</strong>phrase markets</span>
+          <span><strong class="${best !== null && best > 0 ? "hot" : ""}">${best === null ? "--" : formatPlainPercent(best, true)}</strong>best edge</span>
+        </div>`;
+
     holder.innerHTML = `
-      <section class="stage${tonight ? " is-tonight" : ""}">
+      <section class="stage${tonight ? " is-tonight" : ""}${isReplay ? " is-replay" : ""}">
         <div class="stage-light" aria-hidden="true"></div>
         ${octagonSvg()}
         <div class="stage-body">
           <p class="stage-kicker">
+            ${modeBadge}
             ${tonight ? '<span class="onair">On air</span>' : ""}
             <span>${escapeHtml(formatDate(card.date) || "date TBD")}</span>
             ${where ? `<span class="dot">·</span><span>${escapeHtml(where)}</span>` : ""}
           </p>
           <h2 class="stage-title">${escapeHtml(card.title)}</h2>
           <div class="stage-meta">
-            <div class="clock" id="stageClock" data-date="${escapeHtml(card.date || "")}"></div>
-            <div class="stage-stats">
-              ${card.replaying ? '<span class="stage-replaying">Showing a replay of Jul 18</span>' : ""}
-              <span><strong>${formatInteger(card.fights)}</strong>fights</span>
-              <span><strong>${formatInteger(card.markets)}</strong>phrase markets</span>
-              <span><strong class="${best !== null && best > 0 ? "hot" : ""}">${best === null ? "--" : formatPlainPercent(best, true)}</strong>best edge</span>
-            </div>
+            ${card.mode === "next" ? `<div class="clock" id="stageClock" data-date="${escapeHtml(card.date || "")}"></div>` : ""}
+            ${stats}
+            ${tapeInvite}
+            ${rightRail}
           </div>
         </div>
       </section>`;
-    startClock();
+    if (card.mode === "next") startClock();
+    const launch = document.getElementById("launchReplay");
+    if (launch) launch.addEventListener("click", () => { enterReplay(0); renderAll(); });
+    const exit = document.getElementById("exitReplay");
+    if (exit) exit.addEventListener("click", () => { exitReplay(); renderAll(); });
   }
 
   let clockTimer = 0;
@@ -406,7 +767,7 @@
   function renderTicker() {
     const holder = document.getElementById("ticker");
     if (!holder) return;
-    const rows = getRows()
+    const rows = boardRows()
       .map(deriveRow)
       .filter((row) => parseNumber(row.edge) !== null)
       .sort((a, b) => (parseNumber(b.edge) || 0) - (parseNumber(a.edge) || 0))
@@ -472,7 +833,7 @@
     const holder = document.getElementById("cardBoard");
     if (!holder) return;
     const card = getSelectedCard() || getCards()[0];
-    const rows = getRows().map(deriveRow);
+    const rows = boardRows().map(deriveRow);
     if (!card || !rows.length) { holder.innerHTML = ""; holder.hidden = true; return; }
     holder.hidden = false;
 
@@ -577,7 +938,7 @@
 
   function autoPickSignal() {
     if (state.signalUserSet) return;
-    const rows = getRows();
+    const rows = boardRows();
     if (rows.some((row) => row.watch)) state.signal = "watch";
     else if (rows.some((row) => parseNumber(row.edge) > 0)) state.signal = "active";
     else state.signal = "all";
@@ -585,7 +946,11 @@
 
   function renderTabs() {
     els.tabBar.querySelectorAll(".tab").forEach((tab) => {
-      tab.classList.toggle("is-active", tab.dataset.tab === state.tab);
+      const name = tab.dataset.tab;
+      const active = name === "replay"
+        ? state.mode === "replay" && state.tab === "markets"
+        : name === state.tab && !(name === "markets" && state.mode === "replay");
+      tab.classList.toggle("is-active", active);
     });
     const switched = state.paintedTab !== state.tab;
     Object.entries(els.pages).forEach(([name, page]) => {
@@ -754,18 +1119,22 @@
       renderTable();
     });
     if (els.refreshButton) els.refreshButton.addEventListener("click", manualRefresh);
+    const TAB_ROUTES = { markets: "/desk", paper: "/ledger", model: "/lab" };
     els.tabBar.addEventListener("click", (event) => {
       const tab = event.target.closest("[data-tab]");
       if (!tab) return;
-      if (state.fightRoute) {
-        state.fightRoute = "";
-        history.replaceState(null, "", window.location.pathname + window.location.search);
+      if (tab.dataset.tab === "replay") {
+        if (state.mode !== "replay") enterReplay(replay.frame || 0);
+        routeTo(`/replay/${replay.frame}`);
+        renderAll();
+        return;
       }
-      state.tab = tab.dataset.tab;
-      renderTabs();
+      if (tab.dataset.tab === "markets" && state.mode === "replay") exitReplay();
+      routeTo(TAB_ROUTES[tab.dataset.tab] || "/desk");
     });
     if (els.portfolioChip) {
       els.portfolioChip.addEventListener("click", () => {
+        routeTo("/ledger");
         state.tab = "paper";
         renderTabs();
       });
@@ -1007,6 +1376,20 @@
   function renderFightHeader() {
     const card = getSelectedCard();
     const fight = getSelectedFight();
+
+    // In replay, the stage already owns the context. Repeating the future
+    // event here would glue tomorrow's fighters onto last month's prices.
+    if (state.mode === "replay") {
+      const rows = boardRows();
+      const watch = rows.filter((row) => deriveRow(row).watch).length;
+      els.fightHeader.innerHTML = `
+        <p class="block-title">Every market on the tape
+          <span class="block-note">${formatInteger(rows.length)} phrase markets · ${watch
+            ? `${formatInteger(watch)} watch signals at this point of the night`
+            : "no watch signals at this point of the night"}</span>
+        </p>`;
+      return;
+    }
 
     if (!card) {
       const next = (data.upcoming_events || [])[0];
@@ -1335,13 +1718,21 @@
   function renderTable() {
     const marketSection = document.querySelector("#page-markets .content .toolbar");
     const tableWrap = document.querySelector("#page-markets .content .table-wrap");
-    const noLiveMarkets = !getRows().length && !getCards().length && !replayTape();
-    if (marketSection) marketSection.hidden = noLiveMarkets;
-    if (tableWrap) tableWrap.hidden = noLiveMarkets;
-    if (noLiveMarkets) { els.tableMeta.textContent = ""; return; }
+    // The board only shows the mode's own rows. In NEXT mode there is no
+    // board: the stage owns the screen and offers the tape instead.
+    const sourceRows = boardRows();
+    const idle = !sourceRows.length;
+    if (marketSection) marketSection.hidden = idle;
+    if (tableWrap) tableWrap.hidden = idle;
+    if (idle) {
+      els.tableMeta.textContent = "";
+      els.tableBody.innerHTML = "";
+      rowNodes.clear();
+      state.boardPainted = false;
+      return;
+    }
     const columns = activeColumns();
-    const usingReplay = !getRows().length && replayTape();
-    let rows = (usingReplay ? replayRows() : getRows()).map(deriveRow);
+    let rows = sourceRows.map(deriveRow);
     rows = applyFilters(rows);
     rows = applySort(rows);
     const scope = state.signal === "watch" ? "watch row" : state.signal === "active" ? "active market" : "market";
