@@ -2452,4 +2452,533 @@ tbody tr.is-expandable:focus-visible td:first-child { box-shadow: inset 3px 0 0 
 
 html[data-perf="capture"] .amb-light {
   animation-play-state: paused;
+}/* ============================================================
+   UFC MENTION MARKETS — MARKET CARD SYSTEM
+   Scope: .mgrid / .mcard and descendants only.
+   Assumes shell tokens: --bg --bg-deep --surface --surface-2
+   --border --border-strong --edge-control --ink --ink-2 --ink-3
+   --violet --periwinkle --cyan --coral --emerald --down
+   --corner-red --corner-blue
+   Markup contract is fixed; this file owns only presentation.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   GRID
+   Desktop (>1024px): 12 cols. featured 6x2, standard 3, compact 2.
+   dense flow lets compacts backfill holes left by featured.
+   ------------------------------------------------------------ */
+.mgrid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: minmax(150px, auto);
+  grid-auto-flow: dense;
+  gap: 14px;
+}
+
+.mcard--featured { grid-column: span 6; grid-row: span 2; }
+.mcard--standard,
+.mcard--waiting  { grid-column: span 3; }
+.mcard--compact  { grid-column: span 2; }
+
+/* ------------------------------------------------------------
+   CARD MATERIAL
+   Layered: grain -> state rail -> translucent gradient surface,
+   all over the page's --bg. 1px inner stroke via inset shadow.
+   State layers are driven by custom properties so modifiers
+   never have to restate the full background/shadow stacks.
+   ------------------------------------------------------------ */
+.mcard {
+  /* state hooks (overridden by modifiers below) */
+  --mc-rail: linear-gradient(0deg, transparent, transparent);
+  --mc-surf-a: color-mix(in srgb, var(--surface-2) 72%, transparent);
+  --mc-surf-b: color-mix(in srgb, var(--surface) 86%, transparent);
+  --mc-ring: 0 0 0 0 transparent;
+  --mc-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.045'/%3E%3C/svg%3E");
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 16px;
+  border-radius: 10px;
+  cursor: pointer;
+
+  background:
+    var(--mc-grain) repeat,
+    var(--mc-rail),
+    linear-gradient(165deg, var(--mc-surf-a), var(--mc-surf-b) 64%);
+  background-color: color-mix(in srgb, var(--bg-deep) 45%, transparent);
+
+  box-shadow:
+    inset 0 0 0 1px var(--border),                                      /* 1px inner stroke */
+    inset 0 1px 0 0 color-mix(in srgb, var(--ink) 5%, transparent),     /* top bevel light */
+    var(--mc-ring),                                                     /* selection/focus ring slot */
+    0 1px 2px rgba(0, 0, 0, 0.35),
+    0 14px 32px -22px rgba(0, 0, 0, 0.65);
+
+  color: var(--ink);
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+
+  transition: transform 150ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Hover: lift + brighter stroke. The brighter stroke lives on a
+   pseudo whose OPACITY animates, keeping motion to transform/opacity. */
+.mcard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--edge-control);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms cubic-bezier(0.2, 0, 0, 1);
+}
+@media (hover: hover) {
+  .mcard:hover        { transform: translateY(-2px); }
+  .mcard:hover::after { opacity: 0.8; }
+}
+
+/* Keyboard focus mirrors selection ring */
+.mcard:focus-visible {
+  outline: none;
+  --mc-ring:
+    0 0 0 2px var(--violet),
+    0 0 0 5px color-mix(in srgb, var(--violet) 25%, transparent);
+}
+
+/* ------------------------------------------------------------
+   FEATURED CORNER GLOW — keyed to state
+   violet default / emerald on strong up-edge / coral on is-new
+   (is-new declared last: at equal specificity, source order wins)
+   ------------------------------------------------------------ */
+.mcard--featured { --mc-glow: color-mix(in srgb, var(--violet) 26%, transparent); }
+.mcard--featured:has(.mcard-edge.up),
+.mcard--featured.is-hot            { --mc-glow: color-mix(in srgb, var(--emerald) 22%, transparent); }
+.mcard.mcard--featured.is-new      { --mc-glow: color-mix(in srgb, var(--coral) 24%, transparent); }
+
+.mcard--featured::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    240px 190px at calc(100% - 24px) -8%,
+    var(--mc-glow),
+    transparent 72%
+  );
+  opacity: 0.9;
+}
+
+/* ------------------------------------------------------------
+   HEADER ROW
+   ------------------------------------------------------------ */
+.mcard-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mcard-call {
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ink-2);
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--surface-2) 82%, transparent);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.mcard-fresh {
+  font-family: "Spline Sans Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+}
+.mcard.is-new .mcard-fresh {
+  color: var(--coral);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------
+   PHRASE — the contract text dominates the card
+   ------------------------------------------------------------ */
+.mcard-phrase {
+  margin: 0;
+  font-family: "Bricolage Grotesque", Inter, sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+  color: var(--ink);
+}
+.mcard--featured .mcard-phrase {
+  font-size: clamp(28px, 1.6vw + 16px, 40px);
+  line-height: 1.0;
+}
+.mcard--compact .mcard-phrase {
+  font-size: 15px;
+  line-height: 1.15;
+}
+
+/* ------------------------------------------------------------
+   FIGHT LINE — corner dots + names
+   ------------------------------------------------------------ */
+.mcard-fight {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.mcard-fight i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+.mcard-fight .c-red {
+  background: var(--corner-red);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--corner-red) 50%, transparent);
+}
+.mcard-fight .c-blue {
+  background: var(--corner-blue);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--corner-blue) 50%, transparent);
+}
+.mcard-fight em {
+  font-style: italic;
+  font-family: "Spline Sans Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  color: var(--ink-2); /* NOT --ink-3: "v" is text and must clear 4.5:1 */
+}
+
+/* ------------------------------------------------------------
+   NUMBERS ROW — model vs market
+   margin-top:auto pins nums/edge/spark to the card's bottom,
+   giving the phrase all the breathing room.
+   ------------------------------------------------------------ */
+.mcard-nums {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: auto;
+  min-width: 0;
+  font-family: "Spline Sans Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.mcard-model {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.mcard--featured .mcard-model { font-size: 28px; }
+.mcard--compact  .mcard-model { font-size: 16px; }
+
+.mcard-vs {
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.mcard-mkt {
+  font-size: 13px;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.mcard--compact .mcard-mkt { font-size: 11px; }
+
+/* ------------------------------------------------------------
+   EDGE PILL — money semantics only
+   Text is nudged toward --ink so it clears 4.5:1 on its own
+   tinted pill background, not just on the raw surface.
+   ------------------------------------------------------------ */
+.mcard-edge {
+  align-self: flex-start;
+  font-family: "Spline Sans Mono", ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.mcard--featured .mcard-edge { font-size: 15px; }
+.mcard--compact  .mcard-edge { font-size: 11.5px; padding: 2px 7px; }
+
+.mcard-edge.up {
+  color: color-mix(in srgb, var(--emerald) 78%, var(--ink));
+  background: color-mix(in srgb, var(--emerald) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--emerald) 32%, transparent);
+}
+.mcard-edge.down {
+  color: color-mix(in srgb, var(--down) 80%, var(--ink));
+  background: color-mix(in srgb, var(--down) 9%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--down) 30%, transparent);
+}
+
+/* ------------------------------------------------------------
+   SPARKLINE SLOT (host-injected svg)
+   ------------------------------------------------------------ */
+.mcard-spark { height: 44px; margin-top: 2px; }
+.mcard--featured .mcard-spark { height: 76px; }
+.mcard--compact  .mcard-spark { height: 26px; }
+.mcard-spark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* ------------------------------------------------------------
+   COMPACT DENSITY
+   ------------------------------------------------------------ */
+.mcard--compact { padding: 12px 14px; gap: 6px; }
+.mcard--compact .mcard-call  { font-size: 9.5px; padding: 3px 6px; }
+.mcard--compact .mcard-fight { font-size: 11.5px; }
+
+/* ------------------------------------------------------------
+   STATES
+   ------------------------------------------------------------ */
+
+/* is-watch: violet left rail + slightly elevated surface. A rail,
+   not a flood — surface only steps up one layer and cools. */
+.mcard.is-watch {
+  --mc-rail: linear-gradient(90deg, var(--violet) 0 3px, transparent 3px);
+  --mc-surf-a: color-mix(in srgb, var(--surface-2) 90%, transparent);
+  --mc-surf-b: color-mix(in srgb, var(--surface-2) 68%, transparent);
+}
+.mcard.is-watch .mcard-call {
+  color: var(--periwinkle);
+  background: color-mix(in srgb, var(--violet) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--violet) 45%, transparent);
+}
+
+/* is-selected: 1.5px violet outer ring + raised */
+.mcard.is-selected {
+  --mc-ring:
+    0 0 0 1.5px var(--violet),
+    0 0 30px -10px color-mix(in srgb, var(--violet) 65%, transparent),
+    0 18px 40px -22px rgba(0, 0, 0, 0.7);
+  transform: translateY(-2px);
+}
+
+/* is-new: one-shot pop-in (backwards fill so hover/selected
+   transforms are not overridden after the animation ends) */
+.mcard.is-new {
+  animation: mcard-pop 360ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+@keyframes mcard-pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* is-stale: quiet, slightly desaturated; opacity kept high enough
+   that --ink-2 secondary text still clears 4.5:1 after blending */
+.mcard.is-stale { opacity: 0.85; filter: saturate(0.7); }
+.mcard.is-stale .mcard-spark { opacity: 0.55; }
+
+/* ------------------------------------------------------------
+   WAITING ARCHETYPE
+   Dashed real border (an inset shadow can't dash), dimmed
+   internals, explanatory line supplied by ::after — which also
+   removes the hover ring; hover lift disabled too.
+   ------------------------------------------------------------ */
+.mcard--waiting {
+  cursor: default;
+  border: 1px dashed var(--border-strong);
+  padding: 15px; /* 16px minus 1px border */
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
+  box-shadow: none;
+}
+.mcard--waiting::after {
+  content: "Waiting on the broadcast — pricing opens at the first mention window.";
+  position: static;
+  inset: auto;
+  opacity: 1;
+  box-shadow: none;
+  pointer-events: none;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-2);
+  transition: none;
+}
+.mcard--waiting:hover { transform: none; }
+.mcard--waiting .mcard-phrase { color: var(--ink-2); }
+.mcard--waiting .mcard-nums,
+.mcard--waiting .mcard-edge,
+.mcard--waiting .mcard-spark { opacity: 0.45; }
+.mcard--waiting .mcard-call {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+/* ------------------------------------------------------------
+   BREAKPOINTS
+   ------------------------------------------------------------ */
+
+/* <=1024px: 8 cols. Featured goes full-bleed 8 (a 6-span would
+   strand a 2-col hole nothing can dense-fill); standard 4,
+   compact 4 with its identity carried by density, not width. */
+@media (max-width: 1024px) {
+  .mgrid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    grid-auto-rows: minmax(140px, auto);
+  }
+  .mcard--featured { grid-column: span 8; grid-row: span 2; }
+  .mcard--standard,
+  .mcard--waiting,
+  .mcard--compact  { grid-column: span 4; }
+}
+
+/* <=768px: 2 cols; explicit row heights dropped */
+@media (max-width: 768px) {
+  .mgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: auto; }
+  .mcard--featured { grid-column: span 2; grid-row: auto; }
+  .mcard--standard,
+  .mcard--waiting,
+  .mcard--compact  { grid-column: span 1; }
+}
+
+/* <=559px (covers the 390px class): single column;
+   compact restructures into a horizontal row with the edge pill
+   right-aligned and the sparkline dropped. */
+@media (max-width: 559px) {
+  .mgrid { grid-template-columns: 1fr; gap: 10px; }
+  .mcard--featured,
+  .mcard--standard,
+  .mcard--waiting,
+  .mcard--compact { grid-column: 1 / -1; }
+
+  .mcard--compact {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 4px;
+    padding: 12px 14px;
+  }
+  .mcard--compact .mcard-top    { grid-column: 1 / -1; }
+  .mcard--compact .mcard-phrase { grid-column: 1; }
+  .mcard--compact .mcard-fight  { grid-column: 1; }
+  .mcard--compact .mcard-nums   { grid-column: 1; margin-top: 2px; }
+  .mcard--compact .mcard-edge {
+    grid-column: 2;
+    grid-row: 2 / span 3;
+    align-self: center;
+    justify-self: end;
+  }
+  .mcard--compact .mcard-spark { display: none; }
+}
+
+/* ------------------------------------------------------------
+   REDUCED MOTION
+   ------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .mcard,
+  .mcard::before,
+  .mcard::after {
+    transition: none !important;
+    animation: none !important;
+  }
+  .mcard:hover,
+  .mcard.is-selected { transform: none; }
+}
+/* ================= view switcher + contract pane ================= */
+.view-switch { display: inline-flex; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); overflow: hidden; }
+.view-switch button {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--voice);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--snap) linear, color var(--snap) linear;
+}
+.view-switch button + button { border-left: 1px solid var(--border-strong); }
+.view-switch button:hover { color: var(--ink); background: var(--surface-2); }
+.view-switch button.is-active { background: var(--violet); color: var(--ink-on-fill); }
+
+.detail-pane {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  width: min(480px, 100vw);
+  overflow-y: auto;
+  padding: 22px 24px 32px;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface) 30%);
+  border-left: 1px solid var(--border-strong);
+  box-shadow: -24px 0 60px rgba(4, 4, 10, 0.55);
+  animation: pane-in 260ms var(--ease) both;
+}
+@keyframes pane-in { from { transform: translateX(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.pane-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.pane-call {
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--violet);
+  color: var(--ink-on-fill);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.pane-nav { display: flex; gap: 6px; }
+.pane-btn {
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: color var(--snap) linear, border-color var(--snap) linear, background var(--snap) linear;
+}
+.pane-btn:hover, .pane-btn:focus-visible { color: var(--ink); border-color: var(--edge-control); background: var(--surface-2); }
+
+.pane-phrase { font-family: var(--display); font-size: clamp(26px, 3vw, 38px); font-weight: 800; line-height: 1.02; margin-bottom: 8px; }
+.pane-fight { display: flex; align-items: center; gap: 7px; color: var(--ink-2); font-size: 13px; margin-bottom: 16px; }
+.pane-fight i { width: 3px; height: 14px; border-radius: 2px; display: inline-block; }
+.pane-fight i.c-red { background: var(--red-corner); }
+.pane-fight i.c-blue { background: var(--blue-corner); }
+.pane-fight em { font-style: normal; color: var(--ink-3); font-family: var(--num); font-size: 10px; }
+
+.pane-nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+.pane-nums > div { padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); }
+.pane-num { display: block; font-family: var(--num); font-size: 19px; font-weight: 500; }
+.pane-num.up { color: var(--gain-bright); }
+.pane-num.down { color: var(--loss); }
+.pane-lab { display: block; margin-top: 2px; font-size: 9.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); }
+
+.pane-chart { margin-bottom: 14px; }
+.pane-code { margin-top: 16px; font-family: var(--num); font-size: 10.5px; color: var(--ink-3); }
+
+.detail-pane .audit { border-left: 0; padding: 0; background: transparent; }
+
+@media (max-width: 640px) {
+  .detail-pane { width: 100vw; border-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .detail-pane { animation: none; }
 }

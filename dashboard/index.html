@@ -85,9 +85,14 @@
                 <option value="">All phrases</option>
               </select>
               <input id="searchInput" type="search" placeholder="Search" aria-label="Search">
+              <div class="view-switch" id="viewSwitch" role="group" aria-label="Board layout">
+                <button type="button" data-view="grid" class="is-active">Grid</button>
+                <button type="button" data-view="table">Table</button>
+              </div>
               <span class="toolbar-meta" id="tableMeta"></span>
             </div>
 
+            <div class="mgrid" id="marketGrid" hidden></div>
             <div class="panel" id="board">
               <div class="table-wrap" tabindex="0" role="region" aria-label="Market board, scrollable">
                 <table id="dataTable">
@@ -152,6 +157,7 @@
         <span id="footerStamp"></span>
       </footer>
     </main>
+    <aside class="detail-pane" id="detailPane" hidden aria-label="Market detail"></aside>
 
     <script>
       const cacheBust = Date.now().toString();

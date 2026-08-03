@@ -215,6 +215,8 @@
   const state = {
     tab: "markets",
     mode: "next",          // "live" | "next" | "replay" — one mode owns the page
+    view: (function () { try { return localStorage.getItem("wx_view") || "grid"; } catch (e) { return "grid"; } })(),
+    paneTicker: "",
     signal: "watch",
     signalUserSet: false,
     selectedCard: "",
@@ -333,6 +335,7 @@
     }
     if (head === "desk" && parts[1] === "m" && parts[2]) {
       state.routedMarket = parts[2];
+      state.paneTicker = parts[2];
       state.expanded = new Set([state.routedMarket]);
     }
   }
@@ -414,6 +417,9 @@
         model_probability: model,
         edge,
         side: edge !== null && edge > 0 ? "yes" : "no",
+        side_price: edge !== null && edge > 0 ? ask : (ask === null ? null : Math.round((1 - ask) * 100) / 100 + 0.02),
+        yes_edge: edge,
+        no_edge: edge === null ? null : -edge,
         hurdle: 0.05,
         league_rate: null,
         watch: edge !== null && edge > 0.06,
@@ -1120,6 +1126,35 @@
     });
     if (els.refreshButton) els.refreshButton.addEventListener("click", manualRefresh);
     const TAB_ROUTES = { markets: "/desk", paper: "/ledger", model: "/lab" };
+    const viewSwitch = document.getElementById("viewSwitch");
+    if (viewSwitch) {
+      viewSwitch.addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-view]");
+        if (!btn) return;
+        state.view = btn.dataset.view;
+        try { localStorage.setItem("wx_view", state.view); } catch (e) { /* private mode */ }
+        viewSwitch.querySelectorAll("[data-view]").forEach((b) => b.classList.toggle("is-active", b === btn));
+        renderTable();
+      });
+      viewSwitch.querySelectorAll("[data-view]").forEach((b) => b.classList.toggle("is-active", b.dataset.view === state.view));
+    }
+    const gridHolder = document.getElementById("marketGrid");
+    if (gridHolder) {
+      gridHolder.addEventListener("click", (event) => {
+        const card = event.target.closest(".mcard");
+        if (card) openPane(card.dataset.mticker);
+      });
+      gridHolder.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        const card = event.target.closest(".mcard");
+        if (card) { event.preventDefault(); openPane(card.dataset.mticker); }
+      });
+    }
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && state.paneTicker) closePane();
+      if (state.paneTicker && event.key === "ArrowRight" && event.altKey) paneStep(1);
+      if (state.paneTicker && event.key === "ArrowLeft" && event.altKey) paneStep(-1);
+    });
     els.tabBar.addEventListener("click", (event) => {
       const tab = event.target.closest("[data-tab]");
       if (!tab) return;
@@ -1735,6 +1770,17 @@
     let rows = sourceRows.map(deriveRow);
     rows = applyFilters(rows);
     rows = applySort(rows);
+
+    const grid = document.getElementById("marketGrid");
+    const useGrid = state.view === "grid";
+    if (grid) grid.hidden = !useGrid || !rows.length;
+    if (tableWrap) tableWrap.hidden = idle || useGrid;
+    if (useGrid) {
+      renderMarketGrid(rows);
+      if (state.paneTicker) renderPane();
+      els.tableMeta.textContent = `${formatInteger(rows.length)} market${plural(rows.length)}`;
+      return;
+    }
     const scope = state.signal === "watch" ? "watch row" : state.signal === "active" ? "active market" : "market";
     els.tableMeta.textContent = `${formatInteger(rows.length)} ${scope}${plural(rows.length)} · click a row for the math`;
     renderHeader(columns);
@@ -2105,7 +2151,11 @@
       if (side) {
         const sideEdge = side === "YES" ? row.yes_edge : row.no_edge;
         const otherEdge = side === "YES" ? row.no_edge : row.yes_edge;
-        lines.push(["Side picked", `${side}, because its edge (${formatPlainPercent(sideEdge, true)}) beats the other side (${formatPlainPercent(otherEdge, true)}).`]);
+        if (parseNumber(sideEdge) !== null && parseNumber(otherEdge) !== null) {
+          lines.push(["Side picked", `${side}, because its edge (${formatPlainPercent(sideEdge, true)}) beats the other side (${formatPlainPercent(otherEdge, true)}).`]);
+        } else {
+          lines.push(["Side picked", `${side}, the side our number favors against this book.`]);
+        }
       }
       if (parseNumber(row.hurdle) !== null) {
         const parts = [
@@ -2133,6 +2183,161 @@
       <p class="audit-title">Inside this number</p>
       ${lines.map(([label, text]) => `<div class="audit-line"><span>${escapeHtml(label)}</span><p>${escapeHtml(text)}</p></div>`).join("")}
     </div>`;
+  }
+
+
+  /* ================= the market grid =================
+     Cards are the default reading of the board. Archetypes rank what matters:
+     one featured signal, standard cards for calls, compact for the rest,
+     waiting cards for books with no quote. The dense table stays one click
+     away for power users. */
+
+  function archetypeFor(row, isFeatured) {
+    if (isFeatured) return "featured";
+    if (missingPrices(row)) return "waiting";
+    const call = String(row.call || "");
+    if (row.watch || call.startsWith("WATCH") || call.startsWith("LEAN")) return "standard";
+    return "compact";
+  }
+
+  function marketCardHtml(row, archetype) {
+    const edge = parseNumber(row.edge);
+    const model = formatPlainPercent(row.model_probability);
+    const bid = parseNumber(row.yes_bid);
+    const ask = parseNumber(row.yes_ask);
+    const market = bid !== null && ask !== null
+      ? `${Math.round(bid * 100)}¢ / ${Math.round(ask * 100)}¢`
+      : ask !== null ? `${Math.round(ask * 100)}¢ ask` : "no quote yet";
+    const call = String(row.call || "").trim();
+    const isNew = row.watch && state.seenAtLoad && !state.seenAtLoad.has(String(row.ticker || ""));
+    const classes = [
+      "mcard", `mcard--${archetype}`,
+      isNew ? "is-new" : "", row.watch ? "is-watch" : "",
+      state.paneTicker === row.ticker ? "is-selected" : "",
+    ].filter(Boolean).join(" ");
+    const phraseHead = String(row.phrase || "").split(/\s*\/\s*/)[0].trim();
+    const spark = archetype === "featured" || archetype === "standard" ? sparkline(row) : "";
+    return `<article class="${classes}" data-mticker="${escapeHtml(String(row.ticker || ""))}" tabindex="0" role="button"
+      aria-label="${escapeHtml(`${row.phrase}, ${row.matchup || ""}, model ${model}, edge ${formatPlainPercent(edge, true)}`)}">
+      <header class="mcard-top">
+        <span class="mcard-call">${escapeHtml(call || (archetype === "waiting" ? "Waiting" : "Priced"))}</span>
+        <span class="mcard-fresh">${isNew ? "NEW" : ""}</span>
+      </header>
+      <h3 class="mcard-phrase">${escapeHtml(archetype === "compact" ? phraseHead : String(row.phrase || ""))}</h3>
+      <p class="mcard-fight"><i class="c-red"></i>${escapeHtml(lastName(row.fighter_1))} <em>v</em> <i class="c-blue"></i>${escapeHtml(lastName(row.fighter_2))}</p>
+      ${archetype === "waiting"
+        ? '<p class="mcard-wait">Kalshi has not posted a book for this phrase yet. It fills in on its own.</p>'
+        : `<div class="mcard-nums"><span class="mcard-model">${model}</span><span class="mcard-vs">model vs</span><span class="mcard-mkt">${escapeHtml(market)}</span></div>
+           <div class="mcard-edge ${edge !== null && edge > 0 ? "up" : "down"}">${formatPlainPercent(edge, true)}</div>`}
+      <div class="mcard-spark">${spark}</div>
+    </article>`;
+  }
+
+  function renderMarketGrid(rows) {
+    const grid = document.getElementById("marketGrid");
+    if (!grid) return;
+    if (!rows.length) { grid.hidden = true; grid.innerHTML = ""; return; }
+    grid.hidden = false;
+    const byEdge = rows.slice().sort((a, b) => Math.abs(parseNumber(b.edge) || 0) - Math.abs(parseNumber(a.edge) || 0));
+    const featured = byEdge.find((row) => row.watch) || byEdge[0];
+    const html = rows.map((row) => marketCardHtml(row, archetypeFor(row, row === featured))).join("");
+    if (grid.dataset.html !== html) {
+      grid.dataset.html = html;
+      grid.innerHTML = html;
+    }
+  }
+
+  /* ================= the contract pane =================
+     Selecting a market opens its contract sheet beside the board: big phrase,
+     the whole night of prices, and the math, without losing your place. */
+
+  function paneRow() {
+    if (!state.paneTicker) return null;
+    const row = boardRows().map(deriveRow).find((r) => String(r.ticker) === state.paneTicker);
+    return row || null;
+  }
+
+  function openPane(ticker) {
+    state.paneTicker = String(ticker || "");
+    if (state.mode !== "replay" && state.paneTicker) {
+      window.history.replaceState(null, "", `#/desk/m/${encodeURIComponent(state.paneTicker)}`);
+    }
+    renderPane();
+    renderMarketGridSelection();
+  }
+
+  function closePane() {
+    state.paneTicker = "";
+    if (state.mode !== "replay" && window.location.hash.startsWith("#/desk/m/")) {
+      window.history.replaceState(null, "", "#/desk");
+    }
+    renderPane();
+    renderMarketGridSelection();
+  }
+
+  function renderMarketGridSelection() {
+    document.querySelectorAll(".mcard").forEach((card) => {
+      card.classList.toggle("is-selected", card.dataset.mticker === state.paneTicker);
+    });
+  }
+
+  function paneStep(delta) {
+    const rows = boardRows().map(deriveRow);
+    if (!rows.length) return;
+    const index = rows.findIndex((r) => String(r.ticker) === state.paneTicker);
+    const next = rows[(index + delta + rows.length) % rows.length];
+    openPane(next.ticker);
+  }
+
+  function renderPane() {
+    const pane = document.getElementById("detailPane");
+    if (!pane) return;
+    const row = paneRow();
+    if (!row) {
+      pane.hidden = true;
+      pane.innerHTML = "";
+      document.body.classList.remove("pane-open");
+      return;
+    }
+    pane.hidden = false;
+    document.body.classList.add("pane-open");
+    const model = formatPlainPercent(row.model_probability);
+    const bid = parseNumber(row.yes_bid);
+    const ask = parseNumber(row.yes_ask);
+    pane.innerHTML = `
+      <div class="pane-head">
+        <span class="pane-call">${escapeHtml(String(row.call || ""))}</span>
+        <div class="pane-nav">
+          <button class="pane-btn" id="panePrev" type="button" aria-label="Previous market">&#8592;</button>
+          <button class="pane-btn" id="paneNext" type="button" aria-label="Next market">&#8594;</button>
+          <button class="pane-btn" id="paneClose" type="button" aria-label="Close detail">&#10005;</button>
+        </div>
+      </div>
+      <h2 class="pane-phrase">${escapeHtml(String(row.phrase || ""))}</h2>
+      <p class="pane-fight"><i class="c-red"></i>${escapeHtml(row.fighter_1 || "")} <em>v</em> <i class="c-blue"></i>${escapeHtml(row.fighter_2 || "")}</p>
+      <div class="pane-nums">
+        <div><span class="pane-num">${model}</span><span class="pane-lab">our model</span></div>
+        <div><span class="pane-num">${bid !== null ? `${Math.round(bid * 100)}¢` : "--"}</span><span class="pane-lab">bid</span></div>
+        <div><span class="pane-num">${ask !== null ? `${Math.round(ask * 100)}¢` : "--"}</span><span class="pane-lab">ask</span></div>
+        <div><span class="pane-num ${parseNumber(row.edge) > 0 ? "up" : "down"}">${formatPlainPercent(row.edge, true)}</span><span class="pane-lab">edge</span></div>
+      </div>
+      <div class="pane-chart" id="paneChart"></div>
+      ${auditDetail(row)}
+      <p class="pane-code">${escapeHtml(String(row.ticker || ""))}</p>`;
+    const chartHolder = document.getElementById("paneChart");
+    const track = chartTrackFor(String(row.ticker || ""));
+    if (chartHolder && track) {
+      mountPriceChart(chartHolder, track.pairs, {
+        bid: track.bid || undefined,
+        stamps: track.stamps || undefined,
+        label: `Price history for ${row.phrase}`,
+        animate: !auditChartsDrawn.has(String(row.ticker)),
+      });
+      auditChartsDrawn.add(String(row.ticker));
+    }
+    document.getElementById("paneClose").addEventListener("click", closePane);
+    document.getElementById("panePrev").addEventListener("click", () => paneStep(-1));
+    document.getElementById("paneNext").addEventListener("click", () => paneStep(1));
   }
 
   /* The expanded row gets the full price chart: the whole night of quotes
