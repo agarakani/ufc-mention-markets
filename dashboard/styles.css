@@ -14,56 +14,56 @@
 :root {
   color-scheme: dark;
 
-  /* THE WORD EXCHANGE — obsidian ground with a violet cast */
-  --bg: #0b0b11;
-  --bg-deep: #08080d;
-  --surface: #14141d;
-  --surface-2: #1b1c28;
-  --cue-box: #0d0d15;
+  /* THE SCOREBOARD — flat broadcast panels, no atmosphere.
+     Color is structural: red corner, blue corner, money green. The highlight
+     is white. Panels join with dark rules, the way broadcast graphics butt
+     together, not with glowing borders. */
+  --bg: #17181a;
+  --bg-deep: #101112;
+  --surface: #1e1f22;
+  --surface-2: #26272b;
+  --cue-box: #101112;
 
-  /* borders: decorative separators vs control boundaries (WCAG 1.4.11) */
-  --border: #2a2b3a;
-  --border-strong: #3a3c52;
-  --edge-control: #6a6d8f;
+  --border: #0d0d0f;          /* panel joins: darker than the ground */
+  --border-strong: #000000;
+  --edge-control: #7c7e85;
 
-  --ink: #f2efe9;        /* warm off-white */
-  --ink-2: #a7a4b8;
-  --ink-3: #6f6c84;      /* strokes and axis text at 14px+, never body copy */
+  --ink: #ffffff;
+  --ink-2: #c9c7c1;
+  --ink-3: #8a8880;
   --white-hot: #ffffff;
-  --ink-on-fill: #0b0b11;
+  --ink-on-fill: #101112;
 
-  /* the exchange accents */
-  --violet: #8b7bff;     /* primary: selection, watch, focus, live line */
-  --periwinkle: #aab4ff;
-  --cyan: #56c8ff;       /* informational: links, scrub, crosshair */
-  --coral: #ff6a55;      /* urgency: NEW, replay badge, expiring */
-  --acid: var(--violet); /* legacy alias: every old flood rule now lands violet */
-  --on-acid: #0b0b11;
+  /* structural color, flat, no gradients anywhere */
+  --violet: #ffffff;          /* legacy accent alias: the highlight is white now */
+  --periwinkle: #c9c7c1;
+  --cyan: #c9c7c1;
+  --coral: #d20a2e;           /* urgency shares the red-corner family */
+  --acid: #ffffff;
+  --on-acid: #101112;
 
-  /* the sport's corners — fighters only */
-  --red-corner: #e5484d;
-  --blue-corner: #5a9df0;
+  --red-corner: #d20a2e;
+  --blue-corner: #2456e6;
 
-  /* money: emerald strictly for positive, muted red for negative */
-  --gain: #2fbf83;
-  --gain-bright: #43d698;
-  --loss: #f0655f;
-  --tally: #ff4d3d;
-  --select: #232438;
-  --ticker-bed: #08080d;
-  --tile-wash: #12121b;
-  --row-watch: #161623;
-  --lane-bed: #1a1b29;
-  --lane-tick: #262740;
-  --lane-dead: #303252;
+  --gain: #12a15e;
+  --gain-bright: #17b96e;
+  --loss: #d94f43;
+  --tally: #d20a2e;
+  --select: #26272b;
+  --ticker-bed: #101112;
+  --tile-wash: #1e1f22;
+  --row-watch: #202127;
+  --lane-bed: #26272b;
+  --lane-tick: #34353b;
+  --lane-dead: #3e3f47;
 
-  --radius: 10px;
-  --radius-sm: 6px;
+  --radius: 2px;
+  --radius-sm: 2px;
 
-  --display: "Bricolage Grotesque", "Inter", Helvetica, Arial, sans-serif;
-  --voice: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --display: "Archivo", Helvetica, Arial, sans-serif;
+  --voice: "Archivo", Helvetica, Arial, sans-serif;
   --num: "Spline Sans Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --prose: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --prose: "Archivo", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
   --ease: cubic-bezier(0.2, 0, 0, 1);
   --pop: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -2981,4 +2981,123 @@ html[data-perf="capture"] .amb-light {
 }
 @media (prefers-reduced-motion: reduce) {
   .detail-pane { animation: none; }
+}
+
+/* ================= THE SCOREBOARD flattening layer =================
+   Appended last so it wins. Every gradient, glow, shadow and translucent
+   wash goes flat; statuses become typographic flags; the fight's own red
+   and blue corners carry the identity. */
+
+.stage, .stage.is-tonight, .stage.is-replay {
+  background: var(--bg-deep);
+  border: 0;
+  border-top: 4px solid var(--red-corner);
+  border-bottom: 3px solid var(--border);
+}
+.stage.is-replay { border-top-color: var(--ink); }
+.stage-light { display: none; }
+.cage { opacity: 0.35; }
+
+.stage-title {
+  font-family: var(--display);
+  font-weight: 900;
+  font-variation-settings: "wdth" 116;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+/* labels: condensed bold caps from the same family, no letterbox pills */
+.stage-kicker, .side-title, .block-title, .toolbar-meta, .mcard-call,
+.tape-invite-kicker, .pane-lab, .tile-head {
+  font-variation-settings: "wdth" 76;
+  letter-spacing: 0.05em;
+}
+
+.mode-badge, .mode-badge--live, .mode-badge--next, .mode-badge--replay {
+  border: 0;
+  border-radius: 0;
+  padding: 4px 10px;
+  font-variation-settings: "wdth" 76;
+  letter-spacing: 0.06em;
+}
+.mode-badge--live { background: var(--red-corner); color: #fff; }
+.mode-badge--next { background: var(--ink); color: var(--ink-on-fill); }
+.mode-badge--replay { background: var(--ink); color: var(--ink-on-fill); }
+
+.tile, .health-block, .tracking-card, .stat-tiles, .panel, .mcard,
+.tape-invite, .detail-pane, .pane-nums > div {
+  box-shadow: none;
+  background-image: none;
+}
+
+.tape-invite { background: var(--surface); border: 3px solid var(--border); }
+.tape-invite:hover, .tape-invite:focus-visible { transform: none; border-color: var(--ink); }
+.tape-invite-kicker { color: var(--ink-2); }
+
+/* market cards become scoreboard cells: flat panels butted with dark rules */
+.mgrid { gap: 3px; background: var(--border); border: 3px solid var(--border); border-radius: 0; }
+.mcard {
+  border: 0;
+  border-radius: 0;
+  background: var(--surface);
+  transition: background 90ms linear;
+}
+.mcard:hover, .mcard:focus-visible { background: var(--surface-2); transform: none; box-shadow: none; }
+.mcard.is-watch { background: var(--row-watch); border-left: 6px solid var(--ink); }
+.mcard.is-selected { outline: 3px solid var(--ink); outline-offset: -3px; }
+.mcard.is-new .mcard-fresh { background: var(--red-corner); color: #fff; padding: 2px 7px; border: 0; }
+.mcard--featured { background: var(--bg-deep); }
+.mcard--featured .mcard-phrase {
+  font-weight: 900;
+  font-variation-settings: "wdth" 112;
+  text-transform: uppercase;
+}
+.mcard--waiting { border: 0; background: var(--surface); opacity: 0.75; }
+.mcard-call { border: 0; background: transparent; padding: 0; color: var(--ink); font-weight: 700; }
+.mcard.is-watch .mcard-call { background: var(--ink); color: var(--ink-on-fill); padding: 3px 8px; }
+.mcard-edge.up { color: var(--gain-bright); }
+.mcard-edge.down { color: var(--ink-3); }
+.mcard-fight i.c-red { background: var(--red-corner); }
+.mcard-fight i.c-blue { background: var(--blue-corner); }
+
+/* the fight is a split bar, red half and blue half, like a broadcast strap */
+.tape { border: 0; border-top: 3px solid var(--red-corner); background: var(--bg-deep); }
+.tape-side { border-left-width: 6px; }
+
+/* navigation: flat panels, white flag for the active location */
+.tabs { border: 3px solid var(--border); background: var(--border); gap: 3px; border-radius: 0; }
+.tab { border: 0; border-radius: 0; background: var(--surface); font-variation-settings: "wdth" 76; }
+.tab:hover, .tab:focus-visible { background: var(--surface-2); color: var(--ink); border-color: transparent; }
+.tab.is-active { background: var(--ink); color: var(--ink-on-fill); }
+
+.segments { border: 3px solid var(--border); background: var(--border); gap: 3px; border-radius: 0; }
+.segment { border-radius: 0; background: var(--surface); }
+.segment:hover, .segment:focus-visible { background: var(--surface-2); }
+.segment.is-active { background: var(--ink); color: var(--ink-on-fill); }
+
+.view-switch { border: 3px solid var(--border); border-radius: 0; }
+.view-switch button.is-active { background: var(--ink); color: var(--ink-on-fill); }
+
+.pill, .pill.warn, .chip-new, .caveat { border-radius: 0; }
+.pill.warn { background: var(--ink); color: var(--ink-on-fill); border: 0; font-weight: 700; }
+.chip-new { background: var(--red-corner); color: #fff; border: 0; }
+
+.detail-pane {
+  background: var(--bg-deep);
+  border-left: 3px solid var(--border);
+  box-shadow: none;
+}
+.pane-call { background: var(--ink); color: var(--ink-on-fill); border-radius: 0; }
+.pane-phrase { font-weight: 900; font-variation-settings: "wdth" 112; text-transform: uppercase; }
+.pane-nums > div { border: 3px solid var(--border); border-radius: 0; background: var(--surface); }
+.pane-btn { border-radius: 0; }
+
+.stage-exit { border-radius: 0; border-width: 3px; }
+.replay-bar { border: 3px solid var(--border); border-radius: 0; background: var(--bg-deep); }
+
+.heat .cell { border-radius: 0; }
+.heat .cell.is-watch { box-shadow: inset 0 0 0 3px var(--ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  .mcard, .tab, .segment { transition: none; }
 }

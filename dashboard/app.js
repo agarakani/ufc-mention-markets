@@ -274,7 +274,6 @@
     bindEvents();
     bindTickerPause();
     deriveMode();
-    seedAmbientPhrases();
     if (state.routedFrame !== null && replayTape()) enterReplay(state.routedFrame, { autoplay: false });
     renderAll();
     state.dataStamp = dataFingerprint();
