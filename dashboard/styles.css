@@ -47,7 +47,7 @@
 
   --gain: #12a15e;
   --gain-bright: #17b96e;
-  --loss: #d94f43;
+  --loss: #e4685c;
   --tally: #d20a2e;
   --select: #26272b;
   --ticker-bed: #101112;
@@ -1688,7 +1688,7 @@ h1, .stage-title, .page-head h2, .tab, .tile-name, .block-title {
 
 .nav-fight { transition: background var(--snap) linear, color var(--snap) linear; }
 .nav-fight:hover, .nav-fight:focus-visible { background: var(--acid); color: var(--on-acid); box-shadow: none; }
-.nav-fight:hover *, .nav-fight:focus-visible * { color: var(--on-acid) !important; border-color: var(--on-acid) !important; }
+.nav-fight:hover *, .nav-fight:focus-visible * { color: var(--on-acid) !important; }
 
 .nav-card-head { transition: background var(--snap) linear; }
 .nav-card-head:hover { background: var(--surface-2); }
@@ -1896,10 +1896,14 @@ tbody tr.is-watch td:first-child::before { background: var(--acid); }
   position: absolute;
   top: 3px;
   bottom: 3px;
-  width: 0;
-  transition: width 450ms cubic-bezier(0.22, 1, 0.36, 1), background-color 100ms linear;
+  width: var(--dv-w);
+  animation: dv-grow 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: inherit;
 }
-.dv-in .dv-bar { width: var(--dv-w); }
+.dv-pos.dv-bar { transform-origin: left center; }
+.dv-neg.dv-bar { transform-origin: right center; }
+@keyframes dv-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) { .dv-bar { animation: none; } }
 .dv-pos { background: var(--gain); }
 .dv-neg { background: var(--loss); }
 .dv-val { font-size: 12px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
@@ -2310,149 +2314,21 @@ tbody tr.is-expandable:focus-visible td:first-child { box-shadow: inset 3px 0 0 
    One fixed, inert layer. No JS. Readability first.
    ============================================================ */
 
-.ambient-layer {
-  position: fixed;
-  inset: 0;
-  z-index: -1;              /* behind all in-flow app content */
-  overflow: hidden;
-  pointer-events: none;
-  user-select: none;
-  contain: strict;
-}
-
 /* ---- 1) Drifting light fields ------------------------------
    Each field is its own small(ish) transform-only element.
    The animation lives HERE, never on a full-viewport layer. */
 
-.amb-light {
-  position: absolute;
-  width: 62vmax;
-  height: 62vmax;
-  border-radius: 50%;
-  opacity: 0.10;
-  will-change: transform;
-  transform: translate3d(0, 0, 0);
-}
-
-.amb-light--violet {
-  top: -26vmax;
-  left: -20vmax;
-  background: radial-gradient(
-    circle at 50% 50%,
-    color-mix(in srgb, var(--violet, #8b7bff) 90%, transparent) 0%,
-    color-mix(in srgb, var(--violet, #8b7bff) 35%, transparent) 38%,
-    transparent 70%
-  );
-  animation: amb-drift-a 150s ease-in-out infinite;
-}
-
-.amb-light--cyan {
-  bottom: -28vmax;
-  right: -22vmax;
-  background: radial-gradient(
-    circle at 50% 50%,
-    color-mix(in srgb, var(--cyan, #56c8ff) 85%, transparent) 0%,
-    color-mix(in srgb, var(--cyan, #56c8ff) 30%, transparent) 38%,
-    transparent 70%
-  );
-  animation: amb-drift-b 180s ease-in-out infinite;
-}
-
-@keyframes amb-drift-a {
-  0%   { transform: translate3d(0, 0, 0) scale(1); }
-  50%  { transform: translate3d(5vw, 3vh, 0) scale(1.07); }
-  100% { transform: translate3d(0, 0, 0) scale(1); }
-}
-
-@keyframes amb-drift-b {
-  0%   { transform: translate3d(0, 0, 0) scale(1); }
-  50%  { transform: translate3d(-4vw, -4vh, 0) scale(1.05); }
-  100% { transform: translate3d(0, 0, 0) scale(1); }
-}
-
 /* ---- 2) Ghosted phrase band --------------------------------
-   Host fills .amb-phrase textContent at runtime; ships empty.
-   Stroke-only display type, barely-there, bleeding off edges. */
-
-.amb-phrases {
-  position: absolute;
-  inset: 0;
-}
-
-.amb-phrase {
-  position: absolute;
-  font-family: "Bricolage Grotesque", Inter, system-ui, sans-serif;
-  font-weight: 800;
-  text-transform: uppercase;
-  line-height: 0.85;
-  letter-spacing: -0.02em;
-  white-space: nowrap;
-  color: transparent;
-  -webkit-text-stroke: 1px color-mix(in srgb, var(--ink, #f2efe9) 5%, transparent);
-}
-
-.amb-phrase--1 {
-  top: 4vh;
-  left: -6vw;
-  font-size: clamp(9rem, 22vw, 24rem);
-  transform: rotate(-7deg);
-  transform-origin: left top;
-}
-
-.amb-phrase--2 {
-  top: 44vh;
-  right: -10vw;
-  font-size: clamp(8rem, 19vw, 21rem);
-  transform: rotate(5deg);
-  transform-origin: right top;
-}
-
-.amb-phrase--3 {
-  bottom: -3vh;
-  left: 8vw;
-  font-size: clamp(9rem, 21vw, 23rem);
-  transform: rotate(-4deg);
-  transform-origin: left bottom;
-}
-
-/* ---- 3) Broadcast scanlines (static) ----------------------- */
-
-.amb-scanlines {
-  position: absolute;
-  inset: 0;
-  opacity: 0.015;
-  background: repeating-linear-gradient(
-    to bottom,
-    var(--ink, #f2efe9) 0px,
-    var(--ink, #f2efe9) 1px,
-    transparent 1px,
-    transparent 3px
-  );
-}
+   Host fills /* ---- 3) Broadcast scanlines (static) ----------------------- */
 
 /* ---- 4) Film grain (static, tiled inline SVG) -------------- */
-
-.amb-grain {
-  position: absolute;
-  inset: 0;
-  opacity: 0.03;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 160px 160px;
-}
 
 /* ---- Motion kill-switches ---------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
-  .amb-light {
-    animation: none;
-    will-change: auto;
   }
-}
 
-html[data-perf="capture"] .amb-light {
-  animation-play-state: paused;
-}/* ============================================================
+html[data-perf="capture"] /* ============================================================
    UFC MENTION MARKETS — MARKET CARD SYSTEM
    Scope: .mgrid / .mcard and descendants only.
    Assumes shell tokens: --bg --bg-deep --surface --surface-2
@@ -3101,3 +2977,84 @@ html[data-perf="capture"] .amb-light {
 @media (prefers-reduced-motion: reduce) {
   .mcard, .tab, .segment { transition: none; }
 }
+
+/* ================= small screens: the scoreboard folds ================= */
+@media (max-width: 640px) {
+  .tabs { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: 0 0 auto; white-space: nowrap; }
+
+  .cage { display: none; }
+
+  .rtl { flex-wrap: wrap; row-gap: 6px; }
+  .rtl-count { display: none; }
+  .rtl-badge { display: none; }
+  .rtl-timecode { font-size: 13px; }
+  .rtl-cluster--right { margin-left: auto; }
+  .rtl-track { flex: 1 1 100%; order: 3; }
+
+  .stage-title { font-size: clamp(26px, 8vw, 38px); }
+  .pane-nums { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ================= polish pass: audit fixes =================
+   Everything below answers a named audit finding; keep the order. */
+
+/* keyboard focus on cards and controls */
+.mcard:focus-visible { outline: 2px solid var(--white-hot); outline-offset: -2px; }
+.view-switch button:focus-visible { outline-offset: -2px; }
+
+/* the timeline sheds the last of the old skin */
+.rtl { background: var(--bg-deep); border: 3px solid var(--border); border-radius: 0; box-shadow: none; font-family: var(--prose); }
+.rtl-btn { background: var(--surface); border: 1px solid var(--edge-control); border-radius: 0; }
+.rtl-track { background: var(--bg-deep); border-radius: 0; box-shadow: inset 0 0 0 1px var(--border); }
+.rtl-marker-tip { border-radius: 0; box-shadow: none; font-family: var(--prose); }
+.rtl-badge { background: var(--red-corner); color: #fff; border: 0; border-radius: 0; font-family: var(--voice); }
+.rtl--playing .rtl-play { color: var(--ink); border-color: var(--ink); box-shadow: none; }
+.rtl-playhead::before { background: var(--white-hot); box-shadow: none; }
+.rtl-knob { background: var(--surface-2); border: 1px solid var(--white-hot); box-shadow: 0 0 0 1px var(--border-strong); }
+.rtl-track:focus-visible .rtl-knob { box-shadow: 0 0 0 3px var(--white-hot); }
+
+/* tiles: flat panels, no gradient resurrection on hover */
+.tile { background: var(--surface); border-color: var(--border); }
+.tile:hover, .tile:focus-visible { background: var(--surface-2); border-color: var(--border); }
+.tile::after { content: none; }
+
+/* cards: no glow, no ring, no lift */
+.mcard--featured::before, .mcard::after { content: none; }
+.mcard.is-selected { transform: none; }
+.mcard, .mcard * { font-family: var(--prose); }
+.mcard-phrase, .pane-phrase { font-family: var(--display); }
+.mcard-vs { font-family: var(--voice); }
+.mcard--waiting::after { content: none; }
+.mcard-wait { font-size: 12px; line-height: 1.45; color: var(--ink-2); }
+.mcard-edge.down { color: var(--ink-2); }
+
+/* corner keys stay corner-colored under the pointer */
+.nav-fight:hover .corner, .nav-fight:focus-visible .corner { border-left-color: var(--red-corner) !important; }
+.nav-fight:hover .corner.blue, .nav-fight:focus-visible .corner.blue { border-left-color: var(--blue-corner) !important; }
+
+/* the one word that means "don't trust this" becomes a flag */
+.status .stale { background: var(--tally); color: #fff; padding: 1px 6px; font-weight: 600; }
+
+/* opaque tokenized header */
+.topbar { background: var(--bg); backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+/* urgency flags unified */
+.signal-new { background: var(--red-corner); color: #fff; border: 0; }
+
+/* stray seam between tabs */
+.tab + .tab { border-left: 0; }
+
+/* legible money text */
+.pill.good { color: var(--gain-bright); border-color: var(--border); }
+.signal-edge { color: var(--gain-bright); }
+
+/* watch marker halo in white, once */
+.lane .mark.is-watch { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.28); }
+
+/* heat cells on today's tokens */
+.heat .cell { background: var(--surface); }
+.heat .cell.up { background: color-mix(in srgb, var(--gain) calc(22% + var(--s) * 78%), var(--surface)); }
+.heat .cell.down { background: color-mix(in srgb, #a03028 calc(24% + var(--s) * 76%), var(--surface)); }
+.heat .empty-cell { background: var(--surface); opacity: 0.5; }

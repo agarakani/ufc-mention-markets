@@ -703,7 +703,7 @@
       ? `<button class="tape-invite" id="launchReplay" type="button">
           <span class="tape-invite-kicker">While you wait</span>
           <span class="tape-invite-title">Play the ${escapeHtml(formatDate(card.tapeDate) || "last")} card back</span>
-          <span class="tape-invite-sub">Every price and signal, exactly as the board saw it</span>
+          <span class="tape-invite-sub">The night's prices and signals, as recorded</span>
         </button>`
       : "";
 
@@ -1449,11 +1449,11 @@
               <span class="cd-colon">:</span>
               <span class="cd-group"><strong>${String(hours).padStart(2, "0")}</strong><span>HRS</span></span>
             </div>
-            <p class="fight-sub">${escapeHtml([next.name, next.venue, next.location].filter(Boolean).join(" · "))} · Mention markets tend to open closer to fight night. This page checks on its own.</p>
+            <p class="fight-sub">${escapeHtml([next.name, next.venue, next.location].filter(Boolean).join(" · "))} · Mention markets tend to open closer to fight night. They appear here when they open.</p>
           </div>`;
         return;
       }
-      els.fightHeader.innerHTML = "<h2>No cards yet</h2><p class=\"fight-sub\">Kalshi's UFC mention markets show up here on their own once they open.</p>";
+      els.fightHeader.innerHTML = "<h2>No cards yet</h2><p class=\"fight-sub\">Kalshi's UFC mention markets appear here once they open.</p>";
       return;
     }
 
@@ -1832,7 +1832,7 @@
 
     if (row.watch) {
       if (parseNumber(row.side_price) === null) {
-        return `Our model thinks YES is ${model} and the book has not printed a quote at this point of the night yet. The edge reads ${edge} against the last known level.${thin}`;
+        return `Our model thinks YES is ${model} and the book has not printed a quote at this point of the night yet. The edge is ${edge} against the last known level.${thin}`;
       }
       const capBit = parseNumber(row.edge_cap) !== null ? ` and the cap is ${cap}` : "";
       return `Our model thinks YES is ${model}. Buying ${side} costs ${sidePrice}, so ${side} has ${edge} of edge. The entry bar is ${hurdle}${capBit}, so this clears and becomes WATCH ${side}.${thin}`;
@@ -1841,7 +1841,7 @@
       return `Our model thinks YES is ${model}, a ${edge} disagreement with the market. On settled cards, most gaps over ${cap} came from the model, so we flag this row instead of trading it.`;
     }
     if (row.block_reason === "low_trust") {
-      return `Our model thinks YES is ${model} and ${side} has ${edge} of edge, but ${row.trust_note || "this phrase group has not shown real skill on old fights"}.`;
+      return `Our model thinks YES is ${model} and ${side} has ${edge} of edge, but ${row.trust_note || "this phrase group has not shown skill on old fights"}.`;
     }
     if (parseNumber(row.edge) <= 0) {
       return `Our model thinks YES is ${model}. Neither side is cheap compared to that, so there is nothing to do here.`;
@@ -2007,7 +2007,7 @@
       rowNodes.clear();
       const fight = getSelectedFight();
       const message = fight && fight.odds_status === "tbd"
-        ? "Kalshi lists this fight. The mention odds are not posted yet, and this fills in on its own."
+        ? "Kalshi lists this fight but has not posted mention odds yet. They appear here when it does."
         : "No markets match those filters.";
       body.innerHTML = `<tr><td class="empty" colspan="${columns.length}">${escapeHtml(message)}</td></tr>`;
       return;
@@ -2139,7 +2139,7 @@
     }
 
     if (row.trust_ok === false) {
-      lines.push(["Phrase trust", `Low. ${row.trust_note || "This phrase group has not shown real skill in the old-fight prediction test."} It can lean, but it cannot be a watch.`]);
+      lines.push(["Phrase trust", `Low. ${row.trust_note || "This phrase group has not shown skill in the old-fight prediction test."} It can lean, but it cannot be a watch.`]);
     } else if (row.trust_note) {
       lines.push(["Phrase trust", row.trust_note]);
     }
@@ -2225,7 +2225,7 @@
       <h3 class="mcard-phrase">${escapeHtml(archetype === "compact" ? phraseHead : String(row.phrase || ""))}</h3>
       <p class="mcard-fight"><i class="c-red"></i>${escapeHtml(lastName(row.fighter_1))} <em>v</em> <i class="c-blue"></i>${escapeHtml(lastName(row.fighter_2))}</p>
       ${archetype === "waiting"
-        ? '<p class="mcard-wait">Kalshi has not posted a book for this phrase yet. It fills in on its own.</p>'
+        ? '<p class="mcard-wait">Kalshi has not posted a book for this phrase yet. Prices appear here once it does.</p>'
         : `<div class="mcard-nums"><span class="mcard-model">${model}</span><span class="mcard-vs">model vs</span><span class="mcard-mkt">${escapeHtml(market)}</span></div>
            <div class="mcard-edge ${edge !== null && edge > 0 ? "up" : "down"}">${formatPlainPercent(edge, true)}</div>`}
       <div class="mcard-spark">${spark}</div>
@@ -2747,7 +2747,7 @@
         return `<div class="cov-row ${card.state}">
           <span>${escapeHtml(formatDate(card.date) || card.date)}</span>
           <b>${label}</b>
-          <i>${card.markets ? `${formatInteger(card.markets)} markets · ${formatInteger(card.snapshots)} snapshots` : "&mdash;"}</i>
+          <i>${card.markets ? `${formatInteger(card.markets)} markets · ${formatInteger(card.snapshots)} snapshots` : "--"}</i>
         </div>`;
       }).join("");
       covBlock = `
@@ -2835,7 +2835,7 @@
     const positions = data.tracking_positions || [];
 
     if (!cards.length) {
-      els.trackingSummary.textContent = "Nothing tracked yet. The tracker logs new watch rows here on its own.";
+      els.trackingSummary.textContent = "Nothing tracked yet. The tracker logs new watch rows here as they appear.";
       els.trackingCards.innerHTML = "";
       if (els.paperStats) els.paperStats.innerHTML = "";
       els.trackingBody.innerHTML = '<tr><td class="tracking-empty" colspan="8">The tracker has logged no paper entries yet. It adds one pretend contract the first time a market becomes a watch.</td></tr>';
@@ -3630,7 +3630,7 @@
         <span class="dv-phrase">${escapeHtml(row.phrase)}</span>
         <span class="dv-track">
           <i class="dv-zero"></i>
-          <i class="dv-bar ${pos ? "dv-pos" : "dv-neg"}" style="${anchor};--dv-w:${widthPct.toFixed(2)}%;transition-delay:${reduce ? 0 : i * 35}ms"></i>
+          <i class="dv-bar ${pos ? "dv-pos" : "dv-neg"}" style="${anchor};--dv-w:${widthPct.toFixed(2)}%;animation-delay:${reduce ? 0 : i * 35}ms"></i>
         </span>
         <span class="dv-val ${pos ? "ce-up" : "ce-down"}">${escapeHtml(ceMoney(pnl))}</span>
         <span class="dv-meta">${trades} TR · ${rate}%</span>
@@ -3655,16 +3655,6 @@
       ${scale}
     </div>`;
 
-    const chart = container.querySelector(".dv-chart");
-    if (reduce) {
-      chart.classList.add("dv-in");
-    } else {
-      // Double rAF: first frame paints the zero-width bars, second flips
-      // the class so every bar transitions from a committed initial state.
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => chart.classList.add("dv-in"));
-      });
-    }
   }
 
   init();
