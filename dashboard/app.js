@@ -215,7 +215,7 @@
   const state = {
     tab: "markets",
     mode: "next",          // "live" | "next" | "replay" — one mode owns the page
-    view: (function () { try { return localStorage.getItem("wx_view") || "grid"; } catch (e) { return "grid"; } })(),
+    view: (function () { try { return localStorage.getItem("wx_view") || "table"; } catch (e) { return "table"; } })(),
     paneTicker: "",
     signal: "watch",
     signalUserSet: false,
@@ -596,7 +596,7 @@
      The card is an event, so the page opens like one: the octagon lit from
      above, the name at poster scale, and a clock running down to first bell. */
 
-  const FIGHT_ACCENTS = ["#ff6b2c", "#ffc53d", "#3ddc97", "#22d3ee", "#5b9dff", "#ff5c8a"];
+  const FIGHT_ACCENTS = ["#8a8880"];
 
   function accentFor(key) {
     const text = String(key || "");
