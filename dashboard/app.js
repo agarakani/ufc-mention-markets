@@ -956,11 +956,11 @@
         matchup: `${market.fighter_1} vs ${market.fighter_2}`,
         yes_ask: ask,
         yes_bid: bid,
-        no_ask: ask === null ? null : Math.round((1 - ask) * 100) / 100 + 0.02,
+        no_ask: ask === null ? null : Math.min(0.99, Math.round((1 - ask) * 100) / 100 + 0.02),
         model_probability: model,
         edge,
         side: edge !== null && edge > 0 ? "yes" : "no",
-        side_price: edge !== null && edge > 0 ? ask : (ask === null ? null : Math.round((1 - ask) * 100) / 100 + 0.02),
+        side_price: edge !== null && edge > 0 ? ask : (ask === null ? null : Math.min(0.99, Math.round((1 - ask) * 100) / 100 + 0.02)),
         yes_edge: edge,
         no_edge: edge === null ? null : -edge,
         hurdle: 0.05,
@@ -1190,8 +1190,12 @@
 
   function boardRows() {
     if (getRows().length) return getRows();
-    if (state.mode === "replay" && replayTape()) return replayRows();
-    return [];
+    const tape = replayTape();
+    if (!tape) return [];
+    // No live markets: the board carries the last recorded card's closing
+    // state as plain data. No transport, no playback, just the final numbers.
+    if (state.mode !== "replay") replay.frame = tape.frames - 1;
+    return replayRows();
   }
 
   function bestEdgeOnCard() {
@@ -1251,13 +1255,7 @@
 
     // NEXT mode: the board is empty on purpose; the tape is an invitation,
     // not a default. One clear entry, no historical numbers in the hero.
-    const tapeInvite = card.mode === "next" && card.hasTape
-      ? `<button class="tape-invite" id="launchReplay" type="button">
-          <span class="tape-invite-kicker">While you wait</span>
-          <span class="tape-invite-title">Play the ${escapeHtml(formatDate(card.tapeDate) || "last")} card back</span>
-          <span class="tape-invite-sub">The night's prices and signals, as recorded</span>
-        </button>`
-      : "";
+    const tapeInvite = "";
 
     const stats = card.mode === "next"
       ? ""
@@ -1289,8 +1287,6 @@
         </div>
       </section>`;
     if (card.mode === "next") startClock();
-    const launch = document.getElementById("launchReplay");
-    if (launch) launch.addEventListener("click", () => { enterReplay(0); renderAll(); });
     const exit = document.getElementById("exitReplay");
     if (exit) exit.addEventListener("click", () => { exitReplay(); renderAll(); });
   }
@@ -1672,7 +1668,7 @@
   const MOON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.2A8.2 8.2 0 0 1 9.8 4a8.4 8.4 0 1 0 10.2 10.2z"/></svg>';
 
   function currentTheme() {
-    return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+    return document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
   }
 
   function paintThemeButton(button) {
@@ -1687,7 +1683,7 @@
     paintThemeButton(button);
     button.addEventListener("click", () => {
       const next = currentTheme() === "dark" ? "light" : "dark";
-      if (next === "dark") document.documentElement.setAttribute("data-theme", "dark");
+      if (next === "light") document.documentElement.setAttribute("data-theme", "light");
       else document.documentElement.removeAttribute("data-theme");
       try { localStorage.setItem("mm_theme", next); } catch (e) { /* private mode */ }
       paintThemeButton(button);
@@ -1749,12 +1745,6 @@
     els.tabBar.addEventListener("click", (event) => {
       const tab = event.target.closest("[data-tab]");
       if (!tab) return;
-      if (tab.dataset.tab === "replay") {
-        if (state.mode !== "replay") enterReplay(replay.frame || 0);
-        routeTo(`/replay/${replay.frame}`);
-        renderAll();
-        return;
-      }
       if (tab.dataset.tab === "markets" && state.mode === "replay") exitReplay();
       routeTo(TAB_ROUTES[tab.dataset.tab] || "/desk");
     });
@@ -2008,14 +1998,13 @@
 
     // In replay, the stage already owns the context. Repeating the future
     // event here would glue tomorrow's fighters onto last month's prices.
-    if (state.mode === "replay") {
+    if (state.mode === "replay" || (!getRows().length && replayTape())) {
       const rows = boardRows();
       const watch = rows.filter((row) => deriveRow(row).watch).length;
+      const tape = replayTape();
       els.fightHeader.innerHTML = `
-        <p class="block-title">Every market on the tape
-          <span class="block-note">${formatInteger(rows.length)} phrase markets · ${watch
-            ? `${formatInteger(watch)} watch signals at this point of the night`
-            : "no watch signals at this point of the night"}</span>
+        <p class="block-title">The last card
+          <span class="block-note">${escapeHtml(formatDate(tape.event_date) || tape.card || "")} · ${formatInteger(rows.length)} markets at the final pre-fight prices · ${formatInteger(watch)} were watch signals</span>
         </p>`;
       return;
     }

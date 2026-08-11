@@ -4,30 +4,36 @@
    Everything else is ink on paper. */
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 
-  --bg: #ffffff;
-  --bg-sunken: #f7f7f8;
-  --surface: #ffffff;
+  /* cinematic dark: deep neutral ground, elevated cards that catch light */
+  --bg: #0a0b0e;
+  --bg-sunken: #101218;
+  --surface: #12141a;
 
-  --ink: #09090b;
-  --ink-2: #52525b;
-  --ink-3: #a1a1aa;
+  --ink: #f5f6f8;
+  --ink-2: #9ba1ad;
+  --ink-3: #626875;
 
-  --line: #e4e4e7;
-  --line-2: #f4f4f5;
+  --line: #23262e;
+  --line-2: #1a1c23;
 
-  --up: #00a804;
-  --down: #e04300;
-  --corner-red: #e5484d;
-  --corner-blue: #2f6fed;
+  --accent: #4d8dff;
+  --accent-soft: rgba(77, 141, 255, 0.14);
+  --up: #00d26a;
+  --down: #ff5042;
+  --corner-red: #ff5d64;
+  --corner-blue: #5a9dff;
 
   --radius: 16px;
   --radius-sm: 12px;
   --pill: 999px;
 
-  --shadow-1: 0 1px 2px rgba(9, 9, 11, 0.04);
-  --shadow-2: 0 8px 24px rgba(9, 9, 11, 0.06);
+  /* dark depth: a lit top edge plus real shadow, the Linear card recipe */
+  --shadow-1: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 16px 40px rgba(0, 0, 0, 0.5);
+  --glow-up: drop-shadow(0 0 7px rgba(0, 210, 106, 0.45));
+  --glow-down: drop-shadow(0 0 7px rgba(255, 80, 66, 0.4));
 
   --expo: cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -80,25 +86,31 @@
   --mono: "Inter", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-[data-theme="dark"] {
-  color-scheme: dark;
+[data-theme="light"] {
+  color-scheme: light;
 
-  --bg: #0b0b0c;
-  --bg-sunken: #151517;
-  --surface: #151517;
+  --bg: #ffffff;
+  --bg-sunken: #f7f7f8;
+  --surface: #ffffff;
 
-  --ink: #fafafa;
-  --ink-2: #a1a1aa;
-  --ink-3: #71717a;
+  --ink: #09090b;
+  --ink-2: #52525b;
+  --ink-3: #a1a1aa;
 
-  --line: #27272a;
-  --line-2: #1c1c1f;
+  --line: #e4e4e7;
+  --line-2: #f4f4f5;
 
-  --up: #00c805;
-  --down: #ff5000;
+  --accent: #2f6fed;
+  --accent-soft: rgba(47, 111, 237, 0.10);
+  --up: #00a804;
+  --down: #e04300;
+  --corner-red: #e5484d;
+  --corner-blue: #2f6fed;
 
-  --shadow-1: none;
-  --shadow-2: none;
+  --shadow-1: 0 1px 2px rgba(9, 9, 11, 0.04);
+  --shadow-2: 0 8px 24px rgba(9, 9, 11, 0.06);
+  --glow-up: none;
+  --glow-down: none;
 }
 
 * { box-sizing: border-box; }

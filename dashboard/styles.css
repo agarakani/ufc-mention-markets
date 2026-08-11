@@ -1452,3 +1452,70 @@ td.empty, .tracking-empty { padding: 56px 12px; text-align: center; color: var(-
 .mcard:hover .mcard-side { filter: brightness(0.97); }
 [data-theme="dark"] .mcard-side--yes { background: rgba(0, 200, 5, 0.14); }
 [data-theme="dark"] .mcard-side--no { background: rgba(255, 80, 0, 0.14); }
+
+/* ============ cinematic layer ============
+   Dark is the primary stage now. Charts glow, cards catch light on their top
+   edge, and the accent ring answers the pointer. Light mode keeps the same
+   geometry with the glow switched off. */
+
+/* one quiet ambient field behind the first screen; static, cheap */
+body::before {
+  content: "";
+  position: fixed;
+  top: -240px;
+  left: 50%;
+  width: 900px;
+  height: 480px;
+  transform: translateX(-50%);
+  background: radial-gradient(closest-side, var(--accent-soft), transparent 70%);
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: 0;
+}
+[data-theme="light"] body::before { display: none; }
+.shell { position: relative; z-index: 1; }
+
+/* charts glow in the dark */
+.hero-line, .hero-svg path[stroke] { filter: var(--glow-up); }
+.hero-chart.is-down .hero-line { filter: var(--glow-down); }
+.spark svg polyline, .spark svg path { filter: var(--glow-down); }
+.spark svg .spark-up { filter: var(--glow-up); }
+
+/* cards catch light and answer the pointer with an accent ring */
+.mcard, .tile, .stat-tile, .health-block, .tracking-card, .paper-hero, .tape {
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-1);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 40%),
+    var(--surface);
+}
+[data-theme="light"] .mcard, [data-theme="light"] .tile, [data-theme="light"] .stat-tile,
+[data-theme="light"] .health-block, [data-theme="light"] .tracking-card,
+[data-theme="light"] .paper-hero, [data-theme="light"] .tape {
+  background: var(--surface);
+  border: 0;
+}
+.mcard:hover, .tile:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  box-shadow: var(--shadow-2), 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent);
+  transform: translateY(-2px);
+}
+
+/* status colors get their saturated dark-stage versions */
+.pill.warn, .mcard.is-watch .mcard-call { background: rgba(0, 210, 106, 0.14); color: var(--up); }
+.mcard-side--yes { background: rgba(0, 210, 106, 0.12); color: var(--up); }
+.mcard-side--no { background: rgba(255, 80, 66, 0.12); color: var(--down); }
+[data-theme="light"] .mcard-side--yes { background: rgba(0, 168, 4, 0.10); }
+[data-theme="light"] .mcard-side--no { background: rgba(224, 67, 0, 0.10); }
+
+/* the active tab underline takes the accent */
+.tab.is-active::after { background: var(--accent); height: 2px; }
+.segment.is-active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-1); }
+
+/* focus rings in accent, visible on the dark stage */
+:focus-visible { outline-color: var(--accent); }
+
+/* the big numbers breathe a little more */
+.stage-title { letter-spacing: -0.04em; }
+.hero-value { text-shadow: 0 0 24px rgba(0, 210, 106, 0.12); }
+[data-theme="light"] .hero-value { text-shadow: none; }
