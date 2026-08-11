@@ -3,14 +3,24 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#090c10">
+    <meta name="theme-color" content="#ffffff">
     <meta name="description" content="Live research board for UFC announcer-mention markets: model probabilities vs Kalshi prices, with paper trades scored in public.">
     <title>UFC Mention Markets</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M6.5 1.5 L13.5 1.5 L18.5 6.5 L18.5 13.5 L13.5 18.5 L6.5 18.5 L1.5 13.5 L1.5 6.5 Z' fill='none' stroke='%2379a2ff' stroke-width='1.8'/%3E%3Cpath d='M7 10.8 L9.2 13 L13.6 7.4' fill='none' stroke='%23e1ad59' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,400..900&family=Spline+Sans+Mono:wght@300;400;500;600&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="styles.css">
+  <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem("mm_theme");
+          var dark = saved ? saved === "dark"
+            : window.matchMedia("(prefers-color-scheme: dark)").matches;
+          if (dark) document.documentElement.setAttribute("data-theme", "dark");
+        } catch (e) { /* private mode */ }
+      })();
+    </script>
   </head>
   <body>
     <a class="skip-link" href="#board">Skip to the board</a>
@@ -32,7 +42,8 @@
           <button class="portfolio-chip" id="portfolioChip" type="button" hidden></button>
           <div class="status" id="dataStatus">Loading local data</div>
           <p class="visually-hidden" id="updatePulse" aria-live="polite"></p>
-          <button class="refresh-button" id="refreshButton" type="button">Update now</button>
+          <button class="theme-btn" id="themeBtn" type="button" aria-label="Switch between light and dark"></button>
+          <button class="refresh-button" id="refreshButton" type="button">Update</button>
         </div>
       </header>
 

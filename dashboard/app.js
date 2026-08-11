@@ -273,6 +273,8 @@
     setupRefreshButton();
     bindEvents();
     bindTickerPause();
+    setupTheme();
+    setupStickyHeader();
     deriveMode();
     if (state.routedFrame !== null && replayTape()) enterReplay(state.routedFrame, { autoplay: false });
     renderAll();
@@ -1119,6 +1121,45 @@
         els.status.textContent = `Auto-update failed. ${error.message || error}`;
       }
     }, Math.max(5, seconds) * 1000);
+  }
+
+
+  /* ---------- appearance ---------- */
+
+  const SUN = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M4.2 12H2M22 12h-2.2M5.9 5.9 4.4 4.4M19.6 19.6l-1.5-1.5M18.1 5.9l1.5-1.5M4.4 19.6l1.5-1.5"/></svg>';
+  const MOON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.2A8.2 8.2 0 0 1 9.8 4a8.4 8.4 0 1 0 10.2 10.2z"/></svg>';
+
+  function currentTheme() {
+    return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+  }
+
+  function paintThemeButton(button) {
+    const dark = currentTheme() === "dark";
+    button.innerHTML = dark ? SUN : MOON;
+    button.setAttribute("aria-label", dark ? "Switch to light" : "Switch to dark");
+  }
+
+  function setupTheme() {
+    const button = document.getElementById("themeBtn");
+    if (!button) return;
+    paintThemeButton(button);
+    button.addEventListener("click", () => {
+      const next = currentTheme() === "dark" ? "light" : "dark";
+      if (next === "dark") document.documentElement.setAttribute("data-theme", "dark");
+      else document.documentElement.removeAttribute("data-theme");
+      try { localStorage.setItem("mm_theme", next); } catch (e) { /* private mode */ }
+      paintThemeButton(button);
+      // Charts bake their colours in at draw time, so repaint after a switch.
+      renderAll();
+    });
+  }
+
+  function setupStickyHeader() {
+    const bar = document.querySelector(".topbar");
+    if (!bar) return;
+    const onScroll = () => bar.classList.toggle("is-stuck", window.scrollY > 8);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
   }
 
   /* ---------- events ---------- */
