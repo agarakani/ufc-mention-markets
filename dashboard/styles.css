@@ -3051,3 +3051,14 @@ thead th { padding: 0; }
 .toolbar { padding: 8px 0; }
 .detail-pane { padding: 18px 20px 26px; }
 .tab { min-height: 40px; }
+
+.quiet-note {
+  max-width: 62ch;
+  margin: 10px 0 4px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--coral);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.5;
+}

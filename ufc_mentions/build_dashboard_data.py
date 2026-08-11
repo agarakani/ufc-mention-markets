@@ -544,9 +544,23 @@ def build_coverage(report: dict) -> dict:
     """Every card Kalshi ran, and whether we captured it."""
     if not report or not report.get("kalshi_reachable"):
         return {"available": False}
+    recorded = [
+        card for card in (report.get("cards") or [])
+        if card.get("state") == "recorded" and card.get("date")
+    ]
+    last_card_date = max((str(card["date"]) for card in recorded), default="")
+    days_quiet = None
+    if last_card_date:
+        try:
+            last = datetime.strptime(last_card_date, "%Y-%m-%d").date()
+            days_quiet = (datetime.now(timezone.utc).date() - last).days
+        except ValueError:
+            days_quiet = None
     return {
         "available": True,
         "recording_since": report.get("recording_since", ""),
+        "last_card_date": last_card_date,
+        "days_quiet": days_quiet,
         "cards_with_markets": as_int(report.get("cards_with_markets")) or 0,
         "cards_recorded": as_int(report.get("cards_recorded")) or 0,
         "cards_missed": as_int(report.get("cards_missed")) or 0,

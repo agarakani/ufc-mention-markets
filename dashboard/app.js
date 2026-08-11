@@ -697,6 +697,14 @@
       ? `<button class="stage-exit" id="exitReplay" type="button">Leave the tape</button>`
       : "";
 
+    // Say plainly how long Kalshi has been quiet, so an empty board reads as
+    // "upstream has not listed markets", not "the site is broken".
+    const coverage = ((data.model_health || {}).coverage || {});
+    const quietNote = card.mode === "next" && coverage.available
+      && Number.isFinite(coverage.days_quiet) && coverage.days_quiet > 8 && coverage.last_card_date
+      ? `<p class="quiet-note">Kalshi has not listed a UFC mention card since ${escapeHtml(formatDate(coverage.last_card_date))}, ${formatInteger(coverage.days_quiet)} days ago. The board fills in on its own the moment they post one, under any series name.</p>`
+      : "";
+
     // NEXT mode: the board is empty on purpose; the tape is an invitation,
     // not a default. One clear entry, no historical numbers in the hero.
     const tapeInvite = card.mode === "next" && card.hasTape
@@ -727,6 +735,7 @@
             ${where ? `<span class="dot">·</span><span>${escapeHtml(where)}</span>` : ""}
           </p>
           <h2 class="stage-title">${escapeHtml(card.title)}</h2>
+          ${quietNote}
           <div class="stage-meta">
             ${card.mode === "next" ? `<div class="clock" id="stageClock" data-date="${escapeHtml(card.date || "")}"></div>` : ""}
             ${stats}

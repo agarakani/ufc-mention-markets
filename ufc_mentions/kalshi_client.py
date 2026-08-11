@@ -245,6 +245,25 @@ class KalshiClient:
             if not cursor:
                 return rows
 
+    def scan_events(self, *, status: str = "open", max_pages: int = 60) -> list[dict]:
+        """Every event of a status, across all series. Used to rediscover the
+        UFC mention series if Kalshi relists it under a new ticker."""
+        rows = []
+        cursor = None
+        pages = 0
+        while pages < max_pages:
+            payload = self.get(EVENTS_PATH, {
+                "limit": 200,
+                "cursor": cursor,
+                "status": status,
+            })
+            rows.extend(payload.get("events") or [])
+            cursor = payload.get("cursor")
+            pages += 1
+            if not cursor:
+                break
+        return rows
+
     def get_orderbook(self, ticker: str) -> TopOfBook:
         payload = self.get(f"{MARKETS_PATH}/{ticker}/orderbook")
         return top_of_book(payload)

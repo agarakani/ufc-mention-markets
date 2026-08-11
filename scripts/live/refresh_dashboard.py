@@ -19,6 +19,10 @@ if str(ROOT) not in sys.path:
 
 from ufc_mentions.build_dashboard_data import build_payload, write_data, OUT_DEFAULT as DASHBOARD_DATA
 from ufc_mentions.kalshi_client import KalshiClient
+from ufc_mentions.fight_series import (
+    load_known_series, save_known_series, merge_series,
+    discover_series_from_events,
+)
 from ufc_mentions.kalshi_context_model import KalshiFightContextModel
 from ufc_mentions.kalshi_mentions import (
     TranscriptCorpus,
@@ -47,6 +51,8 @@ SETTLE_MIN_INTERVAL_SECONDS = 30 * 60
 COVERAGE_MARKER = ROOT / "model_outputs" / ".coverage_attempt"
 COVERAGE_MIN_INTERVAL_SECONDS = 6 * 60 * 60
 WALKFORWARD_MARKER = ROOT / "model_outputs" / ".walkforward_attempt"
+SERIES_SCAN_MARKER = ROOT / "model_outputs" / ".series_scan_attempt"
+SERIES_SCAN_INTERVAL_SECONDS = 30 * 60
 WALKFORWARD_MIN_INTERVAL_SECONDS = 3 * 60 * 60
 UPCOMING_FETCH_MARKER = ROOT / "model_outputs" / ".upcoming_fetch_stamp"
 UPCOMING_FETCH_INTERVAL_SECONDS = 24 * 60 * 60
@@ -560,6 +566,54 @@ def add_price_changes(rows: list[dict], previous: list[dict]) -> None:
             row["ask_change"] = ""
 
 
+def discover_open_fight_events(client, *, configured_series: str, verbose: bool = False,
+                               now: float | None = None) -> list[dict]:
+    """Open UFC mention events across every series we know about.
+
+    Polls each known series every cycle (cheap and targeted). On a throttle it
+    also scans all open events for the mention pattern, so if Kalshi relists
+    under a new series ticker the recorder finds it on its own and remembers the
+    new name. Kalshi has restructured this series before, so a single hardcoded
+    ticker was a standing risk of going silently blind."""
+    now = time.time() if now is None else now
+    known = merge_series([configured_series], load_known_series())
+
+    due = True
+    if SERIES_SCAN_MARKER.exists():
+        due = (now - SERIES_SCAN_MARKER.stat().st_mtime) >= SERIES_SCAN_INTERVAL_SECONDS
+    if due:
+        try:
+            SERIES_SCAN_MARKER.parent.mkdir(parents=True, exist_ok=True)
+            SERIES_SCAN_MARKER.touch()
+            discovered = discover_series_from_events(client.scan_events(status="open"))
+            fresh = [s for s in discovered if s not in known]
+            if fresh:
+                known = merge_series(known, discovered)
+                save_known_series(known)
+                if verbose:
+                    print(f"  discovered new fight series: {', '.join(fresh)}", flush=True)
+        except Exception as exc:
+            if verbose:
+                print(f"  series rediscovery skipped: {exc}", flush=True)
+
+    events: list[dict] = []
+    seen: set[str] = set()
+    for series in known:
+        try:
+            found = client.get_events(series_ticker=series, status="open")
+        except Exception as exc:
+            if verbose:
+                print(f"  series {series} poll failed: {exc}", flush=True)
+            continue
+        for event in found:
+            ticker = str(event.get("event_ticker") or "")
+            if ticker and ticker not in seen:
+                seen.add(ticker)
+                event.setdefault("series_ticker", series)
+                events.append(event)
+    return events
+
+
 def refresh_once(
     client: KalshiClient,
     corpus: TranscriptCorpus,
@@ -590,7 +644,7 @@ def refresh_once(
             "title": "",
         }]
     else:
-        events = client.get_events(series_ticker=series_ticker, status="open")
+        events = discover_open_fight_events(client, configured_series=series_ticker, verbose=verbose)
         excluded = {ticker.upper() for ticker in (exclude_event_tickers or set())}
         if excluded:
             events = [
