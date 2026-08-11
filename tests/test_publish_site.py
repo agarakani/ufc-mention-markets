@@ -80,3 +80,22 @@ class PublishDueTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_every_stylesheet_the_page_imports_is_published():
+    """styles.css @imports base.css, so shipping one without the other breaks
+    the live site while local dev looks fine."""
+    import re
+    from pathlib import Path
+    from scripts.live.publish_site import SITE_FILES
+
+    dashboard = Path(__file__).resolve().parents[1] / "dashboard"
+    imported = set()
+    for name in SITE_FILES:
+        path = dashboard / name
+        if path.suffix != ".css" or not path.exists():
+            continue
+        for match in re.finditer(r'@import\s+url\(["\']?([^"\')]+)', path.read_text(encoding="utf-8")):
+            imported.add(match.group(1).strip())
+    missing = sorted(imported - set(SITE_FILES))
+    assert not missing, f"imported but never published: {missing}"
