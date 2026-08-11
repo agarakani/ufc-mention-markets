@@ -1,3 +1,545 @@
+/* Hero: the headline number and its scrubable line chart.
+   window.mountHero(container, opts) -> { update(opts), destroy() }
+
+   Built once via innerHTML; every later change mutates text, attributes and
+   transforms only. The SVG holds nothing but the area and the line, so it can
+   be stretched with preserveAspectRatio="none" without distorting anything
+   round. The hairline, the dot and the baseline live in an HTML overlay
+   positioned in percentages, which maps exactly onto the stretched viewBox.
+
+   There is no escapeHtml here on purpose: the shell is a fixed string and every
+   caller-supplied word lands through textContent or setAttribute. */
+(function () {
+  const W = 1000;              // viewBox width, arbitrary: the svg is stretched
+  const H = 300;               // viewBox height, likewise
+  const PAD_TOP = 22;          // headroom so the scrub dot never clips
+  const PAD_BOTTOM = 22;
+  const SMOOTH_LIMIT = 240;    // above this density a spline costs bytes for no gain
+  let seq = 0;
+
+  /* Number(null) and Number("") are both 0, so blanks have to be rejected
+     before the finite check or a missing value silently reads as zero. */
+  function blank(value) {
+    return value === null || value === undefined || value === "" ||
+      (typeof value === "string" && value.trim() === "");
+  }
+
+  function num(value) {
+    if (blank(value)) return null;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function reducedMotion() {
+    return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
+
+  function round(n) {
+    return Math.round(n * 100) / 100;
+  }
+
+  /* ---------- formatting ---------- */
+
+  function groupDigits(abs, digits) {
+    return abs.toLocaleString(undefined, {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    });
+  }
+
+  function moneyDigits(abs) {
+    return abs >= 10000 ? 0 : 2;
+  }
+
+  function formatMoney(value) {
+    const abs = Math.abs(value);
+    return (value < 0 ? "-$" : "$") + groupDigits(abs, moneyDigits(abs));
+  }
+
+  function formatPercent(value) {
+    const abs = Math.abs(value);
+    return (value < 0 ? "-" : "") + groupDigits(abs, abs >= 100 ? 0 : 1) + "%";
+  }
+
+  function signOf(value) {
+    return value > 0 ? "+" : value < 0 ? "-" : "";
+  }
+
+  function formatMoneyDelta(value) {
+    const abs = Math.abs(value);
+    return signOf(value) + "$" + groupDigits(abs, moneyDigits(abs));
+  }
+
+  function formatPercentDelta(value) {
+    const abs = Math.abs(value);
+    return signOf(value) + groupDigits(abs, abs >= 100 ? 0 : 1) + "%";
+  }
+
+  function formatPointsDelta(value) {
+    const abs = Math.abs(value);
+    return signOf(value) + groupDigits(abs, abs >= 100 ? 0 : 1) + " pts";
+  }
+
+  function parseTime(raw) {
+    if (raw == null || raw === "") return null;
+    const date = raw instanceof Date ? raw : new Date(raw);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  /* Short stamps read best when they match the span: clock time inside a day
+     and a half, calendar dates beyond it. */
+  function stampLabel(date, spanMs, raw) {
+    if (!date) return raw == null ? "" : String(raw);
+    if (spanMs > 0 && spanMs <= 36 * 3600 * 1000) {
+      return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    }
+    return date.toLocaleDateString([], { month: "short", day: "numeric" });
+  }
+
+  /* ---------- path building ---------- */
+
+  /* Monotone cubic (Fritsch-Carlson): a soft line that never overshoots into
+     values the data never held. Straight segments above SMOOTH_LIMIT. */
+  function linePathFrom(xs, ys) {
+    const n = xs.length;
+    if (!n) return "";
+    if (n === 1) return "M" + round(xs[0]) + "," + round(ys[0]);
+    if (n > SMOOTH_LIMIT) {
+      let flat = "M" + round(xs[0]) + "," + round(ys[0]);
+      for (let i = 1; i < n; i++) flat += "L" + round(xs[i]) + "," + round(ys[i]);
+      return flat;
+    }
+    const dx = [];
+    const slope = [];
+    for (let i = 0; i < n - 1; i++) {
+      dx[i] = xs[i + 1] - xs[i] || 1e-6;
+      slope[i] = (ys[i + 1] - ys[i]) / dx[i];
+    }
+    const tangent = [slope[0]];
+    for (let i = 1; i < n - 1; i++) {
+      const a = slope[i - 1];
+      const b = slope[i];
+      if (a * b <= 0) {
+        tangent[i] = 0;
+      } else {
+        const span = dx[i - 1] + dx[i];
+        tangent[i] = (3 * span) / ((span + dx[i]) / a + (span + dx[i - 1]) / b);
+      }
+    }
+    tangent[n - 1] = slope[n - 2];
+
+    let d = "M" + round(xs[0]) + "," + round(ys[0]);
+    for (let i = 0; i < n - 1; i++) {
+      const h = dx[i] / 3;
+      d += "C" + round(xs[i] + h) + "," + round(ys[i] + tangent[i] * h) +
+        " " + round(xs[i + 1] - h) + "," + round(ys[i + 1] - tangent[i + 1] * h) +
+        " " + round(xs[i + 1]) + "," + round(ys[i + 1]);
+    }
+    return d;
+  }
+
+  /* ---------- mount ---------- */
+
+  function mountHero(target, options) {
+    const container = typeof target === "string" ? document.querySelector(target) : target;
+    if (!container) return { update: function () {}, destroy: function () {} };
+
+    const uid = "hero" + (++seq) + Math.random().toString(36).slice(2, 7);
+    const gradId = uid + "-fill";
+    const clipId = uid + "-wipe";
+    const abort = new AbortController();
+    const listen = { signal: abort.signal };
+
+    const state = {
+      value: null,
+      valueFormat: "money",
+      label: "",
+      delta: null,
+      deltaLabel: "",
+      series: [],
+      baseline: undefined,       // undefined = first point; null = hidden; number = fixed
+      percentScale: "auto",      // "auto" | "fraction" | "unit"
+      deltaFormat: null,         // null = follow valueFormat; or "money"|"percent"|"points"
+      scrubUpdatesValue: true,
+      card: false,
+      onScrub: function () {},
+    };
+
+    let geo = null;              // current geometry, null until laid out
+    let scrubIndex = -1;         // index into geo.draw, -1 when idle
+    let frame = 0;
+    let pendingX = 0;
+    let announced = false;       // keyboard scrub announces, pointer scrub does not
+
+    container.classList.add("hero");
+    container.innerHTML =
+      '<div class="hero-head">' +
+        '<p class="hero-label" data-hero="label"></p>' +
+        '<div class="hero-value" data-hero="value">--</div>' +
+        '<div class="hero-delta" data-hero="delta">' +
+          '<svg class="hero-tri" viewBox="0 0 10 10" aria-hidden="true" focusable="false">' +
+            '<path d="M5 1.9 8.6 8.1 1.4 8.1Z" stroke-linejoin="round" stroke-width="1.5"/>' +
+          '</svg>' +
+          '<span class="hero-delta-value" data-hero="deltaValue"></span>' +
+          '<span class="hero-delta-label" data-hero="deltaLabel"></span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="hero-chart" data-hero="chart" role="img" aria-label="">' +
+        '<svg class="hero-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" ' +
+             'aria-hidden="true" focusable="false">' +
+          '<defs>' +
+            '<linearGradient id="' + gradId + '" x1="0" y1="0" x2="0" y2="1">' +
+              '<stop offset="0" stop-color="var(--hero-line)" stop-opacity="0.08"/>' +
+              '<stop offset="1" stop-color="var(--hero-line)" stop-opacity="0"/>' +
+            '</linearGradient>' +
+            '<clipPath id="' + clipId + '">' +
+              '<rect class="hero-wipe" data-hero="wipe" x="0" y="-40" width="' + W + '" height="' + (H + 80) + '"/>' +
+            '</clipPath>' +
+          '</defs>' +
+          '<g clip-path="url(#' + clipId + ')">' +
+            '<path class="hero-area" data-hero="area" d="" fill="url(#' + gradId + ')"/>' +
+            '<path class="hero-line" data-hero="line" d="" fill="none" stroke="var(--hero-line)" ' +
+                  'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ' +
+                  'vector-effect="non-scaling-stroke"/>' +
+          '</g>' +
+        '</svg>' +
+        '<div class="hero-overlay" aria-hidden="true">' +
+          '<span class="hero-base" data-hero="base"></span>' +
+          '<span class="hero-hairline" data-hero="hairline"></span>' +
+          '<span class="hero-dot" data-hero="dot"></span>' +
+          '<span class="hero-empty" data-hero="empty">No history yet</span>' +
+        '</div>' +
+      '</div>' +
+      '<p class="hero-sr" data-hero="sr" role="status" aria-live="polite"></p>';
+
+    const el = {};
+    container.querySelectorAll("[data-hero]").forEach(function (node) {
+      el[node.getAttribute("data-hero")] = node;
+    });
+
+    /* ---------- geometry ---------- */
+
+    function percentScaleFactor(points) {
+      if (state.valueFormat !== "percent") return 1;
+      if (state.percentScale === "fraction") return 100;
+      if (state.percentScale === "unit") return 1;
+      let peak = Math.abs(num(state.value) || 0);
+      for (let i = 0; i < points.length; i++) peak = Math.max(peak, Math.abs(points[i].v));
+      return peak <= 1.5 ? 100 : 1;      // 0..1 reads as a fraction, anything larger does not
+    }
+
+    function layout() {
+      const series = Array.isArray(state.series) ? state.series : [];
+      const clean = [];
+      for (let i = 0; i < series.length; i++) {
+        const point = series[i];
+        const v = num(point && point.v);
+        if (v === null) continue;
+        clean.push({ t: point && point.t, v: v, index: i, source: point });
+      }
+      if (!clean.length) {
+        geo = null;
+        return;
+      }
+
+      // A single reading still deserves a line: draw it flat across the box.
+      const draw = clean.length === 1 ? [clean[0], clean[0]] : clean;
+      const n = draw.length;
+
+      let lo = Infinity;
+      let hi = -Infinity;
+      for (let i = 0; i < n; i++) {
+        if (draw[i].v < lo) lo = draw[i].v;
+        if (draw[i].v > hi) hi = draw[i].v;
+      }
+
+      let baseline = state.baseline === undefined ? draw[0].v : state.baseline;
+      baseline = baseline === null ? null : num(baseline);
+      // A reference line lying exactly under a flat line says nothing twice.
+      if (baseline !== null && hi - lo < 1e-9 && Math.abs(baseline - lo) < 1e-9) baseline = null;
+
+      if (baseline !== null) {
+        lo = Math.min(lo, baseline);
+        hi = Math.max(hi, baseline);
+      }
+      if (hi - lo < 1e-9) {
+        const flat = Math.abs(hi) * 0.05 || 1;
+        lo -= flat;
+        hi += flat;
+      } else {
+        const breathe = (hi - lo) * 0.08;
+        lo -= breathe;
+        hi += breathe;
+      }
+
+      const plot = H - PAD_TOP - PAD_BOTTOM;
+      const yOf = function (v) { return PAD_TOP + (1 - (v - lo) / (hi - lo)) * plot; };
+
+      const xs = [];
+      const ys = [];
+      for (let i = 0; i < n; i++) {
+        xs.push((i / (n - 1)) * W);
+        ys.push(yOf(draw[i].v));
+      }
+
+      const line = linePathFrom(xs, ys);
+      const first = draw[0].v;
+      const last = draw[n - 1].v;
+
+      const firstTime = parseTime(draw[0].t);
+      const lastTime = parseTime(draw[n - 1].t);
+      const spanMs = firstTime && lastTime ? Math.abs(lastTime - firstTime) : 0;
+
+      geo = {
+        clean: clean,
+        draw: draw,
+        xs: xs,
+        ys: ys,
+        line: line,
+        area: line + "L" + W + "," + H + "L0," + H + "Z",
+        baseline: baseline,
+        baselinePct: baseline === null ? null : (yOf(baseline) / H) * 100,
+        first: first,
+        last: last,
+        // Flat reads as a hold, not a loss: only a genuine fall turns the line down-coloured.
+        direction: last > first ? 1 : last < first ? -1 : 0,
+        spanMs: spanMs,
+        scale: percentScaleFactor(clean),
+      };
+    }
+
+    /* ---------- value formatting bound to current state ---------- */
+
+    function scaled(v) {
+      return v * (geo ? geo.scale : percentScaleFactor([]));
+    }
+
+    function formatValue(v) {
+      const n = num(v);
+      if (n === null) return "--";
+      return state.valueFormat === "percent" ? formatPercent(scaled(n)) : formatMoney(n);
+    }
+
+    function formatDelta(v) {
+      const mode = state.deltaFormat || state.valueFormat;
+      if (mode === "points") return formatPointsDelta(scaled(v));
+      if (mode === "percent") return formatPercentDelta(scaled(v));
+      return formatMoneyDelta(v);
+    }
+
+    function labelAt(point) {
+      return stampLabel(parseTime(point.t), geo ? geo.spanMs : 0, point.t);
+    }
+
+    /* ---------- painting ---------- */
+
+    function paintDelta(delta, label) {
+      const value = num(delta);
+      el.delta.hidden = value === null && !label;
+      if (value === null) {
+        el.delta.setAttribute("data-dir", "0");
+        el.deltaValue.textContent = "";
+        el.deltaLabel.textContent = label || "";
+        return;
+      }
+      el.delta.setAttribute("data-dir", value > 0 ? "1" : value < 0 ? "-1" : "0");
+      el.deltaValue.textContent = formatDelta(value);
+      el.deltaLabel.textContent = label || "";
+    }
+
+    function paintChart() {
+      const chart = el.chart;
+      if (!geo) {
+        container.setAttribute("data-hero-empty", "true");
+        chart.removeAttribute("tabindex");
+        chart.setAttribute("aria-label", (state.label ? state.label + ". " : "") + "No history yet");
+        el.line.setAttribute("d", "");
+        el.area.setAttribute("d", "");
+        el.base.style.display = "none";
+        return;
+      }
+      container.removeAttribute("data-hero-empty");
+      container.style.setProperty("--hero-line", geo.direction < 0 ? "var(--down, #ff5000)" : "var(--up, #00c805)");
+      chart.setAttribute("tabindex", "0");
+      el.line.setAttribute("d", geo.line);
+      el.area.setAttribute("d", geo.area);
+      if (geo.baselinePct === null) {
+        el.base.style.display = "none";
+      } else {
+        el.base.style.display = "";
+        el.base.style.top = geo.baselinePct.toFixed(3) + "%";
+      }
+
+      const change = geo.last - geo.first;
+      const word = change > 0 ? "up" : change < 0 ? "down" : "unchanged at";
+      const from = labelAt(geo.draw[0]);
+      const to = labelAt(geo.draw[geo.draw.length - 1]);
+      chart.setAttribute("aria-label",
+        (state.label ? state.label + ". " : "") +
+        "Line chart with " + geo.clean.length + " point" + (geo.clean.length === 1 ? "" : "s") + ". " +
+        (from ? "Starts " + from + " at " : "Starts at ") + formatValue(geo.first) + ". " +
+        (to ? "Ends " + to + " at " : "Ends at ") + formatValue(geo.last) + ". " +
+        (change === 0 ? "Unchanged." : word.charAt(0).toUpperCase() + word.slice(1) + " " + formatDelta(Math.abs(change)) + "."));
+    }
+
+    function paintHead() {
+      el.label.textContent = state.label || "";
+      el.label.hidden = !state.label;
+      const missing = num(state.value) === null;
+      el.value.textContent = formatValue(state.value);
+      // A placeholder at full weight reads as redacted text, so it goes quiet.
+      if (missing) el.value.setAttribute("data-placeholder", "true");
+      else el.value.removeAttribute("data-placeholder");
+      paintDelta(state.delta, state.deltaLabel);
+    }
+
+    /* ---------- scrubbing ---------- */
+
+    function showScrub(index) {
+      if (!geo) return;
+      const clamped = Math.max(0, Math.min(index, geo.draw.length - 1));
+      if (clamped === scrubIndex) return;
+      scrubIndex = clamped;
+
+      const point = geo.draw[clamped];
+      const xPct = (geo.xs[clamped] / W) * 100;
+      const yPct = (geo.ys[clamped] / H) * 100;
+      el.hairline.style.left = xPct.toFixed(3) + "%";
+      el.dot.style.left = xPct.toFixed(3) + "%";
+      el.dot.style.top = yPct.toFixed(3) + "%";
+      container.setAttribute("data-hero-scrub", "true");
+
+      if (state.scrubUpdatesValue) {
+        el.value.textContent = formatValue(point.v);
+        paintDelta(point.v - geo.first, labelAt(point));
+      }
+      if (announced) {
+        el.sr.textContent = formatValue(point.v) + (labelAt(point) ? ", " + labelAt(point) : "");
+      }
+
+      const payload = Object.assign({}, point.source, { t: point.t, v: point.v, index: point.index });
+      state.onScrub(payload);
+    }
+
+    function clearScrub() {
+      if (scrubIndex === -1) return;
+      scrubIndex = -1;
+      container.removeAttribute("data-hero-scrub");
+      if (state.scrubUpdatesValue) paintHead();
+      el.sr.textContent = "";
+      state.onScrub(null);
+    }
+
+    function indexFromX(clientX) {
+      const rect = el.chart.getBoundingClientRect();
+      if (!rect.width || !geo) return 0;
+      const frac = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      return Math.round(frac * (geo.draw.length - 1));
+    }
+
+    function queueScrub(clientX) {
+      pendingX = clientX;
+      if (frame) return;
+      frame = window.requestAnimationFrame(function () {
+        frame = 0;
+        if (geo) showScrub(indexFromX(pendingX));
+      });
+    }
+
+    el.chart.addEventListener("pointerdown", function (event) {
+      if (!geo) return;
+      // Capture so a finger that slides past the edge keeps driving the scrub.
+      if (el.chart.setPointerCapture) {
+        try { el.chart.setPointerCapture(event.pointerId); } catch (err) { /* no capture, no harm */ }
+      }
+      announced = false;
+      queueScrub(event.clientX);
+    }, listen);
+
+    el.chart.addEventListener("pointermove", function (event) {
+      if (!geo) return;
+      // Mouse hovers scrub without pressing; touch only reports while in contact.
+      announced = false;
+      queueScrub(event.clientX);
+    }, listen);
+
+    el.chart.addEventListener("pointerup", function () { clearScrub(); }, listen);
+    el.chart.addEventListener("pointercancel", function () { clearScrub(); }, listen);
+    el.chart.addEventListener("pointerleave", function (event) {
+      if (event.pointerType === "mouse") clearScrub();
+    }, listen);
+
+    el.chart.addEventListener("keydown", function (event) {
+      if (!geo) return;
+      const last = geo.draw.length - 1;
+      const step = event.shiftKey ? 10 : 1;
+      const from = scrubIndex === -1 ? last : scrubIndex;
+      let next = null;
+      if (event.key === "ArrowRight") next = Math.min(last, from + step);
+      else if (event.key === "ArrowLeft") next = Math.max(0, from - step);
+      else if (event.key === "Home") next = 0;
+      else if (event.key === "End") next = last;
+      else if (event.key === "Escape") { clearScrub(); return; }
+      else return;
+      event.preventDefault();
+      announced = true;
+      showScrub(next);
+    }, listen);
+
+    el.chart.addEventListener("blur", function () { clearScrub(); }, listen);
+
+    /* ---------- entrance ---------- */
+
+    /* The pre-state is committed with a forced reflow and released in the same
+       task. Deferring the release to rAF would strand the chart at scaleX(0)
+       anywhere rAF is parked, so it is deliberately synchronous. */
+    function animateIn() {
+      if (reducedMotion() || !geo) return;
+      const svg = container.querySelector(".hero-svg");
+      container.classList.add("is-pre");
+      if (svg) svg.classList.add("is-pre");
+      container.getBoundingClientRect();
+      container.classList.remove("is-pre");
+      if (svg) svg.classList.remove("is-pre");
+    }
+
+    /* ---------- public ---------- */
+
+    function apply(next, animate) {
+      if (next) {
+        Object.keys(state).forEach(function (key) {
+          if (Object.prototype.hasOwnProperty.call(next, key) && next[key] !== undefined) state[key] = next[key];
+        });
+      }
+      if (typeof state.onScrub !== "function") state.onScrub = function () {};
+      scrubIndex = -1;
+      container.removeAttribute("data-hero-scrub");
+      container.classList.toggle("hero--card", !!state.card);
+      layout();
+      paintChart();
+      paintHead();
+      if (animate) animateIn();
+    }
+
+    apply(options, true);
+
+    return {
+      update: function (next) { apply(next, !!(next && next.animate)); },
+      destroy: function () {
+        abort.abort();
+        if (frame) window.cancelAnimationFrame(frame);
+        frame = 0;
+        container.innerHTML = "";
+        container.classList.remove("hero", "hero--card", "is-pre");
+        container.removeAttribute("data-hero-scrub");
+        container.removeAttribute("data-hero-empty");
+      },
+    };
+  }
+
+  window.mountHero = mountHero;
+})();
+
 /* Replay Timeline — signature scrub bar for UFC Mention Markets.
    window.mountTimeline(container, opts) -> { update({ frame, playing, speed }) }
    Built once via innerHTML; every later repaint mutates styles/text only. */
@@ -215,7 +757,7 @@
   const state = {
     tab: "markets",
     mode: "next",          // "live" | "next" | "replay" — one mode owns the page
-    view: (function () { try { return localStorage.getItem("wx_view") || "table"; } catch (e) { return "table"; } })(),
+    view: (function () { try { return localStorage.getItem("wx_view") || "grid"; } catch (e) { return "grid"; } })(),
     paneTicker: "",
     signal: "watch",
     signalUserSet: false,
@@ -1284,7 +1826,10 @@
         : "";
     }
     if (els.footerStamp) {
-      els.footerStamp.textContent = ts ? `Data updated ${formatTimestamp(ts)}` : "";
+      const build = data.build || {};
+      const bits = [ts ? `Data updated ${formatTimestamp(ts)}` : ""];
+      if (build.commit) bits.push(`Build ${build.commit}`);
+      els.footerStamp.textContent = bits.filter(Boolean).join(" · ");
     }
     renderPortfolioChip();
   }
@@ -2276,8 +2821,12 @@
       <p class="mcard-fight"><i class="c-red"></i>${escapeHtml(lastName(row.fighter_1))} <em>v</em> <i class="c-blue"></i>${escapeHtml(lastName(row.fighter_2))}</p>
       ${archetype === "waiting"
         ? '<p class="mcard-wait">Kalshi has not posted a book for this phrase yet. Prices appear here once it does.</p>'
-        : `<div class="mcard-nums"><span class="mcard-model">${model}</span><span class="mcard-vs">model vs</span><span class="mcard-mkt">${escapeHtml(market)}</span></div>
-           <div class="mcard-edge ${edge !== null && edge > 0 ? "up" : "down"}">${formatPlainPercent(edge, true)}</div>`}
+        : `<div class="mcard-chance"><span class="mcard-model">${model}</span><span class="mcard-chance-lab">our chance</span>
+             <span class="mcard-edge ${edge !== null && edge > 0 ? "up" : "down"}">${formatPlainPercent(edge, true)} edge</span></div>
+           <div class="mcard-book">
+             <span class="mcard-side mcard-side--yes">Yes ${ask !== null ? `${Math.round(ask * 100)}¢` : "--"}</span>
+             <span class="mcard-side mcard-side--no">No ${parseNumber(row.no_ask) !== null ? `${Math.round(parseNumber(row.no_ask) * 100)}¢` : "--"}</span>
+           </div>`}
       <div class="mcard-spark">${spark}</div>
     </article>`;
   }
@@ -2375,7 +2924,22 @@
       <p class="pane-code">${escapeHtml(String(row.ticker || ""))}</p>`;
     const chartHolder = document.getElementById("paneChart");
     const track = chartTrackFor(String(row.ticker || ""));
-    if (chartHolder && track) {
+    if (chartHolder && track && track.pairs && track.pairs.length > 1 && window.mountHero) {
+      const series = track.pairs.map((pair, index) => ({
+        t: (track.stamps || [])[index] || index,
+        v: (pair[0] !== null && pair[0] !== undefined ? pair[0] : pair[1]) * 100,
+      }));
+      const lastPoint = series[series.length - 1].v;
+      window.mountHero(chartHolder, {
+        value: lastPoint,
+        valueFormat: "percent",
+        label: "YES price through the night",
+        delta: lastPoint - series[0].v,
+        deltaLabel: "since we started watching",
+        series,
+        onScrub: () => {},
+      });
+    } else if (chartHolder && track) {
       mountPriceChart(chartHolder, track.pairs, {
         bid: track.bid || undefined,
         stamps: track.stamps || undefined,
@@ -3017,7 +3581,34 @@
     </svg>`;
   }
 
+  let paperHero = null;
+
+  function renderPaperHero() {
+    const holder = document.getElementById("paperHero");
+    if (!holder) return;
+    const equity = ((data.performance || {}).equity || []);
+    if (equity.length < 2) { holder.hidden = true; return; }
+    holder.hidden = false;
+    const series = equity.map((step) => ({ t: step.date, v: step.cumulative_pnl }));
+    const last = series[series.length - 1].v;
+    const opts = {
+      value: last,
+      valueFormat: "money",
+      label: "Paper profit, replayed under today's rule",
+      delta: last - 0,
+      deltaLabel: `since ${formatDate(equity[0].date) || equity[0].date}`,
+      series,
+      onScrub: (point) => {
+        // The big number follows the finger; release returns to now.
+        if (paperHero) paperHero.update({ value: point ? point.v : last, delta: (point ? point.v : last) - 0 });
+      },
+    };
+    if (!paperHero || !holder.firstChild) paperHero = window.mountHero(holder, opts);
+    else paperHero.update(opts);
+  }
+
   function renderPerformance() {
+    renderPaperHero();
     const holder = document.getElementById("performanceCharts");
     if (!holder) return;
     const perf = data.performance || {};

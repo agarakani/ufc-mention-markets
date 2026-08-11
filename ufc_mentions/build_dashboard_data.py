@@ -984,6 +984,20 @@ def name_cards_from_schedule(cards: list[dict], upcoming: list[dict]) -> None:
         card["source_note"] = "Card name from the published UFC schedule; markets from Kalshi."
 
 
+def build_stamp() -> dict:
+    """The exact code version this payload was built from, shown in the
+    footer so a cached page is identifiable at a glance."""
+    import subprocess
+    try:
+        commit = subprocess.run(
+            ["git", "-C", str(ROOT), "rev-parse", "--short", "HEAD"],
+            check=True, capture_output=True, text=True, timeout=10,
+        ).stdout.strip()
+    except Exception:
+        commit = "unknown"
+    return {"commit": commit, "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+
+
 def build_payload() -> dict:
     kalshi_meta = read_json(KALSHI_META)
     kalshi_audit_summary = read_json(KALSHI_AUDIT_SUMMARY)
@@ -1015,6 +1029,7 @@ def build_payload() -> dict:
     tracking_positions = build_tracking_positions()
 
     return {
+        "build": build_stamp(),
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "sources": {
             "kalshi_live": str(KALSHI_LIVE.relative_to(ROOT)),

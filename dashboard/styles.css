@@ -1101,3 +1101,354 @@ td.empty, .tracking-empty { padding: 56px 12px; text-align: center; color: var(-
 .dv-meta { font-size: 12px; color: var(--ink-3); }
 .ce-empty { color: var(--ink-3); }
 .ce-empty-mark { color: var(--ink); font-weight: 600; }
+
+
+/* ============ hero: headline number with scrubable chart ============ */
+/* ============================================================
+   HERO: headline number + scrubable line chart
+   Tokens come from the global sheet; the var() fallbacks here are
+   only so the block survives being dropped into a bare page.
+   ============================================================ */
+
+.hero {
+  --hero-line: var(--up, #00c805);
+  --hero-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --hero-chart-h: clamp(180px, 32vw, 280px);
+
+  position: relative;
+  display: block;
+  container-type: inline-size;
+  container-name: hero;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  color: var(--ink, #09090b);
+  font-feature-settings: "cv05" 1;
+}
+
+/* Optional: the hero sitting on a raised surface instead of bare on the page. */
+.hero--card {
+  padding: clamp(24px, 4vw, 32px);
+  border-radius: 16px;
+  background: var(--surface, #ffffff);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .hero--card {
+  border: 1px solid var(--line, #27272a);
+  box-shadow: none;
+}
+
+/* ---------- head ---------- */
+
+.hero-head {
+  display: block;
+}
+
+.hero-label {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  color: var(--ink-2, #52525b);
+}
+
+.hero-label[hidden] {
+  display: none;
+}
+
+/* Sized against the viewport as a floor, then against the hero's own column so
+   a narrow sidebar gets a smaller number instead of a number that spills. */
+.hero-value {
+  font-size: clamp(48px, 8.5vw, 88px);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  color: var(--ink, #09090b);
+  white-space: nowrap;
+}
+
+@container hero (min-width: 1px) {
+  .hero-value {
+    font-size: clamp(48px, 13cqw, 88px);
+  }
+}
+
+.hero-value[data-placeholder] {
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--ink-3, #a1a1aa);
+}
+
+.hero-delta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 15px;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.01em;
+  color: var(--ink-3, #a1a1aa);
+}
+
+.hero-delta[hidden] {
+  display: none;
+}
+
+.hero-delta-value {
+  font-weight: 600;
+  color: var(--ink-3, #a1a1aa);
+}
+
+.hero-delta[data-dir="1"] .hero-delta-value {
+  color: var(--up, #00c805);
+}
+
+.hero-delta[data-dir="-1"] .hero-delta-value {
+  color: var(--down, #ff5000);
+}
+
+.hero-delta-label {
+  font-weight: 450;
+  color: var(--ink-3, #a1a1aa);
+}
+
+/* Triangle drawn in SVG, never an emoji. Rounded tips via a matching stroke. */
+.hero-tri {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  align-self: center;
+  fill: currentColor;
+  stroke: currentColor;
+  color: var(--ink-3, #a1a1aa);
+  transition: transform 240ms var(--hero-ease), color 240ms var(--hero-ease);
+}
+
+.hero-delta[data-dir="1"] .hero-tri {
+  color: var(--up, #00c805);
+}
+
+.hero-delta[data-dir="-1"] .hero-tri {
+  color: var(--down, #ff5000);
+  transform: rotate(180deg);
+}
+
+/* Flat is a hold, not a direction: no arrow at all. */
+.hero-delta[data-dir="0"] .hero-tri {
+  display: none;
+}
+
+/* ---------- chart ---------- */
+
+.hero-chart {
+  position: relative;
+  height: var(--hero-chart-h);
+  margin-top: clamp(28px, 4vw, 40px);
+  border-radius: 12px;
+  outline: none;
+}
+
+.hero-chart:focus-visible {
+  box-shadow: 0 0 0 2px var(--bg, #ffffff), 0 0 0 4px var(--ink-3, #a1a1aa);
+}
+
+.hero-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  touch-action: none;
+}
+
+/* Left-to-right reveal. This replaces a stroke-dasharray sweep on purpose:
+   dash lengths are unreliable under vector-effect: non-scaling-stroke with a
+   non-uniform viewBox stretch, a clip wipe is exact and looks identical. */
+.hero-wipe {
+  transform: scaleX(1);
+  transform-origin: 0 0;
+  transition: transform 620ms var(--hero-ease);
+}
+
+.hero-area {
+  opacity: 1;
+  transition: opacity 420ms var(--hero-ease) 260ms;
+}
+
+.hero-svg.is-pre .hero-wipe {
+  transform: scaleX(0);
+  transition: none;
+}
+
+.hero-svg.is-pre .hero-area {
+  opacity: 0;
+  transition: none;
+}
+
+.hero .hero-head {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 520ms var(--hero-ease), transform 520ms var(--hero-ease);
+}
+
+.hero.is-pre .hero-head {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: none;
+}
+
+/* ---------- overlay (hairline, dot, baseline, empty state) ---------- */
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* Dashed reference at the opening value. Kept in HTML rather than SVG so the
+   dashes stay evenly spaced under the horizontal stretch. */
+.hero-base {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 0;
+  border-top: 1px dashed var(--line, #e4e4e7);
+  transform: translateY(-0.5px);
+}
+
+[data-theme="dark"] .hero-base {
+  border-top-color: var(--line, #27272a);
+}
+
+.hero-hairline {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  left: 50%;
+  width: 1px;
+  margin-left: -0.5px;
+  background: var(--ink-3, #a1a1aa);
+  opacity: 0;
+  transition: opacity 160ms var(--hero-ease);
+}
+
+.hero-dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  margin: -5.5px 0 0 -5.5px;
+  border-radius: 999px;
+  background: var(--hero-line);
+  box-shadow: 0 0 0 3px var(--bg, #ffffff);
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 160ms var(--hero-ease), transform 220ms var(--hero-ease);
+}
+
+/* Position updates are instant so the dot stays locked to the finger. */
+.hero[data-hero-scrub] .hero-hairline {
+  opacity: 0.4;
+}
+
+.hero[data-hero-scrub] .hero-dot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.hero-empty {
+  display: none;
+}
+
+.hero[data-hero-empty] .hero-svg,
+.hero[data-hero-empty] .hero-base,
+.hero[data-hero-empty] .hero-hairline,
+.hero[data-hero-empty] .hero-dot {
+  display: none;
+}
+
+/* A calm dashed rule across the middle with the note resting on it. */
+.hero[data-hero-empty] .hero-overlay::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 1px dashed var(--line, #e4e4e7);
+}
+
+.hero[data-hero-empty] .hero-empty {
+  display: block;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  color: var(--ink-3, #a1a1aa);
+  background: var(--bg, #ffffff);
+}
+
+.hero--card[data-hero-empty] .hero-empty {
+  background: var(--surface, #ffffff);
+}
+
+.hero-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- motion preferences ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .hero *,
+  .hero *::before,
+  .hero *::after {
+    transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
+  }
+}
+.paper-hero {
+  margin: 28px 0 24px;
+  padding: 28px 28px 12px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+}
+[data-theme="dark"] .paper-hero { border: 1px solid var(--line); box-shadow: none; }
+
+/* the card's bottom half reads like a market: chance, edge, and both books */
+.mcard-chance { display: flex; align-items: baseline; gap: 10px; margin-top: auto; }
+.mcard-chance-lab { font-size: 12px; color: var(--ink-3); }
+.mcard-book { display: flex; gap: 10px; margin-top: 12px; }
+.mcard-side {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  transition: filter 120ms var(--expo);
+}
+.mcard-side--yes { background: rgba(0, 200, 5, 0.10); color: var(--up); }
+.mcard-side--no { background: rgba(255, 80, 0, 0.10); color: var(--down); }
+.mcard:hover .mcard-side { filter: brightness(0.97); }
+[data-theme="dark"] .mcard-side--yes { background: rgba(0, 200, 5, 0.14); }
+[data-theme="dark"] .mcard-side--no { background: rgba(255, 80, 0, 0.14); }
