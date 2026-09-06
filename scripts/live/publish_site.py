@@ -35,7 +35,11 @@ PUBLISH_MARKER = ROOT / "model_outputs" / ".site_publish_stamp"
 PUBLISH_MIN_INTERVAL_SECONDS = 5 * 60
 PUBLISH_LIVE_INTERVAL_SECONDS = 60
 PUBLISH_IDLE_INTERVAL_SECONDS = 10 * 60
-SITE_FILES = ["app.js", "styles.css", "base.css", "data.js"]
+SITE_FILES = [
+    "app.js", "styles.css", "base.css", "data.js",
+    "src/motion.js", "src/charts.js", "src/select.js", "src/board.js", "src/timeline.js",
+    "src/book.js", "src/model.js", "src/ledger.js", "src/pane.js", "src/palette.js",
+]
 LOADER_LINE = "      const cacheBust = Date.now().toString();"
 
 
@@ -79,6 +83,7 @@ def stage_site(site: Path) -> None:
         encoding="utf-8",
     )
     for name in SITE_FILES:
+        (site / name).parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(DASHBOARD / name, site / name)
     (site / ".nojekyll").write_text("", encoding="utf-8")
 

@@ -39,6 +39,19 @@ class StageSiteTests(unittest.TestCase):
             self.assertTrue((site / "app.js").exists())
             self.assertTrue((site / "styles.css").exists())
             self.assertTrue((site / ".nojekyll").exists())
+            # every module the page loads ships with it
+            self.assertTrue((site / "src" / "board.js").exists())
+            self.assertTrue((site / "src" / "palette.js").exists())
+
+    def test_every_script_the_page_loads_is_published(self):
+        from scripts.live.publish_site import DASHBOARD, SITE_FILES
+        import re
+        html = (DASHBOARD / "index.html").read_text(encoding="utf-8")
+        block = re.search(r"const files = \[(.*?)\];", html, re.S)
+        self.assertIsNotNone(block, "index.html loader list changed shape")
+        wanted = re.findall(r'"([^"]+\.js)"', block.group(1))
+        for name in wanted:
+            self.assertIn(name, SITE_FILES, f"{name} is loaded by index.html but not in SITE_FILES")
 
 
 class StaticIndexTests(unittest.TestCase):

@@ -1,122 +1,97 @@
-/* MENTION MARKETS — the quiet money system.
-   Light first, spacious, almost no chrome. Color carries one meaning only:
-   green is up, orange-red is down, red and blue are the fighters' corners.
-   Everything else is ink on paper. */
+/* Mention Markets: design tokens.
+   Dark is the product; light sits behind the toggle.
+   Color has four jobs and nothing else: money (up, down), the corners
+   (red, blue fighter identity), two chart series (model, market), and ink. */
 
 :root {
   color-scheme: dark;
 
-  /* cinematic dark: deep neutral ground, elevated cards that catch light */
-  --bg: #0a0b0e;
-  --bg-sunken: #101218;
-  --surface: #12141a;
+  --bg: #0c0e12;
+  --bg-2: #101319;
+  --surface: #14171d;
+  --surface-2: #1a1e26;
+  --surface-3: #222732;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-2: rgba(255, 255, 255, 0.14);
 
-  --ink: #f5f6f8;
-  --ink-2: #9ba1ad;
-  --ink-3: #626875;
+  --ink: #f2f4f7;
+  --ink-2: #9aa3b2;
+  --ink-3: #5f6774;
+  --ink-inverse: #0c0e12;
 
-  --line: #23262e;
-  --line-2: #1a1c23;
+  --up: #22c97e;
+  --up-fill: #159a5f;
+  --up-soft: rgba(34, 201, 126, 0.14);
+  --down: #ff5e4c;
+  --down-fill: #c73f34;
+  --down-soft: rgba(255, 94, 76, 0.14);
 
-  --accent: #4d8dff;
-  --accent-soft: rgba(77, 141, 255, 0.14);
-  --up: #00d26a;
-  --down: #ff5042;
-  --corner-red: #ff5d64;
-  --corner-blue: #5a9dff;
+  --corner-red: #e0475a;
+  --corner-blue: #3d86ff;
+  --series-model: #3d86ff;
+  --series-market: #b8862e;
 
-  --radius: 16px;
-  --radius-sm: 12px;
-  --pill: 999px;
+  --font: "Instrument Sans", -apple-system, "SF Pro Text", "Segoe UI", Helvetica, Arial, sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
-  /* dark depth: a lit top edge plus real shadow, the Linear card recipe */
-  --shadow-1: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-2: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 16px 40px rgba(0, 0, 0, 0.5);
-  --glow-up: drop-shadow(0 0 7px rgba(0, 210, 106, 0.45));
-  --glow-down: drop-shadow(0 0 7px rgba(255, 80, 66, 0.4));
+  --r-1: 6px;
+  --r-2: 10px;
+  --r-3: 14px;
+  --r-4: 22px;
+
+  --shadow-float: 0 24px 64px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --ring: 0 0 0 2px var(--ink);
 
   --expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --expo-io: cubic-bezier(0.87, 0, 0.13, 1);
+  --t-fast: 140ms;
+  --t-base: 240ms;
+  --t-slow: 460ms;
 
-
-  /* Compatibility: components written against earlier systems still ask for
-     these names. Point them at the current palette rather than leaving them
-     undefined, which renders as invisible strokes. */
-  --rule: var(--line);
-  --hairline: var(--line-2);
-  --muted: var(--ink-2);
-  --ink-on-fill: #ffffff;
-  --white-hot: var(--ink);
-  --surface-2: var(--bg-sunken);
-  --bg-deep: var(--bg-sunken);
-  --border: var(--line);
-  --border-strong: var(--line);
-  --edge-control: var(--ink-3);
-  --edge-line: var(--line);
-  --edge-strong: var(--line);
-  --gain: var(--up);
-  --gain-bright: var(--up);
-  --loss: var(--down);
-  --pos: var(--up);
-  --neg: var(--down);
-  --tally: var(--down);
-  --coral: var(--down);
-  --violet: var(--ink);
-  --acid: var(--ink);
-  --on-acid: var(--bg);
-  --cyan: var(--ink-2);
-  --periwinkle: var(--ink-2);
-  --lane-bed: var(--line-2);
-  --lane-tick: var(--line);
-  --lane-dead: var(--line);
-  --row-watch: var(--bg-sunken);
-  --tile-wash: var(--surface);
-  --ticker-bed: var(--bg-sunken);
-  --select: var(--bg-sunken);
-  --cue-box: transparent;
-  --display: var(--font);
-  --voice: var(--font);
-  --prose: var(--font);
-  --num: var(--font);
-  --ease: var(--expo);
-  --pop: var(--expo);
-  --snap: 140ms;
-  --radius-sm: 12px;
-
-  --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --mono: "Inter", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --gutter: clamp(16px, 4vw, 48px);
+  --content: 1280px;
+  --topbar: 56px;
 }
 
 [data-theme="light"] {
   color-scheme: light;
 
   --bg: #ffffff;
-  --bg-sunken: #f7f7f8;
-  --surface: #ffffff;
+  --bg-2: #f4f5f8;
+  --surface: #f4f5f8;
+  --surface-2: #ffffff;
+  --surface-3: #d9dde5;
+  --line: rgba(9, 12, 18, 0.08);
+  --line-2: rgba(9, 12, 18, 0.16);
 
-  --ink: #09090b;
-  --ink-2: #52525b;
-  --ink-3: #a1a1aa;
+  --ink: #0b0d10;
+  --ink-2: #545c69;
+  --ink-3: #9098a6;
+  --ink-inverse: #ffffff;
 
-  --line: #e4e4e7;
-  --line-2: #f4f4f5;
+  --up: #0a9a55;
+  --up-fill: #12ad64;
+  --up-soft: rgba(10, 154, 85, 0.12);
+  --down: #d93a2e;
+  --down-fill: #e04a3e;
+  --down-soft: rgba(217, 58, 46, 0.12);
 
-  --accent: #2f6fed;
-  --accent-soft: rgba(47, 111, 237, 0.10);
-  --up: #00a804;
-  --down: #e04300;
-  --corner-red: #e5484d;
+  --corner-red: #d63b4e;
   --corner-blue: #2f6fed;
+  --series-model: #2f6fed;
+  --series-market: #b7791f;
 
-  --shadow-1: 0 1px 2px rgba(9, 9, 11, 0.04);
-  --shadow-2: 0 8px 24px rgba(9, 9, 11, 0.06);
-  --glow-up: none;
-  --glow-down: none;
+  --shadow-float: 0 24px 64px rgba(9, 12, 18, 0.18), 0 2px 8px rgba(9, 12, 18, 0.08);
 }
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 
-html { background: var(--bg); }
+html {
+  background: var(--bg);
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--topbar) + 16px);
+}
 
 body {
   margin: 0;
@@ -126,21 +101,26 @@ body {
   font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   font-variant-numeric: tabular-nums;
-  transition: background 240ms var(--expo), color 240ms var(--expo);
+  overflow-x: hidden;
 }
 
-h1, h2, h3, p { margin: 0; }
+h1, h2, h3, h4, p, ul, ol, figure { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
 a { color: inherit; text-decoration: none; }
-button, input, select { font: inherit; color: inherit; }
+button, input, select { font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; }
+button { cursor: pointer; }
+svg { display: block; }
 
 :focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: var(--r-1);
 }
 
-.num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.num { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--mono); font-size: 0.86em; letter-spacing: 0; }
 .up { color: var(--up); }
 .down { color: var(--down); }
 
@@ -160,12 +140,17 @@ button, input, select { font: inherit; color: inherit; }
   top: 8px;
   padding: 10px 16px;
   background: var(--ink);
-  color: var(--bg);
-  border-radius: var(--radius-sm);
-  z-index: 100;
+  color: var(--ink-inverse);
+  border-radius: var(--r-2);
+  z-index: 200;
 }
 .skip-link:focus { left: 16px; }
 
 @media (prefers-reduced-motion: reduce) {
-  * { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
 }

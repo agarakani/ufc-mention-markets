@@ -36,6 +36,8 @@ COVERAGE_REPORT = ROOT / "model_outputs" / "coverage_report.json"
 FIGHTER_DIRECTORY = ROOT / "data" / "processed" / "fighter_directory.csv"
 UPCOMING_EVENTS = ROOT / "data" / "processed" / "upcoming_events.json"
 REPLAY_TAPE = ROOT / "data" / "processed" / "replay_tape.json"
+TAPES_JSON = ROOT / "data" / "processed" / "tapes.json"
+RESULTS_LABELS = ROOT / "data" / "processed" / "kalshi_results_labels.csv"
 TRACKING_ROOT = ROOT / "data" / "tracking"
 TRACKING_WEEKLY_SUMMARY = TRACKING_ROOT / "weekly_summary.csv"
 TRACKING_HIDDEN_MARKERS = {".dashboard_hidden", ".practice_card"}
@@ -458,6 +460,8 @@ def build_tracking_positions() -> list[dict]:
 
 
 def summarize_tracking(cards: list[dict], positions: list[dict]) -> dict:
+
+
     return {
         "tracking_card_count": len(cards),
         "tracking_position_count": len(positions),
@@ -524,6 +528,67 @@ def build_performance(trade_rows: list[dict]) -> dict:
     for entry in phrases:
         entry["pnl"] = round(entry["pnl"], 4)
     return {"equity": equity, "by_phrase": phrases, "official_trades": len(official)}
+
+
+def build_trades(trade_rows: list[dict], label_rows: list[dict] | None = None) -> list[dict]:
+    """Every official paper trade, with the fight named, newest card first.
+
+    The P&L file carries tickers but not fighters; the settled-results labels
+    carry both, so the names come from there."""
+    names: dict[str, tuple[str, str]] = {}
+    for row in label_rows or []:
+        event = str(row.get("event_ticker", "")).strip()
+        f1 = str(row.get("fighter_1", "")).strip()
+        f2 = str(row.get("fighter_2", "")).strip()
+        if event and f1 and f2 and event not in names:
+            names[event] = (f1, f2)
+    trades = []
+    for row in trade_rows:
+        if str(row.get("cohort", "")).strip() != "official":
+            continue
+        event = str(row.get("event_ticker", "")).strip()
+        f1, f2 = names.get(event, ("", ""))
+        trades.append({
+            "ticker": str(row.get("ticker", "")).strip(),
+            "event_ticker": event,
+            "event_date": str(row.get("event_date", "")).strip(),
+            "phrase": str(row.get("phrase", "")).strip(),
+            "fighter_1": f1,
+            "fighter_2": f2,
+            "entered_at": str(row.get("entered_at", "")).strip(),
+            "side": str(row.get("side", "")).strip().lower(),
+            "price": number(row.get("price")),
+            "model_probability": number(row.get("model_probability")),
+            "edge": number(row.get("edge")),
+            "result": str(row.get("result", "")).strip().lower() or None,
+            "won": str(row.get("won", "")).strip().lower() == "true",
+            "pnl": number(row.get("pnl")),
+        })
+    trades.sort(key=lambda t: (t["event_date"], t["entered_at"]), reverse=True)
+    return trades
+
+
+def trim_fighters(fighters: dict, tapes: list[dict], trades: list[dict]) -> dict:
+    """Keep only fighters who appear on a recorded night.
+
+    The identity table covers every fighter in the corpus, thousands of
+    entries, and it was most of the payload. The site only needs the ones it
+    can show. With nothing recorded yet, keep everything."""
+    names: set[str] = set()
+    for tape in tapes or []:
+        for market in tape.get("markets") or []:
+            for key in ("fighter_1", "fighter_2"):
+                name = str(market.get(key) or "").strip().lower()
+                if name:
+                    names.add(name)
+    for trade in trades or []:
+        for key in ("fighter_1", "fighter_2"):
+            name = str(trade.get(key) or "").strip().lower()
+            if name:
+                names.add(name)
+    if not names:
+        return fighters
+    return {key: value for key, value in (fighters or {}).items() if key in names}
 
 
 def build_walkforward(report: dict) -> dict:
@@ -1028,6 +1093,8 @@ def build_payload() -> dict:
     tracking_cards = build_tracking_cards()
     tracking_positions = build_tracking_positions()
 
+    tapes = (read_json(TAPES_JSON) or {}).get("cards", [])
+    trades = build_trades(read_csv(PL_BACKTEST_TRADES), read_csv(RESULTS_LABELS))
     return {
         "build": build_stamp(),
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -1049,12 +1116,14 @@ def build_payload() -> dict:
             tracking_positions,
         ),
         "kalshi": kalshi_rows,
-        "fighters": fighters,
+        "fighters": trim_fighters(fighters, tapes, trades),
         "upcoming_events": build_upcoming_events(),
         "performance": build_performance(read_csv(PL_BACKTEST_TRADES)),
         "kalshi_cards": kalshi_cards,
         "price_tracks": price_tracks,
         "replay": read_json(REPLAY_TAPE),
+        "tapes": tapes,
+        "trades": trades,
         "kalshi_events": kalshi_events,
         "kalshi_meta": kalshi_meta,
         "kalshi_audit_summary": kalshi_audit_summary,
@@ -1067,7 +1136,9 @@ def build_payload() -> dict:
 
 def write_data(path: Path, payload: dict):
     path.parent.mkdir(parents=True, exist_ok=True)
-    encoded = json.dumps(payload, indent=2, sort_keys=True)
+    # Compact on purpose: pretty-printing put every tape number on its own
+    # line and tripled the file the browser has to pull.
+    encoded = json.dumps(payload, separators=(",", ":"), sort_keys=True)
     path.write_text(f"window.UFC_MENTION_DASHBOARD_DATA = {encoded};\n", encoding="utf-8")
 
 
