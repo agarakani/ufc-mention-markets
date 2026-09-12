@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0c0e12">
+    <meta name="description" content="Four nights of UFC announcer-mention markets on Kalshi: every phrase priced by a transcript model, every market's path through the week, and the paper trades scored in public.">
+    <title>Mention Markets</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='11' width='4' height='10' rx='1' fill='%23f2f4f7'/%3E%3Crect x='10' y='5' width='4' height='16' rx='1' fill='%2322c97e'/%3E%3Crect x='17' y='8' width='4' height='13' rx='1' fill='%23f2f4f7'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wdth,wght@0,75..100,400..700;1,75..100,400..700&family=Geist+Mono:wght@400;500&display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wdth,wght@0,75..100,400..700;1,75..100,400..700&family=Geist+Mono:wght@400;500&display=swap"></noscript>
+    <link rel="stylesheet" href="base.css">
+    <link rel="stylesheet" href="styles.css?v=1789242897">
+    <script>
+      (function () {
+        try {
+          if (localStorage.getItem("mm_theme") === "light") {
+            document.documentElement.setAttribute("data-theme", "light");
+          }
+        } catch (e) { /* private mode */ }
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#night">Skip to the board</a>
+    <header class="topbar" id="topbar">
+      <a class="brand" href="#/" aria-label="Mention Markets, home">
+        <svg class="brand-mark" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3" y="11" width="4" height="10" rx="1" fill="currentColor"/>
+          <rect x="10" y="5" width="4" height="16" rx="1" class="brand-mark-up"/>
+          <rect x="17" y="8" width="4" height="13" rx="1" fill="currentColor"/>
+        </svg>
+        <span class="brand-name">Mention Markets</span>
+      </a>
+      <nav class="nights" id="nightSwitch" aria-label="Recorded nights"></nav>
+      <div class="topbar-tools">
+        <button class="tool-btn" id="searchBtn" type="button" aria-label="Search words, fights, and nights">
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.5 10.5 14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <span class="tool-label">Search</span>
+          <kbd class="tool-kbd" aria-hidden="true">⌘K</kbd>
+        </button>
+        <button class="tool-btn tool-icon" id="themeBtn" type="button" aria-label="Switch to light"></button>
+      </div>
+    </header>
+
+    <main class="app" id="app">
+      <section class="section section-night" id="night" aria-labelledby="nightTitle"></section>
+      <section class="section section-book" id="book" aria-labelledby="bookTitle"></section>
+      <section class="section section-model" id="model" aria-labelledby="modelTitle"></section>
+      <section class="section section-record" id="record" aria-labelledby="recordTitle"></section>
+    </main>
+
+    <footer class="footer" id="footer"></footer>
+
+    <div class="pane-backdrop" id="paneBackdrop" hidden></div>
+    <aside class="pane" id="pane" hidden aria-label="Word detail" role="dialog" aria-modal="true"></aside>
+    <div class="palette-backdrop" id="paletteBackdrop" hidden></div>
+    <div class="palette" id="palette" hidden role="dialog" aria-modal="true" aria-label="Search"></div>
+    <p class="visually-hidden" id="announce" aria-live="polite"></p>
+
+    <script>
+      window.STATIC_SITE = true;
+      const cacheBust = Date.now().toString();
+      // Fetch in parallel, execute in order: data first, then the modules,
+      // then the app that wires them together.
+      const files = [
+        "data.js",
+        "src/motion.js", "src/charts.js", "src/select.js",
+        "src/board.js", "src/timeline.js", "src/book.js", "src/model.js",
+        "src/ledger.js", "src/pane.js", "src/palette.js",
+        "app.js",
+      ];
+      for (const file of files) {
+        const s = document.createElement("script");
+        s.src = `${file}?v=${cacheBust}`;
+        s.async = false;
+        document.body.appendChild(s);
+      }
+    </script>
+  </body>
+</html>
