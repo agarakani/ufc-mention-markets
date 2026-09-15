@@ -6,13 +6,13 @@ MM.book = (function () {
 
   function honestLine(book, nights) {
     const eq = book.equity;
-    if (!eq.length) return "";
+    if (!eq.length) return "No settled paper record yet. Results appear here after Kalshi publishes the outcomes.";
     const best = eq.reduce((a, b) => (b.card_pnl > a.card_pnl ? b : a));
     const rest = eq.filter((e) => e !== best).reduce((s, e) => s + e.card_pnl, 0);
     const bestNight = nights.find((n) => n.date === best.date);
     const name = bestNight ? bestNight.title : MM.fmt.dateShort(best.date);
     if (eq.length < 2) return `One settled night so far. ${MM.fmt.money(best.card_pnl, { sign: true })} is a sample of one.`;
-    return `${MM.fmt.dateShort(best.date)} (${esc(name)}) made ${MM.fmt.money(best.card_pnl, { sign: true })}. The other ${eq.length - 1} nights ${rest < 0 ? "lost" : "made"} ${MM.fmt.money(Math.abs(rest))} between them. Four nights is a record, not a proof.`;
+    return `${MM.fmt.dateShort(best.date)} (${esc(name)}) made ${MM.fmt.money(best.card_pnl, { sign: true })}. The other ${MM.fmt.plural(eq.length - 1, "night")} ${rest < 0 ? "lost" : "made"} ${MM.fmt.money(Math.abs(rest))} combined. ${MM.fmt.plural(eq.length, "settled night")} make up this sample; contracts from the same night can move together.`;
   }
 
   function mount(container) {
@@ -24,7 +24,7 @@ MM.book = (function () {
     container.innerHTML = `
       <header class="section-head" data-reveal>
         <h2 class="section-title" id="bookTitle">The book</h2>
-        <p class="section-sub">One paper contract per signal, bought at the live price the moment the model flagged it. Nothing here is real money and nothing is edited after the fact.</p>
+        <p class="section-sub">One paper contract at the buy price in the first saved snapshot that met the entry rule at the time. Simulated trades, settled against Kalshi, before fees.</p>
       </header>
       <div class="book-hero" data-reveal>
         <p class="book-number ${sign}"><span class="book-value">${MM.fmt.money(0)}</span></p>
@@ -51,7 +51,10 @@ MM.book = (function () {
     const startCount = () => MM.motion.countUp(valueEl, book.pnl, { duration: 1100, format: (v) => MM.fmt.money(v, { sign: true }) });
 
     const paintCharts = () => {
-      MM.charts.bars(container.querySelector("#bookNights"), {
+      const nightChart = container.querySelector("#bookNights");
+      const phraseChart = container.querySelector("#bookPhrases");
+      if (!book.equity.length) nightChart.innerHTML = '<p class="figure-note">No settled nights to chart yet.</p>';
+      else MM.charts.bars(nightChart, {
         ariaLabel: "Paper profit for each recorded night",
         height: 240,
         items: book.equity.map((e) => {
@@ -60,7 +63,8 @@ MM.book = (function () {
         }),
         format: (v) => MM.fmt.money(v, { sign: true }),
       });
-      MM.charts.bars(container.querySelector("#bookPhrases"), {
+      if (!book.byPhrase.length) phraseChart.innerHTML = '<p class="figure-note">No paper trades to group by phrase yet.</p>';
+      else MM.charts.bars(phraseChart, {
         ariaLabel: "Paper profit by phrase across all nights",
         horizontal: true,
         labelWidth: 180,
