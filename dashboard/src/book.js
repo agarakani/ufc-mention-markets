@@ -23,7 +23,7 @@ MM.book = (function () {
 
     container.innerHTML = `
       <header class="section-head" data-reveal>
-        <h2 class="section-title" id="bookTitle">The book</h2>
+        <h2 class="section-title" id="bookTitle">Historical test</h2>
         <p class="section-sub">One paper contract at the buy price in the first saved snapshot that met the entry rule at the time. Simulated trades, settled against Kalshi, before fees.</p>
       </header>
       <div class="book-hero" data-reveal>

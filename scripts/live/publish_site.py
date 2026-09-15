@@ -37,7 +37,7 @@ PUBLISH_IDLE_INTERVAL_SECONDS = 10 * 60
 SITE_FILES = [
     "app.js", "styles.css", "base.css", "data.js",
     "src/motion.js", "src/charts.js", "src/select.js", "src/board.js", "src/timeline.js",
-    "src/book.js", "src/model.js", "src/ledger.js", "src/pane.js", "src/palette.js",
+    "src/book.js", "src/model.js", "src/ledger.js", "src/pane.js", "src/palette.js", "src/live.js",
 ]
 LOADER_LINE = "      const cacheBust = Date.now().toString();"
 

@@ -1,13 +1,26 @@
-/* Mention Markets. Four nights of UFC announcer-mention markets, priced by a
-   transcript model and scored in public. This file wires the sections
-   together: routing, the night switch, theme, search, and the footer. */
+/* Page routing, saved recordings, theme, and search. */
 (function () {
   "use strict";
   const $ = (sel, root) => (root || document).querySelector(sel);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   const state = { card: null, frame: null, ticker: null };
-  const mounted = { timeline: null, board: null, book: null, model: null, ledger: null };
+  const mounted = { live: null, timeline: null, board: null, book: null, model: null, ledger: null };
+  function showPage(id) {
+    const history = MM.select.nights().length > 0;
+    $("#live").hidden = id !== "live";
+    $("#paperRecord").hidden = id !== "record";
+    $("#archive").hidden = !history || !["live", "night"].includes(id);
+    $("#book").hidden = !history || !["record", "book"].includes(id);
+    $("#record").hidden = !history || !["record", "book"].includes(id);
+    $("#model").hidden = !history || id !== "model";
+    document.querySelectorAll(".primary-nav a").forEach(link => {
+      const selected = link.hash === `#/${id === "book" ? "record" : id}`;
+      if (selected) link.setAttribute("aria-current", "page"); else link.removeAttribute("aria-current");
+    });
+    window.dispatchEvent(new Event("resize"));
+  }
+  function openArchive() { showPage("night"); $("#archive").open = true; }
 
   /* ---------- theme ---------- */
   function theme() { return document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark"; }
@@ -33,7 +46,7 @@
     let m;
     if ((m = hash.match(/^#\/w\/([A-Z0-9-]+)$/i))) return { type: "word", ticker: m[1] };
     if ((m = hash.match(/^#\/n\/([A-Z0-9]+)$/i))) return { type: "night", card: m[1].toUpperCase() };
-    if ((m = hash.match(/^#\/(book|model|record|night)$/))) return { type: "section", id: m[1] };
+    if ((m = hash.match(/^#\/(live|book|model|record|night)$/))) return { type: "section", id: m[1] };
     return { type: "home" };
   }
   function writeRoute(hash, replace) {
@@ -105,6 +118,7 @@
   function openWord(ticker, opts) {
     const hit = MM.select.market(ticker);
     if (!hit) return false;
+    openArchive();
     if (hit.night.card !== state.card) showNight(hit.night.card, { animate: false });
     // Scroll the board to the tile first; the pane must take focus last so
     // the dialog's focus trap holds and the tile is where focus returns.
@@ -152,13 +166,12 @@
   function paintFooter() {
     const cov = MM.select.model().coverage || {};
     const build = MM.select.build();
-    const since = cov.last_card_date ? MM.fmt.dateShort(cov.last_card_date) : "";
     const stamp = MM.select.generatedAt() ? MM.fmt.stamp(MM.select.generatedAt()) : "";
     $("#footer").innerHTML = `
       <div class="footer-inner">
         <div class="footer-col">
-          <p class="footer-lead">${since ? `Last recorded night: ${esc(since)}. No later recording is included in this snapshot.` : "No recording dates are available in this snapshot."} Saved data does not confirm whether the recorder is running now.</p>
-          <p class="footer-fine">Paper trading only. This site cannot place a trade. The board shows Kalshi's Yes buy prices. Model scoring uses pre-fight bid-ask midpoints adjusted for the spread.</p>
+          <p class="footer-lead">A model of what gets said, tested against what it costs.</p>
+          <p class="footer-fine">Paper trading only. This site cannot place a real order. Current prices are buy quotes; saved recordings and historical tests are separate from new paper entries. A model edge is an estimate, not a guaranteed return.</p>
         </div>
         <div class="footer-col footer-meta">
           ${cov.recording_since ? `<p>Recording since ${esc(MM.fmt.dateShort(cov.recording_since))}</p>` : ""}
@@ -172,7 +185,7 @@
   /* ---------- quiet state ---------- */
   function paintEmpty() {
     $("#night").innerHTML = `
-      <header class="night-head"><h1 class="night-title" id="nightTitle">Nothing recorded yet</h1>
+      <header class="night-head"><h2 class="night-title" id="nightTitle">Nothing recorded yet</h2>
       <p class="night-meta"><span>No saved fight prices are available in this snapshot.</span></p></header>`;
     ["#book", "#model", "#record"].forEach((id) => { $(id).hidden = true; });
   }
@@ -184,27 +197,37 @@
       if (openWord(r.ticker, { replace: true, scroll: initial, focus: !initial })) return;
       // unknown ticker: fall through to the night rather than a blank page
       if (!state.card) showNight(null, { animate: false });
+      openArchive();
       writeRoute(state.card ? `#/n/${state.card}` : "#/", true);
     }
     if (MM.pane.isOpen()) MM.pane.close();
-    if (r.type === "night") { if (r.card !== state.card) showNight(r.card); return; }
+    if (r.type === "night") {
+      openArchive();
+      if (r.card !== state.card) showNight(r.card);
+      $("#night").scrollIntoView({ behavior: initial ? "instant" : "smooth", block: "start" });
+      return;
+    }
     if (r.type === "section") {
       if (!state.card) showNight(null, { animate: false });
+      showPage(r.id);
+      if (r.id === "night") openArchive();
+      if (r.id === "live") document.title = "Mention Markets · UFC mention prices";
       ensureThroughSection(r.id);
-      const target = $("#" + r.id);
+      const target = $(r.id === "record" ? "#paperRecord" : "#" + r.id);
       if (target) target.scrollIntoView({ behavior: initial ? "instant" : MM.motion.reduced() ? "auto" : "smooth", block: "start" });
       return;
     }
     if (!state.card) showNight(null, { animate: false });
+    if (r.type === "home") { showPage("live"); document.title = "Mention Markets · UFC mention prices"; }
   }
 
   function onPaletteAction(a) {
     if (!a) return;
     if (["night", "fight", "section"].includes(a.type) && MM.pane.isOpen()) MM.pane.close();
     if (a.type === "word") openWord(a.ticker, { scroll: true, focus: true });
-    else if (a.type === "night") { writeRoute(`#/n/${a.card}`); showNight(a.card); visitElement($("#night")); }
-    else if (a.type === "fight") { if (a.card !== state.card) { writeRoute(`#/n/${a.card}`); showNight(a.card, { animate: false }); } visitElement(document.querySelector(`.fight[data-event="${a.event}"]`)); }
-    else if (a.type === "section") { writeRoute(`#/${a.id}`); ensureThroughSection(a.id); visitElement($("#" + a.id)); }
+    else if (a.type === "night") { openArchive(); writeRoute(`#/n/${a.card}`); showNight(a.card); visitElement($("#night")); }
+    else if (a.type === "fight") { openArchive(); if (a.card !== state.card) { writeRoute(`#/n/${a.card}`); showNight(a.card, { animate: false }); } visitElement(document.querySelector(`.fight[data-event="${a.event}"]`)); }
+    else if (a.type === "section") { showPage(a.id); if (a.id === "night") openArchive(); writeRoute(`#/${a.id}`); ensureThroughSection(a.id); visitElement($(a.id === "record" ? "#paperRecord" : "#" + a.id)); }
     else if (a.type === "theme") toggleTheme();
     else if (a.type === "copy") {
       try {
@@ -222,6 +245,9 @@
   function init() {
     paintTheme();
     $("#themeBtn").addEventListener("click", toggleTheme);
+    const received = () => { MM.select.invalidate(); MM.ledger.renderPaper($("#paperRecord"), MM.select.data()); paintFooter(); };
+    mounted.live = MM.live.mount($("#live"), { onData: received });
+    MM.ledger.renderPaper($("#paperRecord"), MM.select.data());
     const nights = MM.select.nights();
     MM.pane.mount({ onNavigate: (t) => openWord(t, { focus: true }), onClosed: closedWord });
     MM.palette.mount({
@@ -233,6 +259,7 @@
         { title: "The model", sub: "Calibration, ranking power, the gate", action: { type: "section", id: "model" } },
         { title: "The record", sub: "Every contract, sortable", action: { type: "section", id: "record" } },
         ] : []),
+        { title: "Current cards", sub: "Upcoming fights and mention prices", action: { type: "section", id: "live" } },
         { title: theme() === "dark" ? "Switch to light" : "Switch to dark", action: { type: "theme" } },
         { title: "Copy link to this view", action: { type: "copy" } },
       ],
@@ -241,7 +268,8 @@
 
     if (nights.length) {
       ["book", "model", "record"].forEach(id => {
-        $("#" + id).innerHTML = `<header class="section-head"><h2 class="section-title" id="${id}Title">The ${id}</h2></header>`;
+        const tag = id === "model" ? "h1" : "h2";
+        $("#" + id).innerHTML = `<header class="section-head"><${tag} class="section-title" id="${id}Title">The ${id}</${tag}></header>`;
       });
     } else paintEmpty();
     paintFooter();
@@ -261,6 +289,7 @@
       if (!a) return;
       ev.preventDefault();
       const card = a.getAttribute("data-card");
+      openArchive();
       writeRoute(`#/n/${card}`);
       showNight(card);
       $("#night").scrollIntoView({ behavior: MM.motion.reduced() ? "auto" : "smooth", block: "start" });

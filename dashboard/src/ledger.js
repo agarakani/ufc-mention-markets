@@ -25,8 +25,8 @@ MM.ledger = (function () {
 
     container.innerHTML = `
       <header class="section-head" data-reveal>
-        <h2 class="section-title" id="recordTitle">The record</h2>
-        <p class="section-sub">Recorded paper contracts. Open a row for that phrase's saved prices, model estimates, and outcome.</p>
+        <h2 class="section-title" id="recordTitle">Historical test entries</h2>
+        <p class="section-sub">The earlier backtest, kept separate from the live paper log. Open a row for saved prices, model estimates, and outcome.</p>
       </header>
       <div class="ledger-bar" data-reveal>
         <div class="seg" role="group" aria-label="Night">
@@ -115,5 +115,26 @@ MM.ledger = (function () {
     return { destroy() { container.removeEventListener("click", onClick); container.removeEventListener("keydown", onKey); } };
   }
 
-  return { mount };
+  function renderPaper(container, data) {
+    const previous = new Map(Array.from(container.querySelectorAll('details'), el => [el.dataset.paperCard, el.open]));
+    const focus = container.contains(document.activeElement) ? document.activeElement.closest('[data-paper-card]')?.dataset.paperCard : null;
+    const rows = (data.tracking_positions || []).filter(row => row.paper_action === 'trade');
+    const cards = new Map();
+    rows.forEach(row => { const key = row.card || 'Unlabeled card'; if (!cards.has(key)) cards.set(key, []); cards.get(key).push(row); });
+    const amount = value => isNum(value) ? MM.fmt.money(value, { sign: true }) : 'Pending';
+    container.innerHTML = `<header class="section-head"><h1 class="section-title" id="paperRecordTitle">Paper log</h1><p class="section-sub">Saved entries from the collector. Entry prices and quantities stay fixed; results follow Kalshi. Simulated fills, with P/L before fees.</p></header>
+      ${rows.length ? Array.from(cards, ([key, entries]) => {
+        const title = (data.tracking_cards || []).find(card => card.card === key)?.label || key.replace(/_/g, ' ');
+        const settled = entries.filter(row => ['yes', 'no'].includes(row.outcome) && isNum(row.paper_pnl));
+        const pnl = settled.length ? settled.reduce((total, row) => total + row.paper_pnl, 0) : null;
+        return `<details class="paper-card" data-paper-card="${esc(key)}" ${previous.get(key) ? 'open' : ''}><summary><span>${esc(title)}</span><span>${entries.length} entries · ${settled.length} settled · ${amount(pnl)}</span></summary><div class="live-market-wrap"><table class="live-markets"><caption class="visually-hidden">Paper entries for ${esc(title)}</caption><thead><tr><th scope="col">Fight / phrase</th><th scope="col">Side</th><th scope="col">Entry price</th><th scope="col">Contracts</th><th scope="col">Entered</th><th scope="col">Result</th><th scope="col">P/L</th></tr></thead><tbody>${entries.map(row => {
+          const time = Date.parse(row.entered_at || row.tracked_at || '');
+          const result = ['yes', 'no'].includes(row.outcome) ? `Resolved ${row.outcome.toUpperCase()}` : row.resolution_status === 'pending' ? 'Awaiting settlement' : 'Open';
+          return `<tr><td>${esc(row.matchup || row.event_title || '')}<br><strong>${esc(row.phrase)}</strong></td><td>${esc((row.paper_side || '').toUpperCase())}</td><td>${isNum(row.paper_price) ? `${Math.round(row.paper_price * 100)}¢` : 'Unavailable'}</td><td>${isNum(row.paper_contracts) ? row.paper_contracts : 'Unavailable'}</td><td>${Number.isFinite(time) ? esc(new Date(time).toLocaleString()) : 'Not recorded'}</td><td>${result}</td><td>${amount(['yes', 'no'].includes(row.outcome) ? row.paper_pnl : null)}</td></tr>`;
+        }).join('')}</tbody></table></div></details>`;
+      }).join('') : '<p class="live-empty">No live paper entries have been recorded yet.</p>'}`;
+    if (focus) Array.from(container.querySelectorAll('[data-paper-card]')).find(el => el.dataset.paperCard === focus)?.querySelector('summary').focus({ preventScroll: true });
+  }
+
+  return { mount, renderPaper };
 })();

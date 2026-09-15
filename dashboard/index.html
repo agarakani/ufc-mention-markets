@@ -24,7 +24,7 @@
     </script>
   </head>
   <body>
-    <a class="skip-link" href="#night">Skip to the board</a>
+    <a class="skip-link" href="#live">Skip to current markets</a>
     <header class="topbar" id="topbar">
       <a class="brand" href="#/" aria-label="Mention Markets, home">
         <svg class="brand-mark" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
@@ -34,7 +34,11 @@
         </svg>
         <span class="brand-name">Mention Markets</span>
       </a>
-      <nav class="nights" id="nightSwitch" aria-label="Recorded nights"></nav>
+      <nav class="primary-nav" aria-label="Main navigation">
+        <a href="#/live">Current</a>
+        <a href="#/record">Record</a>
+        <a href="#/model">Model</a>
+      </nav>
       <div class="topbar-tools">
         <button class="tool-btn" id="searchBtn" type="button" aria-label="Search words, fights, and nights">
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.5 10.5 14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -46,7 +50,17 @@
     </header>
 
     <main class="app" id="app">
-      <section class="section section-night" id="night" aria-labelledby="nightTitle"></section>
+      <section class="section section-live" id="live" aria-labelledby="liveTitle"></section>
+      <details class="archive" id="archive">
+        <summary class="archive-toggle">
+          <h2>Past cards</h2>
+          <span>Saved prices and paper results</span>
+          <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </summary>
+        <nav class="nights" id="nightSwitch" aria-label="Recorded nights"></nav>
+        <section class="section section-night" id="night" aria-labelledby="nightTitle"></section>
+      </details>
+      <section class="section" id="paperRecord" aria-labelledby="paperRecordTitle" hidden></section>
       <section class="section section-book" id="book" aria-labelledby="bookTitle"></section>
       <section class="section section-model" id="model" aria-labelledby="modelTitle"></section>
       <section class="section section-record" id="record" aria-labelledby="recordTitle"></section>
@@ -68,7 +82,7 @@
         "data.js",
         "src/motion.js", "src/charts.js", "src/select.js",
         "src/board.js", "src/timeline.js", "src/book.js", "src/model.js",
-        "src/ledger.js", "src/pane.js", "src/palette.js",
+        "src/ledger.js", "src/pane.js", "src/palette.js", "src/live.js",
         "app.js",
       ];
       for (const file of files) {

@@ -50,17 +50,17 @@
 
   --gutter: clamp(16px, 4vw, 48px);
   --content: 1280px;
-  --topbar: 56px;
+  --topbar: 68px;
 }
 
 [data-theme="light"] {
   color-scheme: light;
 
-  --bg: #ffffff;
-  --bg-2: #f4f5f8;
-  --surface: #f4f5f8;
-  --surface-2: #ffffff;
-  --surface-3: #d9dde5;
+  --bg: #f7f6f2;
+  --bg-2: #eeede7;
+  --surface: #eeede7;
+  --surface-2: #fffefa;
+  --surface-3: #ddded7;
   --line: rgba(9, 12, 18, 0.08);
   --line-2: rgba(9, 12, 18, 0.16);
 

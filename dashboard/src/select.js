@@ -190,5 +190,6 @@ MM.select = (function () {
   const build = () => data().build || {};
   const generatedAt = () => data().generated_at || "";
 
-  return { data, nights, night, latestNight, market, allMarkets, book, model, trades, build, generatedAt };
+  const invalidate = () => { cache = null; };
+  return { data, nights, night, latestNight, market, allMarkets, book, model, trades, build, generatedAt, invalidate };
 })();

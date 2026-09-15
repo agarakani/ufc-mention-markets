@@ -42,7 +42,7 @@ MM.model = (function () {
 
     container.innerHTML = `
       <header class="section-head" data-reveal>
-        <h2 class="section-title" id="modelTitle">The model</h2>
+        <h1 class="section-title" id="modelTitle">The model</h1>
         <p class="section-sub">A pre-fight chance for each phrase, learned from ${isNum(m.transcripts) ? m.transcripts.toLocaleString("en-US") + " broadcast transcripts" : "historical broadcast transcripts"} and fight details. The comparison below uses the last saved prediction and price at or before noon UTC on fight day. Kalshi prices do not enter the model.</p>
       </header>
 

@@ -67,7 +67,7 @@ function browser(t, { hash = "", data = fixture(), app = true, immediatePaint = 
     book: { mount(container) { container.dataset.mounted = "true"; } },
     model: { mount(container) { container.dataset.mounted = "true"; } },
   };
-  ["src/select.js", "src/ledger.js", "src/pane.js", "src/palette.js", ...(app ? ["app.js"] : [])].forEach(file => w.eval(fs.readFileSync(path.join(dashboard, file), "utf8")));
+  ["src/select.js", "src/ledger.js", "src/pane.js", "src/palette.js", ...(app ? ["src/live.js", "app.js"] : [])].forEach(file => w.eval(fs.readFileSync(path.join(dashboard, file), "utf8")));
   const flush = () => { while (tasks.length) tasks.shift()(); };
   if (flushTasks) flush();
   return { w, d: w.document, scrolls, flushPaint: () => { while (paint.length) paint.shift()(); }, flushTasks: flush };
@@ -242,12 +242,62 @@ test("the full ledger stays visible without a tall-table intersection threshold"
   assert.ok(d.querySelector("#record .section-head[data-reveal]"));
 });
 
-test("the night title is the page heading, including an empty snapshot", t => {
+test("the current-card title is the page heading, including an empty snapshot", t => {
   for (const data of [fixture(), {}]) {
     const { d } = browser(t, { data });
-    assert.equal(d.querySelectorAll("h1").length, 1);
-    assert.equal(d.querySelector("h1").id, "nightTitle");
+    const headings = Array.from(d.querySelectorAll('h1')).filter(h => !h.closest('[hidden]') && (!h.closest('#archive') || h.closest('#archive').open));
+    assert.equal(headings.length, 1);
+    assert.equal(headings[0].id, "liveTitle");
   }
+});
+
+test("the home page separates current cards from model scores and old trades", t => {
+  const { d } = browser(t);
+  assert.equal(d.querySelector('#live').hidden, false);
+  assert.equal(d.querySelector('#archive').open, false);
+  assert.equal(d.querySelector('#book').hidden, true);
+  assert.equal(d.querySelector('#record').hidden, true);
+  assert.equal(d.querySelector('#model').hidden, true);
+  assert.equal(d.querySelector('.primary-nav [aria-current="page"]').hash, '#/live');
+});
+
+test("record, model and historical links open the requested view", t => {
+  for (const id of ['record', 'model']) {
+    const { d } = browser(t, { hash: `#/${id}` });
+    assert.equal(d.querySelector(`#${id}`).hidden, false);
+    assert.equal(d.querySelector('#live').hidden, true);
+    assert.equal(d.querySelector('#archive').hidden, true);
+    assert.equal(d.querySelector('.primary-nav [aria-current="page"]').hash, `#/${id}`);
+    assert.equal(d.querySelector(id === 'record' ? '#paperRecordTitle' : '#modelTitle').tagName, 'H1');
+  }
+  const { d } = browser(t, { hash: '#/n/JUL11' });
+  assert.equal(d.querySelector('#archive').hidden, false);
+  assert.equal(d.querySelector('#archive').open, true);
+  assert.equal(d.querySelector('#live').hidden, true);
+  assert.equal(d.querySelector('#nightTitle').tagName, 'H1');
+});
+
+test("the live paper log keeps settled and pending cards separate from the backtest", t => {
+  const data = fixture();
+  data.tracking_cards = [{ card: 'saved_paper', label: 'Saved paper card' }];
+  data.tracking_positions = [
+    { card: 'saved_paper', ticker: 'PAPER-1', paper_action: 'trade', matchup: 'Saved fight', phrase: 'Choke', paper_side: 'no', paper_price: 0.43, paper_contracts: 2, outcome: 'no', paper_pnl: 1.14 },
+    { card: 'saved_paper', ticker: 'PAPER-2', paper_action: 'trade', phrase: 'Decision', paper_side: 'yes', paper_price: 0.3, paper_contracts: 3, resolution_status: 'pending', paper_pnl: null },
+    { card: 'saved_paper', ticker: 'LEAN-1', paper_action: 'lean', paper_pnl: 99 },
+  ];
+  const { w, d } = browser(t, { data, hash: '#/record' });
+  const log = d.querySelector('#paperRecord');
+  assert.equal(log.hidden, false);
+  assert.equal(log.querySelectorAll('tbody tr').length, 2);
+  assert.match(log.textContent, /Saved paper card/);
+  assert.match(log.textContent, /\+\$1.14/);
+  assert.match(log.textContent, /Awaiting settlement/);
+  assert.doesNotMatch(log.textContent, /99|JUL11|JUL25/);
+  log.querySelector('details').open = true;
+  log.querySelector('summary').focus();
+  w.MM.ledger.renderPaper(log, data);
+  assert.equal(log.querySelector('details').open, true);
+  assert.equal(d.activeElement, log.querySelector('summary'));
 });
 
 test("night links keep keyboard focus after the navigation is redrawn", t => {
@@ -277,7 +327,7 @@ test("a direct record link mounts the ledger before deferred work runs", t => {
 test("section links mount preceding sections before measuring their scroll position", t => {
   for (const id of ["model", "record"]) {
     const { scrolls } = browser(t, { hash: `#/${id}`, immediatePaint: false, flushTasks: false });
-    const scroll = scrolls.find(entry => entry.id === id);
+    const scroll = scrolls.find(entry => entry.id === (id === 'record' ? 'paperRecord' : id));
     assert.ok(scroll, `${id} must receive the scroll`);
     assert.equal(scroll.behavior, "instant", "Initial navigation must not animate through lazy charts");
     assert.equal(scroll.book, true, "The book must be sized before scrolling past it");
@@ -294,8 +344,8 @@ test("a search section jump also mounts earlier deferred sections before scrolli
   input.value = "The record";
   input.dispatchEvent(new w.Event("input", { bubbles: true }));
   key(w, input, "Enter");
-  const scroll = scrolls.find(entry => entry.id === "record");
-  assert.deepEqual(scroll, { id: "record", behavior: "auto", book: true, model: true, record: true });
+  const scroll = scrolls.find(entry => entry.id === "paperRecord");
+  assert.deepEqual(scroll, { id: "paperRecord", behavior: "auto", book: true, model: true, record: true });
 });
 
 test("the search theme action describes the current theme", t => {
