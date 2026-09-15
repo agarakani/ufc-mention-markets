@@ -38,7 +38,16 @@ function browser(t, { hash = "", data = fixture(), app = true, immediatePaint = 
   t.after(() => dom.window.close());
   const w = dom.window;
   Object.defineProperty(w.document, "readyState", { value: "complete" });
-  w.HTMLElement.prototype.scrollIntoView = function () {};
+  const scrolls = [];
+  w.HTMLElement.prototype.scrollIntoView = function (options) {
+    scrolls.push({
+      id: this.id,
+      behavior: options && options.behavior,
+      book: Boolean(w.document.querySelector("#book[data-mounted]")),
+      model: Boolean(w.document.querySelector("#model[data-mounted]")),
+      record: Boolean(w.document.querySelector("#ledgerBody")),
+    });
+  };
   w.UFC_MENTION_DASHBOARD_DATA = data;
   const paint = [];
   const tasks = [];
@@ -55,12 +64,13 @@ function browser(t, { hash = "", data = fixture(), app = true, immediatePaint = 
       },
     },
     timeline: { mount: () => ({ destroy() {} }) },
-    book: { mount() {} }, model: { mount() {} },
+    book: { mount(container) { container.dataset.mounted = "true"; } },
+    model: { mount(container) { container.dataset.mounted = "true"; } },
   };
   ["src/select.js", "src/ledger.js", "src/pane.js", "src/palette.js", ...(app ? ["app.js"] : [])].forEach(file => w.eval(fs.readFileSync(path.join(dashboard, file), "utf8")));
   const flush = () => { while (tasks.length) tasks.shift()(); };
   if (flushTasks) flush();
-  return { w, d: w.document, flushPaint: () => { while (paint.length) paint.shift()(); }, flushTasks: flush };
+  return { w, d: w.document, scrolls, flushPaint: () => { while (paint.length) paint.shift()(); }, flushTasks: flush };
 }
 
 function key(w, element, value, options = {}) {
@@ -254,6 +264,30 @@ test("book, model and record wait until the board has painted", t => {
 test("a direct record link mounts the ledger before deferred work runs", t => {
   const { d } = browser(t, { hash: "#/record", immediatePaint: false, flushTasks: false });
   assert.ok(d.querySelector("#ledgerBody"));
+});
+
+test("section links mount preceding sections before measuring their scroll position", t => {
+  for (const id of ["model", "record"]) {
+    const { scrolls } = browser(t, { hash: `#/${id}`, immediatePaint: false, flushTasks: false });
+    const scroll = scrolls.find(entry => entry.id === id);
+    assert.ok(scroll, `${id} must receive the scroll`);
+    assert.equal(scroll.behavior, "instant", "Initial navigation must not animate through lazy charts");
+    assert.equal(scroll.book, true, "The book must be sized before scrolling past it");
+    assert.equal(scroll.model, true, "The model must be sized before scrolling to or past it");
+    if (id === "record") assert.equal(scroll.record, true);
+  }
+});
+
+test("a search section jump also mounts earlier deferred sections before scrolling", t => {
+  const { w, d, scrolls, flushPaint } = browser(t, { immediatePaint: false, flushTasks: false });
+  d.querySelector("#searchBtn").click();
+  flushPaint();
+  const input = d.querySelector("#paletteInput");
+  input.value = "The record";
+  input.dispatchEvent(new w.Event("input", { bubbles: true }));
+  key(w, input, "Enter");
+  const scroll = scrolls.find(entry => entry.id === "record");
+  assert.deepEqual(scroll, { id: "record", behavior: "auto", book: true, model: true, record: true });
 });
 
 test("the search theme action describes the current theme", t => {

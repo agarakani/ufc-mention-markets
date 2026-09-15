@@ -135,6 +135,11 @@
     MM.motion.afterPaint(() => setTimeout(next, 0));
   }
 
+  function ensureThroughSection(id) {
+    const ids = ["book", "model", "record"];
+    ids.slice(0, ids.indexOf(id) + 1).forEach(ensureSection);
+  }
+
   function visitElement(el) {
     if (!el) return;
     el.scrollIntoView({ behavior: MM.motion.reduced() ? "auto" : "smooth", block: "start" });
@@ -185,9 +190,9 @@
     if (r.type === "night") { if (r.card !== state.card) showNight(r.card); return; }
     if (r.type === "section") {
       if (!state.card) showNight(null, { animate: false });
-      ensureSection(r.id);
+      ensureThroughSection(r.id);
       const target = $("#" + r.id);
-      if (target) target.scrollIntoView({ behavior: initial || MM.motion.reduced() ? "auto" : "smooth", block: "start" });
+      if (target) target.scrollIntoView({ behavior: initial ? "instant" : MM.motion.reduced() ? "auto" : "smooth", block: "start" });
       return;
     }
     if (!state.card) showNight(null, { animate: false });
@@ -199,7 +204,7 @@
     if (a.type === "word") openWord(a.ticker, { scroll: true, focus: true });
     else if (a.type === "night") { writeRoute(`#/n/${a.card}`); showNight(a.card); visitElement($("#night")); }
     else if (a.type === "fight") { if (a.card !== state.card) { writeRoute(`#/n/${a.card}`); showNight(a.card, { animate: false }); } visitElement(document.querySelector(`.fight[data-event="${a.event}"]`)); }
-    else if (a.type === "section") { writeRoute(`#/${a.id}`); ensureSection(a.id); visitElement($("#" + a.id)); }
+    else if (a.type === "section") { writeRoute(`#/${a.id}`); ensureThroughSection(a.id); visitElement($("#" + a.id)); }
     else if (a.type === "theme") toggleTheme();
     else if (a.type === "copy") {
       try {
