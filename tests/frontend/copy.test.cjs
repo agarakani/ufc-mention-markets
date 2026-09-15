@@ -88,15 +88,31 @@ test('unresolved contracts read pending and never appear as losses', () => {
 
 test('README documents the pre-fight comparison and current page', () => {
   const text = readFileSync(resolve(__dirname, '../../README.md'), 'utf8');
-  for (const value of ['0.4918', '0.4770', '0.5435', '364', '0.066', '0.045', 'Night', 'Book', 'Model', 'Record']) assert.ok(text.includes(value), value);
+  for (const value of ['0.4918', '0.4770', '0.5435', '364', '0.066', '0.045', 'Current', 'Past cards', 'Model', 'Record']) assert.ok(text.includes(value), value);
   assert.doesNotMatch(text, /0\.129|—|The disagreement grid/);
   assert.match(text, /observed said rate in that same sample/);
   assert.match(text, /requirements\.lock/);
   assert.match(text, /make install\nmake test\nmake lint/);
   assert.match(text, /http:\/\/127\.0\.0\.1:8766/);
-  assert.match(text, /cloud job can still reprice/);
   assert.ok(text.includes('cannot place trades'));
   assert.equal(existsSync(resolve(__dirname, '../../docs/superpowers')), false);
+});
+
+test('run instructions separate local paper recording from cloud price updates', () => {
+  const text = readFileSync(resolve(__dirname, '../../README.md'), 'utf8');
+  assert.match(text, /PAPER_CARD=auto \.\/start_live_dashboard\.command/);
+  assert.match(text, /http:\/\/127\.0\.0\.1:8765/);
+  assert.match(text, /30 seconds/);
+  assert.match(text, /scheduled every 10 minutes/);
+  assert.match(text, /does not record paper trades/);
+  assert.match(text, /Without a verified start time, no new entries are allowed/);
+  assert.match(text, /separate from the historical test/);
+  assert.match(text, /No mention market/);
+  const tracking = readFileSync(resolve(__dirname, '../../tracking/README.md'), 'utf8');
+  assert.match(tracking, /PAPER_CARD=auto \.\/start_live_dashboard\.command/);
+  assert.match(tracking, /before fees/);
+  assert.match(tracking, /pending/);
+  assert.doesNotMatch(tracking, /UFC Vegas 119|leans tell us/);
 });
 
 test('page description does not hardcode a sample size', () => {

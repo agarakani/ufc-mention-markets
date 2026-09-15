@@ -5,14 +5,18 @@ fight, then compare those chances with Kalshi's buy prices. It records paper
 trades and checks their outcomes against Kalshi's settled results.
 
 [Open the dashboard](https://agarakani.github.io/ufc-mention-markets/).
-It is one scrolling page: **Night** shows each fight's phrases and saved prices;
-**Book** breaks down paper profit; **Model** compares prediction quality;
-**Record** lists the contracts. Open any word for its price history, or find a
-fight with the search button or Cmd-K.
+**Current** starts with upcoming UFC cards. Open a card, choose a fight, and
+compare the model with Kalshi's YES and NO buy prices. A scheduled card can
+appear before its phrases go on sale. No mention market means no odds or paper
+entry, not a made-up estimate.
+
+The live paper log is separate from the historical test. **Past cards** holds
+saved price histories; **Model** shows prediction tests; **Record** starts with
+the collector's paper entries, followed by the earlier backtest.
 
 This is research tooling. It reads market data and **cannot place trades**.
 
-## The record
+## The historical test
 
 The saved record covers June 20, July 11, July 18, and July 25, 2026:
 
@@ -89,13 +93,30 @@ Open `http://127.0.0.1:8766`. The data files are excluded from git, so a fresh
 clone needs the local datasets and generated `dashboard/data.js`; the public
 site includes the published payload.
 
-For ongoing collection on macOS, `./install_autostart.command` installs the
-recorder at login with a 30-second refresh interval. Its default port is 8765;
-use `--port 8901` with `scripts/live/dashboard_server.py` when a separate port
-is needed. Run one server per port. `./uninstall_autostart.command` removes the
-service. When the recording Mac is offline, new recordings stop. The public
-site stays available, and a cloud job can still reprice already published
-markets. Check the footer timestamp and build hash.
+To collect prices and paper trade upcoming cards:
+
+```bash
+PAPER_CARD=auto ./start_live_dashboard.command
+```
+
+This opens `http://127.0.0.1:8765`, checks Kalshi every 30 seconds, and saves one
+paper contract when an eligible market first clears the entry rule. New entries
+stop at the card's verified start time. Without a verified start time, no new entries are allowed.
+Leave the process running; Control-C stops it. The launcher without
+`PAPER_CARD=auto` updates prices but leaves paper tracking off.
+
+For automatic startup on macOS, run `./install_autostart.command` once. It starts
+the collector at login with paper tracking on. Do not start a second collector
+on the same port. `./uninstall_autostart.command` removes the login service.
+
+The public site's cloud job is scheduled every 10 minutes. It discovers cards
+and mention listings and updates quotes, but **does not record paper trades**.
+New listings need the local model before they get a model price. When the Mac
+is asleep or offline, local recording stops. The page checks for updated data
+every 30 seconds. On the local server, the refresh button also asks the
+collector for a new check; on the public site, it loads the latest published
+data. Check the update time and collector status before treating a quote as
+current.
 
 Public Kalshi reads need no credentials. Optional read credentials belong in
 the gitignored `.env`. There is no order-placement code path.
