@@ -1,14 +1,20 @@
+import json
+import re
+import shutil
 import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from scripts.live.publish_site import (
+    DASHBOARD,
     LOADER_LINE,
     PUBLISH_LIVE_INTERVAL_SECONDS,
     PUBLISH_IDLE_INTERVAL_SECONDS,
     PUBLISH_MARKER,
     PUBLISH_MIN_INTERVAL_SECONDS,
+    SITE_FILES,
     publish_due,
     publish_interval_seconds,
     stage_site,
@@ -33,9 +39,21 @@ class PublishIntervalTests(unittest.TestCase):
 class StageSiteTests(unittest.TestCase):
     def test_site_files_are_staged(self):
         with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "dashboard"
+            source.mkdir()
+            for name in ["index.html", *SITE_FILES]:
+                path = source / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                if name == "data.js":
+                    payload = {"tapes": [], "trades": [], "fighters": {},
+                               "performance": {"equity": [], "official_trades": 0}}
+                    path.write_text("window.UFC_MENTION_DASHBOARD_DATA = " + json.dumps(payload) + ";")
+                else:
+                    shutil.copyfile(DASHBOARD / name, path)
             site = Path(tmp) / "site"
             site.mkdir()
-            stage_site(site)
+            with patch("scripts.live.publish_site.DASHBOARD", source):
+                stage_site(site)
             self.assertTrue((site / "app.js").exists())
             self.assertTrue((site / "styles.css").exists())
             self.assertTrue((site / ".nojekyll").exists())
@@ -44,14 +62,22 @@ class StageSiteTests(unittest.TestCase):
             self.assertTrue((site / "src" / "palette.js").exists())
 
     def test_every_script_the_page_loads_is_published(self):
-        from scripts.live.publish_site import DASHBOARD, SITE_FILES
-        import re
         html = (DASHBOARD / "index.html").read_text(encoding="utf-8")
         block = re.search(r"const files = \[(.*?)\];", html, re.S)
         self.assertIsNotNone(block, "index.html loader list changed shape")
         wanted = re.findall(r'"([^"]+\.js)"', block.group(1))
         for name in wanted:
             self.assertIn(name, SITE_FILES, f"{name} is loaded by index.html but not in SITE_FILES")
+            self.assertTrue((DASHBOARD / name).is_file() or name == "data.js")
+
+    def test_every_stylesheet_link_is_published(self):
+        html = (DASHBOARD / "index.html").read_text(encoding="utf-8")
+        links = re.findall(r'<link\b[^>]*href="([^"?]+\.css)(?:\?[^"]*)?"[^>]*>', html)
+        self.assertTrue(links, "No stylesheet links found in index.html")
+        for name in links:
+            if "://" not in name:
+                self.assertIn(name, SITE_FILES)
+                self.assertTrue((DASHBOARD / name).is_file())
 
 
 class StaticIndexTests(unittest.TestCase):
@@ -62,8 +88,9 @@ class StaticIndexTests(unittest.TestCase):
         self.assertLess(out.index("STATIC_SITE"), out.index("cacheBust"))
 
     def test_stylesheet_link_is_version_busted(self):
-        html = f'<link rel="stylesheet" href="styles.css"><script>\n{LOADER_LINE}\n</script>'
+        html = f'<link rel="stylesheet" href="base.css"><link rel="stylesheet" href="styles.css"><script>\n{LOADER_LINE}\n</script>'
         out = static_index(html, version=12345)
+        self.assertIn('href="base.css?v=12345"', out)
         self.assertIn('href="styles.css?v=12345"', out)
 
     def test_unexpected_index_shape_fails_loudly(self):

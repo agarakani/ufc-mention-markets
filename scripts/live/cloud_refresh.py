@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -20,7 +21,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from ufc_mentions.entry_rules import EDGE_CAP_DEFAULT, watch_decision
-from ufc_mentions.kalshi_client import KalshiClient
+from ufc_mentions.kalshi_client import KalshiClient, TopOfBook
+from ufc_mentions.payload_validation import validate_payload
 
 DATA_PREFIX = "window.UFC_MENTION_DASHBOARD_DATA = "
 MAX_AGE_SECONDS = 10 * 60
@@ -46,7 +48,9 @@ def is_fresh(generated_at: str, now_iso: str, *, max_age_seconds: int = MAX_AGE_
     return (now - generated).total_seconds() < max_age_seconds
 
 
-def repriced_payload(payload: dict, fetch_book, now_iso: str) -> tuple[dict, int]:
+def repriced_payload(
+    payload: dict, fetch_book: Callable[[str], TopOfBook | None], now_iso: str,
+) -> tuple[dict, int]:
     rows = payload.get("kalshi") or []
     updated = 0
     watch_count = 0
@@ -134,6 +138,7 @@ def main() -> int:
     if not updated:
         print("no markets could be repriced")
         return 0
+    validate_payload(payload)
     data_path.write_text(serialize_data_js(payload), encoding="utf-8")
     print(f"repriced {updated} markets; data.js rewritten")
     return 0

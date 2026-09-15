@@ -1,10 +1,14 @@
 import sys
 from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from scripts.live import cloud_refresh
 from scripts.live.cloud_refresh import is_fresh, repriced_payload
 from ufc_mentions.kalshi_client import TopOfBook
 
@@ -75,3 +79,50 @@ def test_is_fresh():
     assert is_fresh("2026-07-19T21:55:00+00:00", NOW, max_age_seconds=600)
     assert not is_fresh("2026-07-19T21:40:00+00:00", NOW, max_age_seconds=600)
     assert not is_fresh("", NOW, max_age_seconds=600)
+
+
+@pytest.fixture
+def published_site(tmp_path, monkeypatch):
+    payload = payload_with_row()
+    payload.update({
+        "generated_at": "2000-01-01T00:00:00+00:00",
+        "tapes": [], "trades": [], "fighters": {},
+        "performance": {"equity": [], "official_trades": 0},
+    })
+    data = tmp_path / "data.js"
+    data.write_text(cloud_refresh.serialize_data_js(payload))
+    monkeypatch.setattr(sys, "argv", ["cloud_refresh.py", "--site-dir", str(tmp_path)])
+    book = TopOfBook(yes_bid=0.35, yes_ask=0.40, no_bid=0.55, no_ask=0.60)
+    monkeypatch.setattr(cloud_refresh, "KalshiClient", lambda: SimpleNamespace(get_orderbook=lambda ticker: book))
+    return data
+
+
+def test_cloud_publish_keeps_file_unchanged_when_input_is_invalid(published_site):
+    payload = cloud_refresh.parse_data_js(published_site.read_text())
+    payload["performance"]["official_trades"] = 10
+    published_site.write_text(cloud_refresh.serialize_data_js(payload))
+    before = published_site.read_bytes()
+    with pytest.raises(ValueError, match="official_trades"):
+        cloud_refresh.main()
+    assert published_site.read_bytes() == before
+
+
+def test_cloud_publish_validates_candidate_not_only_input(published_site, monkeypatch):
+    before = published_site.read_bytes()
+
+    def bad_candidate(payload, fetch_book, now_iso):
+        payload["performance"]["official_trades"] = 10
+        return payload, 1
+
+    monkeypatch.setattr(cloud_refresh, "repriced_payload", bad_candidate)
+    with pytest.raises(ValueError, match="official_trades"):
+        cloud_refresh.main()
+    assert published_site.read_bytes() == before
+
+
+def test_cloud_publish_writes_valid_candidate(published_site):
+    assert cloud_refresh.main() == 0
+    payload = cloud_refresh.parse_data_js(published_site.read_text())
+    assert payload["kalshi"][0]["yes_ask"] == 0.40
+    assert payload["refreshed_by"] == "cloud"
+    assert payload["performance"] == {"equity": [], "official_trades": 0}
