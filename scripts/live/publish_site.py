@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 """Publish the dashboard as a public static site on GitHub Pages.
 
-The dashboard is plain HTML/JS/CSS fed by one data file, so the shareable
-version is just those four files pushed to the gh-pages branch. The public
-page cannot refresh Kalshi itself; it shows the latest snapshot this Mac
-published and re-reads the data file every minute. The Update button is
-hidden there, and nothing on the public site can place trades — it is the
-same read-only research board.
+The dashboard is plain HTML/JS/CSS fed by one data file. Validate the saved
+payload and publish the page with every loader asset. The public page reads
+the published snapshot when opened or reloaded; it cannot place trades.
 
 Publishing replaces the gh-pages branch with a single fresh commit each
 time, so the branch never accumulates history.
@@ -30,6 +27,8 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from ufc_mentions.payload_validation import parse_payload
+
 DASHBOARD = ROOT / "dashboard"
 PUBLISH_MARKER = ROOT / "model_outputs" / ".site_publish_stamp"
 PUBLISH_MIN_INTERVAL_SECONDS = 5 * 60
@@ -38,7 +37,7 @@ PUBLISH_IDLE_INTERVAL_SECONDS = 10 * 60
 SITE_FILES = [
     "app.js", "styles.css", "base.css", "data.js",
     "src/motion.js", "src/charts.js", "src/select.js", "src/board.js", "src/timeline.js",
-    "src/book.js", "src/model.js", "src/ledger.js", "src/pane.js", "src/palette.js",
+    "src/book.js", "src/model.js", "src/ledger.js", "src/pane.js", "src/palette.js", "src/live.js",
 ]
 LOADER_LINE = "      const cacheBust = Date.now().toString();"
 
@@ -62,7 +61,10 @@ def static_index(index_html: str, version: int | None = None) -> str:
         raise ValueError("dashboard/index.html changed shape; update publish_site.py")
     out = index_html.replace(LOADER_LINE, flag + LOADER_LINE, 1)
     stamp = int(time.time()) if version is None else version
-    return out.replace('href="styles.css"', f'href="styles.css?v={stamp}"', 1)
+    for name in SITE_FILES:
+        if name.endswith(".css"):
+            out = out.replace(f'href="{name}"', f'href="{name}?v={stamp}"')
+    return out
 
 
 def publish_due(now: float | None = None, interval_seconds: int | None = None) -> bool:
@@ -78,13 +80,18 @@ def run(cmd: list[str], cwd: Path) -> None:
 
 
 def stage_site(site: Path) -> None:
+    data = (DASHBOARD / "data.js").read_bytes()
+    parse_payload(data.decode("utf-8"))
     (site / "index.html").write_text(
         static_index((DASHBOARD / "index.html").read_text(encoding="utf-8")),
         encoding="utf-8",
     )
     for name in SITE_FILES:
         (site / name).parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(DASHBOARD / name, site / name)
+        if name == "data.js":
+            (site / name).write_bytes(data)
+        else:
+            shutil.copyfile(DASHBOARD / name, site / name)
     (site / ".nojekyll").write_text("", encoding="utf-8")
 
 
@@ -104,7 +111,6 @@ def publish(quiet: bool = False) -> str:
         run(["git", "init", "-q", "-b", "gh-pages"], site)
         run(["git", "config", "user.name", "agarakani"], site)
         run(["git", "config", "user.email", "236674347+agarakani@users.noreply.github.com"], site)
-        # the photo assets push several MB at once; the default 1MB buffer hangs up
         run(["git", "config", "http.postBuffer", "157286400"], site)
         run(["git", "add", "-A"], site)
         run(["git", "commit", "-q", "-m", "Publish dashboard snapshot"], site)

@@ -1,63 +1,40 @@
 # Paper Tracking
 
-Use this to track the model without risking money.
+This records simulated entries, not real orders. New paper entries stay separate
+from the dashboard's historical test results.
 
-There are two ways to track:
-
-- `snapshot`: save one board before the card starts.
-- `live`: let the board keep ticking and save an entry only when a market first becomes `WATCH`.
-
-Before a card starts:
+Start the local collector:
 
 ```bash
-python3 scripts/live/refresh_dashboard.py
-python3 scripts/tracking/snapshot_card.py --card "UFC Vegas 119 Kape vs Horiguchi main card"
+PAPER_CARD=auto ./start_live_dashboard.command
 ```
 
-That saves the model numbers, Kalshi YES/NO prices, official paper trades, and leans in
-`data/tracking/<card>/`.
+The installed login service already uses automatic paper tracking. Run one
+collector, not both. The public cloud price updater cannot record paper entries.
 
-Live paper tracking:
+## Entries
 
-```bash
-python3 scripts/live/refresh_dashboard.py \
-  --poll-seconds 30 \
-  --paper-card "UFC Vegas 119 Kape vs Horiguchi main card"
-```
+Every local refresh checks for a model signal that clears the entry rule. The
+market must be open, with a real buy quote no older than 90 seconds. The tracker
+saves one contract at that side's buy price and does not add another just because
+the signal remains. The original price, model estimate, and timestamp are kept
+in `data/tracking/<card>/`.
 
-The live tracker checks Kalshi every refresh. If a row becomes `WATCH YES` or
-`WATCH NO`, it records one fake contract at the current buy price. If that same
-market stays a watch later, it does not add another entry.
+New entries stop when the card starts, even if Kalshi still allows trading. The
+cutoff comes from the official UFC schedule. If it cannot be verified, the
+tracker blocks new entries. Missing quotes or model estimates also block
+entry. A scheduled fight without a mention market creates no position.
 
-After the fights:
+## Results
 
-Keep the refresher running, or run it again later with the same `--paper-card`.
-It checks Kalshi for final results. Once Kalshi resolves a market, the tracker
-fills `yes` or `no` and recalculates paper P/L.
+Keep the collector running, or restart it later. It checks Kalshi's results for
+saved positions and fills outcomes automatically:
 
-Rows can show three outcome states:
+- `open`: no final result, and the market is still open.
+- `pending`: the market closed or the fight date passed, but no final result is available.
+- `yes` / `no`: Kalshi posted a result.
 
-- `open`: still normal/open.
-- `pending`: the fight date has passed, but Kalshi has not posted the final result.
-- `yes` / `no`: Kalshi has resolved it.
-
-Manual recalculation is still available:
-
-```bash
-python3 scripts/tracking/settle_card.py --card "UFC Vegas 119 Kape vs Horiguchi main card"
-```
-
-If a card was just a messy practice run, put a `.practice_card` file inside
-that card folder. The dashboard will hide it from scoring, but the files stay
-there for debugging.
-
-The tracker keeps two scores:
-
-- `official`: only rows the model marked `WATCH`.
-- `leans`: rows where YES or NO had positive model edge but did not clear the full watch bar.
-
-Rows marked `data-risk watch` had thin fighter history, so they cleared a higher
-edge bar before being tracked as official.
-
-If official P/L stays flat because there are no WATCH rows, leans tell us
-whether the model is close on price or whether the prices are simply not good.
+Unresolved positions are not counted as wins or losses. Settled profit is the
+contract payout minus its recorded cost, **before fees**. The entry rule's fee
+allowance does not deduct actual fees from these totals. Quoted prices are
+simulated fills, so this log is not proof of executable profit.

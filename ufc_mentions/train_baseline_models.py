@@ -49,6 +49,7 @@ from pathlib import Path
 
 try:
     import numpy as np
+    from numpy.typing import ArrayLike
     import pandas as pd
     from sklearn.compose import ColumnTransformer
     from sklearn.impute import SimpleImputer
@@ -143,7 +144,7 @@ def parse_boolish(series: pd.Series) -> pd.Series:
     return mapped.where(lowered.isin({"true", "false"}), series)
 
 
-def event_tier(title) -> str:
+def event_tier(title: object) -> str:
     text = str(title or "")
     if re.search(r"\bUFC\s+\d+\b", text):
         return "ppv"
@@ -267,11 +268,11 @@ def make_pipeline(numeric_cols: list[str], categorical_cols: list[str], c_value:
     ])
 
 
-def safe_auc(y_true, y_prob):
+def safe_auc(y_true: ArrayLike, y_prob: ArrayLike) -> float:
     return roc_auc_score(y_true, y_prob) if len(set(y_true)) == 2 else float("nan")
 
 
-def safe_ap(y_true, y_prob):
+def safe_ap(y_true: ArrayLike, y_prob: ArrayLike) -> float:
     return average_precision_score(y_true, y_prob) if len(set(y_true)) == 2 else float("nan")
 
 
@@ -285,12 +286,14 @@ def top_decile_stats(y_true: pd.Series, y_prob: np.ndarray) -> tuple[float, floa
     return actual_rate, predicted_rate, n
 
 
-def logit(prob):
+def logit(prob: ArrayLike) -> np.ndarray:
     clipped = np.clip(prob, 1e-6, 1 - 1e-6)
     return np.log(clipped / (1 - clipped)).reshape(-1, 1)
 
 
-def calibrate_from_validation(y_val, val_prob, test_prob, temperature=1.0):
+def calibrate_from_validation(
+    y_val: ArrayLike, val_prob: ArrayLike, test_prob: np.ndarray, temperature: float = 1.0,
+) -> tuple[np.ndarray, bool]:
     """Calibrate probabilities using the inner validation window.
 
     Returns calibrated probabilities on the test set.  When the validation
@@ -322,7 +325,7 @@ def calibrate_from_validation(y_val, val_prob, test_prob, temperature=1.0):
     return calibrated, True
 
 
-def compute_calibration_bins(y_true, y_prob, n_bins=10):
+def compute_calibration_bins(y_true: ArrayLike, y_prob: ArrayLike, n_bins: int = 10) -> pd.DataFrame:
     """Compute calibration histogram with equal-width bins on probability.
 
     Returns a DataFrame with columns: bin_left, bin_right, count, mean_pred, actual_rate.
@@ -358,7 +361,10 @@ def compute_calibration_bins(y_true, y_prob, n_bins=10):
     return pd.DataFrame(rows)
 
 
-def tune_c(x_fit, y_fit, x_val, y_val, numeric_cols, categorical_cols):
+def tune_c(
+    x_fit: pd.DataFrame, y_fit: pd.Series, x_val: pd.DataFrame, y_val: pd.Series,
+    numeric_cols: list[str], categorical_cols: list[str],
+) -> tuple[float | None, float]:
     if len(set(y_val)) < 2:
         return C_GRID[0], float("nan")
     best_c = None
@@ -374,7 +380,9 @@ def tune_c(x_fit, y_fit, x_val, y_val, numeric_cols, categorical_cols):
     return best_c, best_loss
 
 
-def calibration_rows(profile, target, y_true, y_prob, bins=10):
+def calibration_rows(
+    profile: str, target: str, y_true: ArrayLike, y_prob: ArrayLike, bins: int = 10,
+) -> list[dict]:
     df = pd.DataFrame({"actual": np.asarray(y_true), "pred": y_prob})
     # Equal-width bins on the probability scale — more stable than
     # quantile bins when the distribution is skewed toward one tail.
@@ -398,7 +406,7 @@ def calibration_rows(profile, target, y_true, y_prob, bins=10):
     return rows
 
 
-def expected_calibration_error(y_true, y_prob, n_bins=10):
+def expected_calibration_error(y_true: ArrayLike, y_prob: ArrayLike, n_bins: int = 10) -> float:
     """Compute ECE — the weighted average of |acc - conf| across bins."""
     if len(y_true) == 0:
         return float("nan")
@@ -413,7 +421,9 @@ def expected_calibration_error(y_true, y_prob, n_bins=10):
     return ece
 
 
-def event_evaluation(predictions: pd.DataFrame, train: pd.DataFrame):
+def event_evaluation(
+    predictions: pd.DataFrame, train: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Evaluate the fight-to-event independence aggregation on held-out cards."""
     metric_rows = []
     calibration = []
@@ -488,7 +498,7 @@ def get_feature_names(pipe: Pipeline) -> np.ndarray:
         return np.array([])
 
 
-def coefficient_rows(profile, target, pipe: Pipeline, limit=20):
+def coefficient_rows(profile: str, target: str, pipe: Pipeline, limit: int = 20) -> list[dict]:
     names = get_feature_names(pipe)
     if len(names) == 0:
         return []
@@ -505,13 +515,15 @@ def coefficient_rows(profile, target, pipe: Pipeline, limit=20):
     return rows
 
 
-def fmt_pct(value):
+def fmt_pct(value: float | None) -> str:
     if pd.isna(value):
         return "n/a"
     return f"{100 * value:.1f}%"
 
 
-def train_profile(df, train, test, profile, include_identity):
+def train_profile(
+    df: pd.DataFrame, train: pd.DataFrame, test: pd.DataFrame, profile: str, include_identity: bool,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, list[str], list[str], list[str]]:
     fit_train, val, first_val_date = chronological_split(train, test_frac=0.20)
 
     metrics = []
@@ -641,7 +653,7 @@ def train_profile(df, train, test, profile, include_identity):
     )
 
 
-def print_summary(metrics: pd.DataFrame, first_test_date: str):
+def print_summary(metrics: pd.DataFrame, first_test_date: str) -> None:
     print(f"Chronological test period starts: {first_test_date}")
     print("\nBaseline model results (positive improvement means model beat train-base-rate baseline)")
     print("--------------------------------------------------------------------------------------")
@@ -684,7 +696,9 @@ def print_summary(metrics: pd.DataFrame, first_test_date: str):
         print(fmt(row))
 
 
-def write_manifest(out_dir, args, first_test_date, feature_info):
+def write_manifest(
+    out_dir: Path, args: argparse.Namespace, first_test_date: str, feature_info: dict[str, dict],
+) -> None:
     with open(out_dir / "feature_manifest.txt", "w", encoding="utf-8") as fh:
         fh.write("Leakage-safe baseline model feature manifest\n")
         fh.write("============================================\n\n")
@@ -710,7 +724,7 @@ def write_manifest(out_dir, args, first_test_date, feature_info):
             fh.write("\n")
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", default=str(JOINED_DEFAULT), help="joined_fights.csv path")
     parser.add_argument("--out-dir", default=str(OUT_DIR_DEFAULT), help="where generated model outputs go")

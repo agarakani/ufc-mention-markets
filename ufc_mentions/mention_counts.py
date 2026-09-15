@@ -6,12 +6,15 @@ counts only when the exact phrase, plural, or possessive form appears at least
 once in the transcript.
 """
 
+from __future__ import annotations
+
 import gzip
 import json
 import os
 import re
 import sys
 from collections import Counter
+from collections.abc import Iterator
 from pathlib import Path
 
 from .phrase_targets import PHRASES_FILE_DEFAULT, load_phrase_targets
@@ -53,25 +56,25 @@ _START = r"(?<![A-Za-z])"          # not preceded by a letter
 _END = r"(?![A-Za-z'])"            # not followed by a letter or apostrophe (rejects "KO'd")
 
 
-def norm(s):
+def norm(s: str | None) -> str:
     """Normalize curly apostrophe to straight so one matcher handles both."""
     return (s or "").replace("’", "'")
 
 
-def strict_pattern(phrase):
+def strict_pattern(phrase: str) -> re.Pattern[str]:
     """Whole 'word', case-insensitive: exact term + (plural/possessive) ONLY."""
     base = r"\s+".join(re.escape(w) for w in norm(phrase).split())
     return re.compile(_START + base + _SUFFIX + _END, re.IGNORECASE)
 
 
-def last_name(full_name):
+def last_name(full_name: str | None) -> str:
     toks = [t for t in re.split(r"\s+", norm(full_name).strip()) if t]
     while toks and toks[-1].lower().strip(".") in NAME_SUFFIXES:
         toks.pop()
     return toks[-1] if toks else ""
 
 
-def iter_records(data_dir):
+def iter_records(data_dir: str | Path) -> Iterator[tuple[str, dict]]:
     for fn in sorted(os.listdir(data_dir)):
         if not fn.endswith(".json.gz"):
             continue
@@ -83,11 +86,11 @@ def iter_records(data_dir):
             yield fn, {"__error__": str(e)}
 
 
-def pct(n, d):
+def pct(n: int | float, d: int | float) -> float:
     return (100.0 * n / d) if d else 0.0
 
 
-def selftest():
+def selftest() -> bool:
     """Verify STRICT matching == 'exact term + plural/possessive, nothing else'."""
     cases = [
         # (phrase, text, expected)
@@ -130,7 +133,7 @@ def selftest():
     return ok
 
 
-def main(data_dir, phrase_path=PHRASES_FILE_DEFAULT):
+def main(data_dir: str | Path, phrase_path: str | Path = PHRASES_FILE_DEFAULT) -> None:
     strict_phrases = load_phrase_targets(phrase_path)
     strict_pats = {p: strict_pattern(p) for p in strict_phrases}
     broad_pats = {g: [strict_pattern(m) for m in members]

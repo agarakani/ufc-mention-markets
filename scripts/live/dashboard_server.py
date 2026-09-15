@@ -7,8 +7,9 @@ import argparse
 import json
 import sys
 import threading
-import time
 import webbrowser
+from collections.abc import Callable
+from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -30,9 +31,10 @@ DASHBOARD_DIR = ROOT / "dashboard"
 
 
 class DashboardRuntime:
-    def __init__(self, args):
+    def __init__(self, args: argparse.Namespace) -> None:
         self.args = args
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
+        self._status = {"state": "starting", "source": "local", "checked_at": "", "error": ""}
         self.client = KalshiClient()
         print(f"Loading transcript corpus from {args.data_dir} ...", flush=True)
         self.corpus = TranscriptCorpus.load(args.data_dir)
@@ -72,7 +74,30 @@ class DashboardRuntime:
         except Exception as exc:
             print(f"Model reload failed; keeping the previous model: {exc}", flush=True)
 
+    def status(self) -> dict:
+        status = dict(self._status)
+        status["refresh_seconds"] = self.args.poll_seconds
+        status["paper_configured"] = bool(self.args.paper_card and not self.args.paper_settle_only)
+        status["paper_enabled"] = status["paper_configured"] and bool(status.get("checked_at")) and status["state"] in {"ready", "refreshing"}
+        status["paper_mode"] = "paper"
+        return status
+
     def refresh(self) -> dict:
+        if not self.lock.acquire(blocking=False):
+            return {"ok": True, "already_running": True, "live_status": self.status()}
+        self._status.update(state="refreshing", attempted_at=datetime.now(timezone.utc).isoformat(timespec="seconds"))
+        try:
+            result = self._refresh()
+            self._status.update(state="ready", checked_at=datetime.now(timezone.utc).isoformat(timespec="seconds"), error="")
+            result["live_status"] = self.status()
+            return result
+        except Exception as exc:
+            self._status.update(state="error", error=str(exc))
+            raise
+        finally:
+            self.lock.release()
+
+    def _refresh(self) -> dict:
         self.maybe_reload_model()
         with self.lock:
             rows = refresh_once(
@@ -94,6 +119,8 @@ class DashboardRuntime:
                 verbose=True,
             )
             payload = build_payload()
+            if (payload.get("kalshi_meta") or {}).get("errors"):
+                raise RuntimeError("; ".join(payload["kalshi_meta"]["errors"]))
             summary = payload.get("summary", {})
             print(
                 f"Dashboard refresh complete: {len({row.get('event_ticker') for row in rows})} fights, "
@@ -106,16 +133,18 @@ class DashboardRuntime:
             }
 
 
-def make_handler(get_runtime):
+def make_handler(
+    get_runtime: Callable[[], DashboardRuntime | None], get_startup_error: Callable[[], str] = lambda: "",
+) -> type[SimpleHTTPRequestHandler]:
     class DashboardHandler(SimpleHTTPRequestHandler):
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args: object, **kwargs: object) -> None:
             super().__init__(*args, directory=str(DASHBOARD_DIR), **kwargs)
 
-        def end_headers(self):
+        def end_headers(self) -> None:
             self.send_header("Cache-Control", "no-store")
             super().end_headers()
 
-        def do_GET(self):
+        def do_GET(self) -> None:
             parsed = urlparse(self.path)
             if parsed.path == "/api/refresh":
                 runtime = get_runtime()
@@ -126,16 +155,26 @@ def make_handler(get_runtime):
                                  "The page updates by itself once they are ready.",
                     })
                     return
-                self.send_json(runtime.refresh())
+                try:
+                    self.send_json(runtime.refresh())
+                except Exception as exc:
+                    self.send_json({"ok": False, "error": str(exc), "live_status": runtime.status()}, HTTPStatus.SERVICE_UNAVAILABLE)
                 return
             if parsed.path == "/api/status":
-                self.send_json({"ok": True, "summary": build_payload().get("summary", {})})
+                runtime = get_runtime()
+                error = get_startup_error()
+                status = runtime.status() if runtime is not None else {
+                    "state": "error" if error else "starting", "paper_enabled": False,
+                    "source": "local", "checked_at": "", "error": error,
+                }
+                ok = status["state"] in {"ready", "refreshing"}
+                self.send_json({"ok": ok, "live_status": status}, HTTPStatus.OK if ok else HTTPStatus.SERVICE_UNAVAILABLE)
                 return
             if parsed.path == "/":
                 self.path = "/index.html"
             super().do_GET()
 
-        def send_json(self, payload: dict, status: HTTPStatus = HTTPStatus.OK):
+        def send_json(self, payload: dict, status: HTTPStatus = HTTPStatus.OK) -> None:
             body = json.dumps(payload, indent=2).encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -143,13 +182,13 @@ def make_handler(get_runtime):
             self.end_headers()
             self.wfile.write(body)
 
-        def log_message(self, format, *args):
+        def log_message(self, format: str, *args: object) -> None:
             return
 
     return DashboardHandler
 
 
-def start_polling(get_runtime, seconds: float) -> threading.Event:
+def start_polling(get_runtime: Callable[[], DashboardRuntime | None], seconds: float) -> threading.Event:
     stop = threading.Event()
     if seconds <= 0:
         return stop
@@ -192,8 +231,8 @@ def main() -> None:
     # Serve the page right away with the last saved data; load the heavy
     # models and run the first refresh in the background. The site should
     # never be a dead link just because the Mac restarted.
-    state: dict = {"runtime": None}
-    server = ThreadingHTTPServer((args.host, args.port), make_handler(lambda: state["runtime"]))
+    state: dict = {"runtime": None, "startup_error": ""}
+    server = ThreadingHTTPServer((args.host, args.port), make_handler(lambda: state["runtime"], lambda: state["startup_error"]))
     url = f"http://{args.host}:{args.port}/"
     print(f"Dashboard server running at {url}", flush=True)
     print("Serving the last saved data while the fight models load...", flush=True)
@@ -204,6 +243,7 @@ def main() -> None:
             state["runtime"] = runtime
             runtime.refresh()
         except Exception as exc:
+            state["startup_error"] = str(exc)
             print(f"Startup refresh failed; serving the last saved dashboard data: {exc}", flush=True)
 
     threading.Thread(target=start_runtime, name="dashboard-startup", daemon=True).start()

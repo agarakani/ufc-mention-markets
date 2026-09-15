@@ -24,6 +24,10 @@ MM.timeline = (function () {
   function mount(container, night, options) {
     const opts = Object.assign({ frame: night.frames - 1, onFrame: () => {} }, options || {});
     const n = night.frames;
+    if (n < 2) {
+      container.innerHTML = `<p class="figure-note">${n === 1 ? "One recorded snapshot. " + MM.fmt.stamp(night.stamps[0]) : "No recorded prices for this night."}</p>`;
+      return { setFrame() {}, frame: () => 0, destroy() { container.innerHTML = ""; } };
+    }
     let frame = Math.max(0, Math.min(n - 1, opts.frame));
     const act = activity(night);
     const fightDay = night.date;
@@ -34,7 +38,7 @@ MM.timeline = (function () {
     root.innerHTML = `
       <div class="scrub-ends">
         <span class="scrub-end">${MM.fmt.stamp(night.stamps[0], { time: false })}</span>
-        <span class="scrub-hint">Drag through the week. The board re-prices under you.</span>
+        <span class="scrub-hint">Drag or use the arrow keys to see recorded prices.</span>
         <span class="scrub-end">${MM.fmt.stamp(night.stamps[n - 1], { time: false })}</span>
       </div>
       <div class="scrub-track" role="slider" tabindex="0" aria-label="Time through the recorded week" aria-valuemin="0" aria-valuemax="${n - 1}" aria-valuenow="${frame}">

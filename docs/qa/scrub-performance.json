@@ -1,0 +1,9 @@
+{
+  "tiles": 120,
+  "samples": 239,
+  "frameMedianMs": 16.699999999999818,
+  "frame95Ms": 16.700000000000728,
+  "maxFrameMs": 16.800000000000182,
+  "longTasksOver50Ms": [],
+  "touchFinalFrame": "68"
+}

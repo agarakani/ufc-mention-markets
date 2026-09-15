@@ -1,0 +1,3667 @@
+[
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/chrome-local-375-dark-26JUL11.png"
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/chrome-local-375-light-26JUL11.png"
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": "locator.click: Timeout 1500ms exceeded.",
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/chrome-local-768-dark-26JUL11.png"
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": "locator.click: Timeout 1500ms exceeded.",
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/chrome-local-768-light-26JUL11.png"
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/chrome-local-1024-dark-26JUL11.png"
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/chrome-local-1024-light-26JUL11.png"
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/chrome-local-1440-dark-26JUL11.png"
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/chrome-local-1440-light-26JUL11.png"
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "local",
+    "interactions": {
+      "frames": {
+        "Home": "0",
+        "ArrowRight": "1",
+        "End": "71",
+        "ArrowLeft": "70",
+        "mouse": "36"
+      },
+      "paneAfterPaletteEscape": true,
+      "directLink": true
+    },
+    "errors": [],
+    "axe": [
+      {
+        "theme": "dark",
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "affectedNodes": 580,
+            "example": {
+              "target": [
+                "a[href$=\"#/n/26JUN20\"] > .night-btn-title"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.38 (foreground color: #5f6774, background color: #0c0e12, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          },
+          {
+            "id": "page-has-heading-one",
+            "impact": "moderate",
+            "affectedNodes": 1,
+            "example": {
+              "target": [
+                "html"
+              ],
+              "summary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          }
+        ]
+      },
+      {
+        "theme": "light",
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "affectedNodes": 820,
+            "example": {
+              "target": [
+                "a[href$=\"#/n/26JUN20\"] > .night-btn-title"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.9 (foreground color: #9098a6, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          },
+          {
+            "id": "page-has-heading-one",
+            "impact": "moderate",
+            "affectedNodes": 1,
+            "example": {
+              "target": [
+                "html"
+              ],
+              "summary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "chrome",
+    "target": "live",
+    "interactions": {
+      "frames": {
+        "Home": "0",
+        "ArrowRight": "1",
+        "End": "71",
+        "ArrowLeft": "70",
+        "mouse": "36"
+      },
+      "paneAfterPaletteEscape": true,
+      "directLink": true
+    },
+    "errors": [],
+    "axe": [
+      {
+        "theme": "dark",
+        "violations": [
+          {
+            "id": "page-has-heading-one",
+            "impact": "moderate",
+            "affectedNodes": 1,
+            "example": {
+              "target": [
+                "html"
+              ],
+              "summary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          }
+        ]
+      },
+      {
+        "theme": "light",
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "affectedNodes": 108,
+            "example": {
+              "target": [
+                ".ledger-row:nth-child(1) > td:nth-child(8) > .down.result"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.19 (foreground color: #d93a2e, background color: #f4f5f8, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          },
+          {
+            "id": "page-has-heading-one",
+            "impact": "moderate",
+            "affectedNodes": 1,
+            "example": {
+              "target": [
+                "html"
+              ],
+              "summary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/firefox-local-375-dark-26JUL11.png"
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/firefox-local-375-light-26JUL11.png"
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": "locator.click: Timeout 1500ms exceeded.",
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/firefox-local-768-dark-26JUL11.png"
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": "locator.click: Timeout 1500ms exceeded.",
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/firefox-local-768-light-26JUL11.png"
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/firefox-local-1024-dark-26JUL11.png"
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/firefox-local-1024-light-26JUL11.png"
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/firefox-local-1440-dark-26JUL11.png"
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/firefox-local-1440-light-26JUL11.png"
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "local",
+    "interactions": {
+      "frames": {
+        "Home": "0",
+        "ArrowRight": "1",
+        "End": "71",
+        "ArrowLeft": "70",
+        "mouse": "36"
+      },
+      "paneAfterPaletteEscape": true,
+      "directLink": true
+    },
+    "errors": [],
+    "axe": [
+      {
+        "theme": "dark",
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "affectedNodes": 579,
+            "example": {
+              "target": [
+                "a[href$=\"#/n/26JUN20\"] > .night-btn-title"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.38 (foreground color: #5f6774, background color: #0c0e12, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          },
+          {
+            "id": "page-has-heading-one",
+            "impact": "moderate",
+            "affectedNodes": 1,
+            "example": {
+              "target": [
+                "html"
+              ],
+              "summary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          }
+        ]
+      },
+      {
+        "theme": "light",
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "affectedNodes": 820,
+            "example": {
+              "target": [
+                "a[href$=\"#/n/26JUN20\"] > .night-btn-title"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.9 (foreground color: #9098a6, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          },
+          {
+            "id": "page-has-heading-one",
+            "impact": "moderate",
+            "affectedNodes": 1,
+            "example": {
+              "target": [
+                "html"
+              ],
+              "summary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "firefox",
+    "target": "live",
+    "interactions": {
+      "frames": {
+        "Home": "0",
+        "ArrowRight": "1",
+        "End": "71",
+        "ArrowLeft": "70",
+        "mouse": "36"
+      },
+      "paneAfterPaletteEscape": true,
+      "directLink": true
+    },
+    "errors": [],
+    "axe": [
+      {
+        "theme": "dark",
+        "violations": [
+          {
+            "id": "page-has-heading-one",
+            "impact": "moderate",
+            "affectedNodes": 1,
+            "example": {
+              "target": [
+                "html"
+              ],
+              "summary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          }
+        ]
+      },
+      {
+        "theme": "light",
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "affectedNodes": 108,
+            "example": {
+              "target": [
+                ".ledger-row:nth-child(1) > td:nth-child(8) > .down.result"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.19 (foreground color: #d93a2e, background color: #f4f5f8, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          },
+          {
+            "id": "page-has-heading-one",
+            "impact": "moderate",
+            "affectedNodes": 1,
+            "example": {
+              "target": [
+                "html"
+              ],
+              "summary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/webkit-local-375-dark-26JUL11.png"
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/webkit-local-375-light-26JUL11.png"
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/webkit-local-768-dark-26JUL11.png"
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/webkit-local-768-light-26JUL11.png"
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/webkit-local-1024-dark-26JUL11.png"
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/webkit-local-1024-light-26JUL11.png"
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/webkit-local-1440-dark-26JUL11.png"
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": "before/webkit-local-1440-light-26JUL11.png"
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:08:52+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "local",
+    "interactions": {
+      "frames": {
+        "Home": "0",
+        "ArrowRight": "1",
+        "End": "71",
+        "ArrowLeft": "70",
+        "mouse": "36"
+      },
+      "paneAfterPaletteEscape": false,
+      "directLink": true,
+      "directEscapeClosed": false
+    },
+    "errors": [],
+    "axe": [
+      {
+        "theme": "dark",
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "affectedNodes": 580,
+            "example": {
+              "target": [
+                "a[href$=\"#/n/26JUN20\"] > .night-btn-title"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.38 (foreground color: #5f6774, background color: #0c0e12, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          },
+          {
+            "id": "page-has-heading-one",
+            "impact": "moderate",
+            "affectedNodes": 1,
+            "example": {
+              "target": [
+                "html"
+              ],
+              "summary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          }
+        ]
+      },
+      {
+        "theme": "light",
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "affectedNodes": 820,
+            "example": {
+              "target": [
+                "a[href$=\"#/n/26JUN20\"] > .night-btn-title"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.9 (foreground color: #9098a6, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          },
+          {
+            "id": "page-has-heading-one",
+            "impact": "moderate",
+            "affectedNodes": 1,
+            "example": {
+              "target": [
+                "html"
+              ],
+              "summary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 375,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 375,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 768,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 768,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 1024,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 1024,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 1440,
+    "theme": "dark",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUN20",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 89,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUL11",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 120,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUL18",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 91,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "width": 1440,
+    "theme": "light",
+    "card": "26JUL25",
+    "build": {
+      "at": "2026-09-12T19:54:57+00:00",
+      "commit": "1058a36"
+    },
+    "navigationError": null,
+    "documentOverflow": false,
+    "clipped": [],
+    "textOutside": [],
+    "tiles": 78,
+    "attachedScreenshot": null
+  },
+  {
+    "browser": "webkit",
+    "target": "live",
+    "interactions": {
+      "frames": {
+        "Home": "0",
+        "ArrowRight": "1",
+        "End": "71",
+        "ArrowLeft": "70",
+        "mouse": "36"
+      },
+      "paneAfterPaletteEscape": true,
+      "directLink": true,
+      "directEscapeClosed": true
+    },
+    "errors": [],
+    "axe": [
+      {
+        "theme": "dark",
+        "violations": [
+          {
+            "id": "page-has-heading-one",
+            "impact": "moderate",
+            "affectedNodes": 1,
+            "example": {
+              "target": [
+                "html"
+              ],
+              "summary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          }
+        ]
+      },
+      {
+        "theme": "light",
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "affectedNodes": 108,
+            "example": {
+              "target": [
+                ".ledger-row:nth-child(1) > td:nth-child(8) > .down.result"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.19 (foreground color: #d93a2e, background color: #f4f5f8, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          },
+          {
+            "id": "page-has-heading-one",
+            "impact": "moderate",
+            "affectedNodes": 1,
+            "example": {
+              "target": [
+                "html"
+              ],
+              "summary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

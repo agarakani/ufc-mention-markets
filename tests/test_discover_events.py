@@ -1,4 +1,3 @@
-import time
 from scripts.live import refresh_dashboard as rd
 
 
@@ -9,7 +8,7 @@ class FakeClient:
         self.scanned = 0
     def get_events(self, *, series_ticker, status=None):
         return self.by_series.get(series_ticker, [])
-    def scan_events(self, *, status="open", max_pages=60):
+    def scan_events(self, *, status="open", max_pages=200, require_complete=False):
         self.scanned += 1
         return self.scan
 
@@ -50,3 +49,12 @@ def test_scan_is_throttled(tmp_path, monkeypatch):
     rd.discover_open_fight_events(client, configured_series="KXFIGHTMENTION", now=5000)
     rd.discover_open_fight_events(client, configured_series="KXFIGHTMENTION", now=5000 + 60)
     assert client.scanned == 1  # second call within the window did not rescan
+
+
+def test_previously_saved_other_sport_series_cannot_add_non_ufc_events(tmp_path, monkeypatch):
+    monkeypatch.setattr(rd, "SERIES_SCAN_MARKER", tmp_path / ".scan")
+    monkeypatch.setattr(rd, "load_known_series", lambda: ["KXNFLMENTION"])
+    other = {"series_ticker": "KXNFLMENTION", "event_ticker": "KXNFLMENTION-26SEP19",
+             "title": "What will announcers say during Packers vs. Bears?"}
+    client = FakeClient({"KXNFLMENTION": [other]}, scan=[])
+    assert rd.discover_open_fight_events(client, configured_series="KXFIGHTMENTION") == []

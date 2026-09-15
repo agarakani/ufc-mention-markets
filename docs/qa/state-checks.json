@@ -1,0 +1,857 @@
+[
+  {
+    "browser": "chrome",
+    "sections": [
+      {
+        "section": "book",
+        "headingTop": 80.640625
+      },
+      {
+        "section": "model",
+        "headingTop": 121.40625
+      },
+      {
+        "section": "record",
+        "headingTop": 121.21875
+      }
+    ],
+    "contrast": [
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.1,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.2,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.3,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.4,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.5,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.6,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.7,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.8,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.9,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 1,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.1,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.2,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.3,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.4,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.5,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.6,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.7,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.8,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.9,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 1,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.1,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.2,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.3,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.4,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.5,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.6,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.7,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.8,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.9,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 1,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.1,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.2,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.3,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.4,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.5,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.6,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.7,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.8,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.9,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 1,
+        "violations": []
+      }
+    ],
+    "ledgerNextPrevAndSearch": true,
+    "errors": []
+  },
+  {
+    "browser": "firefox",
+    "sections": [
+      {
+        "section": "book",
+        "headingTop": 121
+      },
+      {
+        "section": "model",
+        "headingTop": 121
+      },
+      {
+        "section": "record",
+        "headingTop": 121
+      }
+    ],
+    "contrast": [
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.1,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.2,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.3,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.4,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.5,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.6,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.7,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.8,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.9,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 1,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.1,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.2,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.3,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.4,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.5,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.6,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.7,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.8,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.9,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 1,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.1,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.2,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.3,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.4,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.5,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.6,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.7,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.8,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.9,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 1,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.1,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.2,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.3,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.4,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.5,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.6,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.7,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.8,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.9,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 1,
+        "violations": []
+      }
+    ],
+    "ledgerNextPrevAndSearch": true,
+    "errors": []
+  },
+  {
+    "browser": "webkit",
+    "sections": [
+      {
+        "section": "book",
+        "headingTop": 121
+      },
+      {
+        "section": "model",
+        "headingTop": 121
+      },
+      {
+        "section": "record",
+        "headingTop": 121
+      }
+    ],
+    "contrast": [
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.1,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.2,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.3,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.4,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.5,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.6,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.7,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.8,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 0.9,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "yes",
+        "fill": 1,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.1,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.2,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.3,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.4,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.5,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.6,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.7,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.8,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 0.9,
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "result": "no",
+        "fill": 1,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.1,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.2,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.3,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.4,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.5,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.6,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.7,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.8,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 0.9,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "yes",
+        "fill": 1,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.1,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.2,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.3,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.4,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.5,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.6,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.7,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.8,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 0.9,
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "result": "no",
+        "fill": 1,
+        "violations": []
+      }
+    ],
+    "ledgerNextPrevAndSearch": true,
+    "errors": []
+  }
+]

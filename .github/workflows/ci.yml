@@ -1,0 +1,49 @@
+name: Check changes
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.lock
+      - name: Install pinned dependencies
+        run: python -m pip install -r requirements.lock
+      - name: Python tests
+        run: make test-python PYTHON=python
+      - name: Check Python sources
+        run: make lint PYTHON=python
+
+  dashboard:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependencies
+        run: |
+          npm ci --ignore-scripts
+          python -m pip install pytest==7.4.0
+      - name: Check every dashboard script and browser behavior
+        run: make test-dashboard
+      - name: Check published loader assets
+        run: python -m pytest -q -p no:cacheprovider tests/test_publish_site.py tests/test_payload_validation.py

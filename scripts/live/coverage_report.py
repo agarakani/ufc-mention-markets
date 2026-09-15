@@ -25,8 +25,10 @@ import re
 import sys
 import urllib.request
 from collections import defaultdict
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import BinaryIO, ContextManager
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
@@ -51,7 +53,9 @@ def date_from_ticker(ticker: str) -> str:
     return f"20{year}-{MONTHS[month]:02d}-{day}"
 
 
-def kalshi_card_dates(*, timeout: int = 30, opener=urllib.request.urlopen) -> set[str]:
+def kalshi_card_dates(
+    *, timeout: int = 30, opener: Callable[..., ContextManager[BinaryIO]] = urllib.request.urlopen,
+) -> set[str]:
     """Every card date Kalshi has ever run mention markets on."""
     dates: set[str] = set()
     for status in ("settled", "closed", "open", "unopened"):

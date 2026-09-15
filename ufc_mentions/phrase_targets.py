@@ -31,7 +31,7 @@ def phrase_column(phrase: str) -> str:
     return f"mention_{slugify_phrase(phrase)}"
 
 
-def load_phrase_targets(path=PHRASES_FILE_DEFAULT) -> list[str]:
+def load_phrase_targets(path: str | Path = PHRASES_FILE_DEFAULT) -> list[str]:
     path = Path(path)
     if not path.exists():
         return list(DEFAULT_PHRASES)
@@ -51,9 +51,9 @@ def load_phrase_targets(path=PHRASES_FILE_DEFAULT) -> list[str]:
     return phrases or list(DEFAULT_PHRASES)
 
 
-def phrase_columns(path=PHRASES_FILE_DEFAULT) -> list[tuple[str, str]]:
+def phrase_columns(path: str | Path = PHRASES_FILE_DEFAULT) -> list[tuple[str, str]]:
     return [(phrase_column(phrase), phrase) for phrase in load_phrase_targets(path)]
 
 
-def phrase_to_column_map(path=PHRASES_FILE_DEFAULT) -> dict[str, str]:
+def phrase_to_column_map(path: str | Path = PHRASES_FILE_DEFAULT) -> dict[str, str]:
     return {phrase.lower(): column for column, phrase in phrase_columns(path)}

@@ -25,7 +25,7 @@ PRIOR_FLOOR = 5
 PRIOR_CEILING = 50
 
 
-def fighter_key(value) -> str:
+def fighter_key(value: object) -> str:
     text = unicodedata.normalize("NFKD", str(value or ""))
     text = text.encode("ascii", "ignore").decode("ascii").lower()
     return re.sub(r"[^a-z0-9]+", "", text)

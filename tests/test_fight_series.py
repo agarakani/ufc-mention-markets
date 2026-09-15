@@ -36,10 +36,21 @@ def test_march_madness_mention_is_not_ufc():
     # A real different-sport mention series; should not be treated as UFC.
     ev = {"series_ticker": "KXMMMENTION",
           "title": "What will announcers say during the Duke vs. Alabama basketball game"}
-    # It DOES match the generic fight-mention pattern (vs + say); that is fine,
-    # discovery is sport-agnostic on purpose, but the UFC pipeline filters by
-    # fighter/date downstream. We only assert the series is captured, not dropped.
     assert series_of(ev) == "KXMMMENTION"
+    assert not is_fight_mention_event(ev)
+
+
+def test_versus_and_announcers_do_not_identify_ufc():
+    for series, title in [
+        ("KXNFLMENTION", "What will announcers say during Packers vs. Bears?"),
+        ("KXBOXINGMENTION", "What will announcers say during Boxing Fight Night: One vs. Two?"),
+        ("KXMMAMENTION", "What will announcers say during PFL MMA: One vs. Two?"),
+    ]:
+        assert not is_fight_mention_event({"series_ticker": series, "event_ticker": series + "-26SEP19", "title": title})
+
+
+def test_explicit_ufc_sport_identifies_an_unknown_series():
+    assert is_fight_mention_event({"series_ticker": "NEW", "title": "UFC: What will announcers say during One vs Two?"})
 
 
 def test_series_of_falls_back_to_ticker_prefix():

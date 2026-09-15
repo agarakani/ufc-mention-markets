@@ -219,7 +219,7 @@ def apply_live_calibration(probability: float, calibration: dict | None) -> floa
     return 1.0 / (1.0 + math.exp(-z))
 
 
-def group_bias_key(phrase) -> str:
+def group_bias_key(phrase: str | tuple[str, ...] | list[str]) -> str:
     """Stable, JSON-safe key for a phrase group.
 
     Keyed on the sorted word forms so "Blood / Bloody" and "Bloody | Blood"
@@ -261,7 +261,7 @@ class KalshiFightContextModel:
         feature_set: str = "v1",
         calibration: dict | None = None,
         group_bias: dict | None = None,
-    ):
+    ) -> None:
         self.history = add_date_features(history.copy()).reset_index(drop=True)
         self.history.index = [f"h_{index}" for index in range(len(self.history))]
         self.corpus = corpus

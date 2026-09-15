@@ -132,7 +132,7 @@ class KalshiClient:
         private_key_path: str | Path | None = None,
         base_url: str = BASE_URL_DEFAULT,
         session: requests.Session | None = None,
-    ):
+    ) -> None:
         load_dotenv()
         self.key_id = (
             key_id
@@ -245,7 +245,7 @@ class KalshiClient:
             if not cursor:
                 return rows
 
-    def scan_events(self, *, status: str = "open", max_pages: int = 60) -> list[dict]:
+    def scan_events(self, *, status: str = "open", max_pages: int = 200, require_complete: bool = False) -> list[dict]:
         """Every event of a status, across all series. Used to rediscover the
         UFC mention series if Kalshi relists it under a new ticker."""
         rows = []
@@ -262,6 +262,8 @@ class KalshiClient:
             pages += 1
             if not cursor:
                 break
+        if cursor and require_complete:
+            raise KalshiError(f"Event discovery incomplete after {pages} pages")
         return rows
 
     def get_orderbook(self, ticker: str) -> TopOfBook:
