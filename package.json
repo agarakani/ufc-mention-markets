@@ -1,0 +1,12 @@
+{
+  "name": "ufc-mention-markets",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "test": "node --test tests/frontend/*.test.cjs",
+    "check": "node tests/frontend/check-syntax.cjs"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0"
+  }
+}
