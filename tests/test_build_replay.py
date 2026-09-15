@@ -1,7 +1,6 @@
 """Tapes: one per recorded card, outcomes and trades joined, frames capped."""
 
 import csv
-import json
 from pathlib import Path
 
 from scripts.data import build_replay as br

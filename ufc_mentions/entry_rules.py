@@ -20,6 +20,7 @@ large prediction sample, not tuned on the tiny P/L sample.
 from __future__ import annotations
 
 import csv
+from collections.abc import Iterable
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,7 +30,7 @@ EDGE_CAP_DEFAULT = 0.15
 MIN_TRUST_AUC = 0.55
 
 
-def normalize_forms(forms) -> frozenset[str]:
+def normalize_forms(forms: str | Iterable[str]) -> frozenset[str]:
     """Key a phrase group by its word forms, however they were written."""
     if isinstance(forms, str):
         for sep in ("|", "/"):
@@ -65,7 +66,7 @@ def load_phrase_trust(path: Path | str = BACKTEST_GROUPS_CSV) -> dict[frozenset,
     return trust
 
 
-def phrase_trust(forms, trust_map: dict[frozenset, dict] | None) -> tuple[bool, str]:
+def phrase_trust(forms: str | Iterable[str], trust_map: dict[frozenset, dict] | None) -> tuple[bool, str]:
     """(trusted, note). Unknown groups are trusted: there is no evidence against them."""
     if not trust_map:
         return True, ""

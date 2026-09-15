@@ -1,4 +1,3 @@
-import time
 from scripts.live import refresh_dashboard as rd
 
 

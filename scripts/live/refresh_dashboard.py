@@ -103,7 +103,7 @@ def cards_needing_settle(
 
 
 def settle_finished_paper_cards(
-    client,
+    client: KalshiClient,
     *,
     out_root: Path = PAPER_ROOT_DEFAULT,
     active_cards: set[str],
@@ -366,7 +366,7 @@ def append_csv(path: Path, rows: list[dict], fields: list[str]) -> None:
             writer.writerow({field: row.get(field, "") for field in fields})
 
 
-def value(value) -> str:
+def value(value: object) -> str:
     return "" if value is None else f"{float(value):.8f}"
 
 
@@ -418,7 +418,7 @@ def event_snapshot(
     min_fighter_fights: int,
     low_data_buffer: float = 0.10,
     snapshot_timestamp: str,
-    context_model=None,
+    context_model: KalshiFightContextModel | None = None,
     require_context_model: bool = False,
     edge_cap: float = EDGE_CAP_DEFAULT,
     phrase_trust_map: dict | None = None,
@@ -566,7 +566,7 @@ def add_price_changes(rows: list[dict], previous: list[dict]) -> None:
             row["ask_change"] = ""
 
 
-def discover_open_fight_events(client, *, configured_series: str, verbose: bool = False,
+def discover_open_fight_events(client: KalshiClient, *, configured_series: str, verbose: bool = False,
                                now: float | None = None) -> list[dict]:
     """Open UFC mention events across every series we know about.
 
@@ -625,7 +625,7 @@ def refresh_once(
     min_fighter_fights: int,
     low_data_buffer: float = 0.10,
     poll_seconds: float,
-    context_model=None,
+    context_model: KalshiFightContextModel | None = None,
     require_context_model: bool = True,
     verbose: bool = False,
     live_path: Path = LIVE_DEFAULT,

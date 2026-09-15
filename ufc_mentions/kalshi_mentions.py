@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 import re
 import unicodedata
 from dataclasses import dataclass
@@ -59,7 +60,7 @@ def phrase_forms_from_rules(market: dict) -> tuple[str, ...]:
     return forms
 
 
-def grouped_matcher(forms: tuple[str, ...]):
+def grouped_matcher(forms: tuple[str, ...]) -> Callable[[str | None], bool]:
     patterns = tuple(strict_pattern(form) for form in forms)
     return lambda text: any(pattern.search(norm(text)) for pattern in patterns)
 
@@ -109,7 +110,7 @@ class MentionEstimate:
 
 
 class TranscriptCorpus:
-    def __init__(self, fights: list[TranscriptFight]):
+    def __init__(self, fights: list[TranscriptFight]) -> None:
         self.fights = fights
         self.by_fighter: dict[str, set[int]] = {}
         self.display_names: dict[str, str] = {}

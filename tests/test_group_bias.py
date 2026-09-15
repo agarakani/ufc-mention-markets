@@ -1,6 +1,5 @@
 """The per-phrase-group bias correction and its walk-forward gate."""
 
-import math
 import sys
 from pathlib import Path
 
@@ -92,7 +91,7 @@ def test_calibration_report_is_empty_without_data(tmp_path):
 
 
 def test_head_to_head_scores_model_against_market():
-    from scripts.model.calibration_report import head_to_head, discrimination
+    from scripts.model.calibration_report import head_to_head
 
     # Market is right every time; model is right but less confident.
     pairs = [{"probability": 0.6, "market": 0.9, "outcome": 1, "event_date": "2026-01-01"} for _ in range(5)]
@@ -137,7 +136,8 @@ def _fake_kalshi(dates):
         def __enter__(self): return self
         def __exit__(self, *a): return False
         def read(self): return self.payload
-    import io, json as _json
+    import io
+    import json as _json
     def opener(url, timeout=None):
         if "status=settled" in url:
             events = [{"event_ticker": f"KXFIGHTMENTION-{d}XX"} for d in dates]

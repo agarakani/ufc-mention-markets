@@ -132,7 +132,7 @@ class KalshiClient:
         private_key_path: str | Path | None = None,
         base_url: str = BASE_URL_DEFAULT,
         session: requests.Session | None = None,
-    ):
+    ) -> None:
         load_dotenv()
         self.key_id = (
             key_id

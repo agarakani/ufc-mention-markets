@@ -7,8 +7,8 @@ import argparse
 import json
 import sys
 import threading
-import time
 import webbrowser
+from collections.abc import Callable
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -30,7 +30,7 @@ DASHBOARD_DIR = ROOT / "dashboard"
 
 
 class DashboardRuntime:
-    def __init__(self, args):
+    def __init__(self, args: argparse.Namespace) -> None:
         self.args = args
         self.lock = threading.Lock()
         self.client = KalshiClient()
@@ -106,16 +106,16 @@ class DashboardRuntime:
             }
 
 
-def make_handler(get_runtime):
+def make_handler(get_runtime: Callable[[], DashboardRuntime | None]) -> type[SimpleHTTPRequestHandler]:
     class DashboardHandler(SimpleHTTPRequestHandler):
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args: object, **kwargs: object) -> None:
             super().__init__(*args, directory=str(DASHBOARD_DIR), **kwargs)
 
-        def end_headers(self):
+        def end_headers(self) -> None:
             self.send_header("Cache-Control", "no-store")
             super().end_headers()
 
-        def do_GET(self):
+        def do_GET(self) -> None:
             parsed = urlparse(self.path)
             if parsed.path == "/api/refresh":
                 runtime = get_runtime()
@@ -135,7 +135,7 @@ def make_handler(get_runtime):
                 self.path = "/index.html"
             super().do_GET()
 
-        def send_json(self, payload: dict, status: HTTPStatus = HTTPStatus.OK):
+        def send_json(self, payload: dict, status: HTTPStatus = HTTPStatus.OK) -> None:
             body = json.dumps(payload, indent=2).encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -143,13 +143,13 @@ def make_handler(get_runtime):
             self.end_headers()
             self.wfile.write(body)
 
-        def log_message(self, format, *args):
+        def log_message(self, format: str, *args: object) -> None:
             return
 
     return DashboardHandler
 
 
-def start_polling(get_runtime, seconds: float) -> threading.Event:
+def start_polling(get_runtime: Callable[[], DashboardRuntime | None], seconds: float) -> threading.Event:
     stop = threading.Event()
     if seconds <= 0:
         return stop

@@ -22,7 +22,7 @@ from ufc_mentions.entry_rules import (
     watch_decision,
 )
 from ufc_mentions.kalshi_client import KalshiClient, KalshiError, TopOfBook
-from ufc_mentions.kalshi_context_model import KalshiFightContextModel
+from ufc_mentions.kalshi_context_model import ContextPrediction, KalshiFightContextModel
 from ufc_mentions.kalshi_mentions import (
     MentionEstimate,
     RuleParseError,
@@ -64,7 +64,7 @@ class PricedMarket:
 
 def apply_context_prediction(
     estimate: MentionEstimate,
-    prediction,
+    prediction: ContextPrediction | None,
 ) -> MentionEstimate:
     if prediction is None:
         return estimate

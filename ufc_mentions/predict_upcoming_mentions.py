@@ -33,6 +33,7 @@ import argparse
 import csv
 import math
 import re
+from collections.abc import Iterable
 from pathlib import Path
 
 import numpy as np
@@ -61,7 +62,7 @@ METRICS_DEFAULT = PROJECT_ROOT / "model_outputs" / "baseline_metrics.csv"
 OUT_DIR_DEFAULT = PROJECT_ROOT / "model_outputs"
 
 
-def slug(value):
+def slug(value: object) -> str:
     return re.sub(r"[^a-z0-9]+", "_", str(value).strip().lower()).strip("_")
 
 
@@ -99,7 +100,9 @@ def best_profiles(metrics_path: Path) -> dict[str, str]:
     return {target: profiles.get(target, "prefight_odds_history") for target in TARGETS}
 
 
-def train_predict_target(history, upcoming, target, profile):
+def train_predict_target(
+    history: pd.DataFrame, upcoming: pd.DataFrame, target: str, profile: str,
+) -> tuple[np.ndarray, bool, float | str]:
     combined = pd.concat([history, upcoming], ignore_index=False, sort=False)
     cols = feature_columns(combined, profile=profile, include_identity=False, target=target)
     numeric_cols, categorical_cols, prepared = split_feature_types(combined, cols)
@@ -124,14 +127,14 @@ def train_predict_target(history, upcoming, target, profile):
     return calibrated, used_calibration, best_c
 
 
-def aggregate_event_probability(probs):
+def aggregate_event_probability(probs: Iterable[float]) -> float:
     probs = [min(max(float(p), 0.0), 1.0) for p in probs if pd.notna(p)]
     if not probs:
         return float("nan")
     return 1.0 - math.prod(1.0 - p for p in probs)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--history", default=str(JOINED_DEFAULT))
     parser.add_argument("--upcoming", default=str(UPCOMING_DEFAULT))

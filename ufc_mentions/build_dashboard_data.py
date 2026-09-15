@@ -56,7 +56,7 @@ def read_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def number(value):
+def number(value: object) -> float | None:
     if value in ("", None):
         return None
     try:
@@ -65,7 +65,7 @@ def number(value):
         return None
 
 
-def as_int(value):
+def as_int(value: object) -> int | None:
     parsed = number(value)
     return None if parsed is None else int(parsed)
 
@@ -74,7 +74,7 @@ def trim(row: dict, fields: list[str]) -> dict:
     return {field: row.get(field, "") for field in fields}
 
 
-def as_bool(value) -> bool:
+def as_bool(value: object) -> bool:
     if isinstance(value, bool):
         return value
     return str(value or "").strip().lower() in {"1", "true", "yes", "y"}
@@ -310,7 +310,7 @@ def legacy_watch(row: dict, item: dict) -> bool:
     )
 
 
-def kalshi_sort_key(item: dict):
+def kalshi_sort_key(item: dict) -> tuple[bool, float, str, str]:
     best_edge = item.get("edge")
     if best_edge is None:
         best_edge = -999
@@ -781,7 +781,7 @@ def build_model_health(
     }
 
 
-def keep_best(item: dict, field: str, value) -> None:
+def keep_best(item: dict, field: str, value: object) -> None:
     if value is None:
         return
     if item[field] is None or value > item[field]:
@@ -1134,7 +1134,7 @@ def build_payload() -> dict:
     }
 
 
-def write_data(path: Path, payload: dict):
+def write_data(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     # Compact on purpose: pretty-printing put every tape number on its own
     # line and tripled the file the browser has to pull.
@@ -1142,7 +1142,7 @@ def write_data(path: Path, payload: dict):
     path.write_text(f"window.UFC_MENTION_DASHBOARD_DATA = {encoded};\n", encoding="utf-8")
 
 
-def main():
+def main() -> None:
     payload = build_payload()
     write_data(OUT_DEFAULT, payload)
     summary = payload["summary"]
