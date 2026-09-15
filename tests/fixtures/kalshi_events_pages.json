@@ -1,0 +1,2030 @@
+{
+  "source": "https://api.elections.kalshi.com/trade-api/v2/events",
+  "recorded_at": "2026-09-12T19:15:00.867332+00:00",
+  "note": "Two consecutive public API pages. Event objects retain only identifiers and title; cursor values and event ordering are unchanged. No account data or request credentials.",
+  "pages": [
+    {
+      "request": {
+        "status": "open",
+        "limit": 200
+      },
+      "response": {
+        "cursor": "CgYI8NbyhgcSEktYRVVFWElUQ09VTlRSWS0zMA",
+        "events": [
+          {
+            "event_ticker": "KXELONMARS-99",
+            "title": "Will Elon Musk visit Mars in his lifetime?",
+            "series_ticker": "KXELONMARS"
+          },
+          {
+            "event_ticker": "KXNEXTNATOSECGEN-99",
+            "title": "Who will be the next Secretary General of NATO?",
+            "series_ticker": "KXNEXTNATOSECGEN"
+          },
+          {
+            "event_ticker": "KXNEWPOPE-70",
+            "title": "Who will the next Pope be?",
+            "series_ticker": "KXNEWPOPE"
+          },
+          {
+            "event_ticker": "KXWARMING-50",
+            "title": "Will the world pass 2 degrees Celsius over pre-industrial levels before 2050?",
+            "series_ticker": "KXWARMING"
+          },
+          {
+            "event_ticker": "KXMARSVRAIL-50",
+            "title": "Will a human land on Mars before California starts high-speed rail?",
+            "series_ticker": "KXMARSVRAIL"
+          },
+          {
+            "event_ticker": "KXERUPTSUPER-0",
+            "title": "Will a supervolcano erupt before 2050?",
+            "series_ticker": "KXERUPTSUPER"
+          },
+          {
+            "event_ticker": "KXCOLONIZEMARS-50",
+            "title": "Will humans colonize Mars before 2050?",
+            "series_ticker": "KXCOLONIZEMARS"
+          },
+          {
+            "event_ticker": "KXPERSONPRESMAM-45",
+            "title": "Will Zohran Mamdani become President of the United States before 2045?",
+            "series_ticker": "KXPERSONPRESMAM"
+          },
+          {
+            "event_ticker": "KXNEXTDNCCHAIR-45",
+            "title": "Who will be the next DNC Chair?",
+            "series_ticker": "KXNEXTDNCCHAIR"
+          },
+          {
+            "event_ticker": "KXXISUCCESSOR-45JAN01",
+            "title": "Who will be named as Xi Jinping's successor?",
+            "series_ticker": "KXXISUCCESSOR"
+          },
+          {
+            "event_ticker": "KXPERSONPRESFUENTES-45",
+            "title": "Will Nick Fuentes become President of the United States before 2045?",
+            "series_ticker": "KXPERSONPRESFUENTES"
+          },
+          {
+            "event_ticker": "KXNEXTROMANIAPM-45JAN01",
+            "title": "Who will be the next new Prime Minister of Romania?",
+            "series_ticker": "KXNEXTROMANIAPM"
+          },
+          {
+            "event_ticker": "KXNEXTISRAELPM-45JAN01",
+            "title": "Who will succeed Netanyahu as Prime Minister of Israel?",
+            "series_ticker": "KXNEXTISRAELPM"
+          },
+          {
+            "event_ticker": "KXG7LEADEROUT-26JUL20",
+            "title": "Which G7 leader will leave office next?",
+            "series_ticker": "KXG7LEADEROUT"
+          },
+          {
+            "event_ticker": "KXWCCAREERGOALS-KMBAPPE",
+            "title": "Kylian Mbappe Total FIFA World Cup Career Goals",
+            "series_ticker": "KXWCCAREERGOALS"
+          },
+          {
+            "event_ticker": "KXNFLENDSTREAK-40NYJ",
+            "title": "New York J: To Break Playoff Drought",
+            "series_ticker": "KXNFLENDSTREAK"
+          },
+          {
+            "event_ticker": "KXRAMPBREX-40",
+            "title": "Will Ramp or Brex IPO first?",
+            "series_ticker": "KXRAMPBREX"
+          },
+          {
+            "event_ticker": "KXOAIANTH-40",
+            "title": "Will OpenAI or Anthropic IPO first?",
+            "series_ticker": "KXOAIANTH"
+          },
+          {
+            "event_ticker": "KXFUSION",
+            "title": "When will nuclear fusion be achieved?",
+            "series_ticker": "KXFUSION"
+          },
+          {
+            "event_ticker": "KXDEELRIP-40",
+            "title": "Will Deel or Rippling IPO first?",
+            "series_ticker": "KXDEELRIP"
+          },
+          {
+            "event_ticker": "KXGDPYEAR-36",
+            "title": "US real GDP growth in 2036?",
+            "series_ticker": "KXGDPYEAR"
+          },
+          {
+            "event_ticker": "KXUSCPIYEAR-37FEB01",
+            "title": "US headline CPI inflation in December 2036",
+            "series_ticker": "KXUSCPIYEAR"
+          },
+          {
+            "event_ticker": "KXNOMGDPGROWTH-37JAN28",
+            "title": "US nominal GDP growth in 2036",
+            "series_ticker": "KXNOMGDPGROWTH"
+          },
+          {
+            "event_ticker": "KXU3EOY-37JAN09",
+            "title": "US unemployment rate at year-end 2036",
+            "series_ticker": "KXU3EOY"
+          },
+          {
+            "event_ticker": "KXLFPRATEEOY-37JAN09",
+            "title": "US labor force participation rate at year-end 2036",
+            "series_ticker": "KXLFPRATEEOY"
+          },
+          {
+            "event_ticker": "KXFEDFUNDSYEAR-37JAN01",
+            "title": "Fed funds rate at end of 2036",
+            "series_ticker": "KXFEDFUNDSYEAR"
+          },
+          {
+            "event_ticker": "KXGDPYEAR-35",
+            "title": "US real GDP growth in 2035?",
+            "series_ticker": "KXGDPYEAR"
+          },
+          {
+            "event_ticker": "KXUSCPIYEAR-36FEB01",
+            "title": "US headline CPI inflation in December 2035",
+            "series_ticker": "KXUSCPIYEAR"
+          },
+          {
+            "event_ticker": "KXNOMGDPGROWTH-36JAN28",
+            "title": "US nominal GDP growth in 2035",
+            "series_ticker": "KXNOMGDPGROWTH"
+          },
+          {
+            "event_ticker": "KXU3EOY-36JAN04",
+            "title": "US unemployment rate at year-end 2035",
+            "series_ticker": "KXU3EOY"
+          },
+          {
+            "event_ticker": "KXLFPRATEEOY-36JAN04",
+            "title": "US labor force participation rate at year-end 2035",
+            "series_ticker": "KXLFPRATEEOY"
+          },
+          {
+            "event_ticker": "KXFEDFUNDSYEAR-36JAN01",
+            "title": "Fed funds rate at end of 2035",
+            "series_ticker": "KXFEDFUNDSYEAR"
+          },
+          {
+            "event_ticker": "KXPGAFUTURE-36MRUS",
+            "title": "Miles Russell: Golf Majors before 2036",
+            "series_ticker": "KXPGAFUTURE"
+          },
+          {
+            "event_ticker": "KXPGAFUTURE-36JKOI",
+            "title": "Jackson Koivun: Golf Majors before 2036",
+            "series_ticker": "KXPGAFUTURE"
+          },
+          {
+            "event_ticker": "KXNEWROLEJP-35DEC",
+            "title": "Who will be the next CEO of JPMorgan Chase?",
+            "series_ticker": "KXNEWROLEJP"
+          },
+          {
+            "event_ticker": "KXNEWROLEGS-35DEC",
+            "title": "Who will be the next CEO of Goldman Sachs?",
+            "series_ticker": "KXNEWROLEGS"
+          },
+          {
+            "event_ticker": "KXPOPCHANGESTATE10-35",
+            "title": "Will any U.S. state experience a population decrease of at least 10% between 2025 and 2035?",
+            "series_ticker": "KXPOPCHANGESTATE10"
+          },
+          {
+            "event_ticker": "KXEARTHQUAKECALIFORNIA-35",
+            "title": "Will there be an at least 8.0 magnitude earthquake in California before 2035?",
+            "series_ticker": "KXEARTHQUAKECALIFORNIA"
+          },
+          {
+            "event_ticker": "KXGDPYEAR-34",
+            "title": "US real GDP growth in 2034?",
+            "series_ticker": "KXGDPYEAR"
+          },
+          {
+            "event_ticker": "KXUSCPIYEAR-35FEB01",
+            "title": "US headline CPI inflation in December 2034",
+            "series_ticker": "KXUSCPIYEAR"
+          },
+          {
+            "event_ticker": "KXNOMGDPGROWTH-35JAN28",
+            "title": "US nominal GDP growth in 2034",
+            "series_ticker": "KXNOMGDPGROWTH"
+          },
+          {
+            "event_ticker": "KXU3EOY-35JAN05",
+            "title": "US unemployment rate at year-end 2034",
+            "series_ticker": "KXU3EOY"
+          },
+          {
+            "event_ticker": "KXLFPRATEEOY-35JAN05",
+            "title": "US labor force participation rate at year-end 2034",
+            "series_ticker": "KXLFPRATEEOY"
+          },
+          {
+            "event_ticker": "KXNEXTUKPRIMEMIN-35JAN01",
+            "title": "Who will be the next Prime Minister of the UK?",
+            "series_ticker": "KXNEXTUKPRIMEMIN"
+          },
+          {
+            "event_ticker": "KXFEDFUNDSYEAR-35JAN01",
+            "title": "Fed funds rate at end of 2034",
+            "series_ticker": "KXFEDFUNDSYEAR"
+          },
+          {
+            "event_ticker": "KXROBOTMARS-35",
+            "title": "Will a humanoid robot walk on Mars before a human does?",
+            "series_ticker": "KXROBOTMARS"
+          },
+          {
+            "event_ticker": "KXPERFORMBONDSONG-35",
+            "title": "Next James Bond film: Artist performing the James Bond Theme",
+            "series_ticker": "KXPERFORMBONDSONG"
+          },
+          {
+            "event_ticker": "KXJOHNNYDEPP-35",
+            "title": "Next Pirates of the Caribbean film: Will Johnny Depp be cast?",
+            "series_ticker": "KXJOHNNYDEPP"
+          },
+          {
+            "event_ticker": "KXFDAVERVE102-VERV",
+            "title": "Will the FDA approve VERVE-102?",
+            "series_ticker": "KXFDAVERVE102"
+          },
+          {
+            "event_ticker": "KXBRUVSEAT-35",
+            "title": "Will Andrew Tate's party win a seat in the next UK election?",
+            "series_ticker": "KXBRUVSEAT"
+          },
+          {
+            "event_ticker": "KXAFRICALEADEROUT-35",
+            "title": "Which of these African leaders will leave office next?",
+            "series_ticker": "KXAFRICALEADEROUT"
+          },
+          {
+            "event_ticker": "KXACTORSONNYCROCKETT-35",
+            "title": "Next Miami Vice film: Cast",
+            "series_ticker": "KXACTORSONNYCROCKETT"
+          },
+          {
+            "event_ticker": "KXGDPYEAR-33",
+            "title": "US real GDP growth in 2033?",
+            "series_ticker": "KXGDPYEAR"
+          },
+          {
+            "event_ticker": "KXUSCPIYEAR-34FEB01",
+            "title": "US headline CPI inflation in December 2033",
+            "series_ticker": "KXUSCPIYEAR"
+          },
+          {
+            "event_ticker": "KXNOMGDPGROWTH-34JAN28",
+            "title": "US nominal GDP growth in 2033",
+            "series_ticker": "KXNOMGDPGROWTH"
+          },
+          {
+            "event_ticker": "KXAIGROWTHBET-34JAN26",
+            "title": "MacAskill\u2013Moll AI growth challenge \u00b7 Who will win?",
+            "series_ticker": "KXAIGROWTHBET"
+          },
+          {
+            "event_ticker": "KXU3EOY-34JAN06",
+            "title": "US unemployment rate at year-end 2033",
+            "series_ticker": "KXU3EOY"
+          },
+          {
+            "event_ticker": "KXLFPRATEEOY-34JAN06",
+            "title": "US labor force participation rate at year-end 2033",
+            "series_ticker": "KXLFPRATEEOY"
+          },
+          {
+            "event_ticker": "KXFEDFUNDSYEAR-34JAN01",
+            "title": "Fed funds rate at end of 2033",
+            "series_ticker": "KXFEDFUNDSYEAR"
+          },
+          {
+            "event_ticker": "KXWCHOST-2038",
+            "title": "Who will host the 2038 FIFA World Cup?",
+            "series_ticker": "KXWCHOST"
+          },
+          {
+            "event_ticker": "KXGDPYEAR-32",
+            "title": "US real GDP growth in 2032?",
+            "series_ticker": "KXGDPYEAR"
+          },
+          {
+            "event_ticker": "KXTRADEDEFICIT-33FEB07",
+            "title": "US trade deficit for 2032",
+            "series_ticker": "KXTRADEDEFICIT"
+          },
+          {
+            "event_ticker": "KXUSCPIYEAR-33FEB01",
+            "title": "US headline CPI inflation in December 2032",
+            "series_ticker": "KXUSCPIYEAR"
+          },
+          {
+            "event_ticker": "KXNOMGDPGROWTH-33JAN28",
+            "title": "US nominal GDP growth in 2032",
+            "series_ticker": "KXNOMGDPGROWTH"
+          },
+          {
+            "event_ticker": "KXPRESPARTY-2032",
+            "title": "Which party will win the 2032 Presidential Election?",
+            "series_ticker": "KXPRESPARTY"
+          },
+          {
+            "event_ticker": "KXU3EOY-33JAN07",
+            "title": "US unemployment rate at year-end 2032",
+            "series_ticker": "KXU3EOY"
+          },
+          {
+            "event_ticker": "KXLFPRATEEOY-33JAN07",
+            "title": "US labor force participation rate at year-end 2032",
+            "series_ticker": "KXLFPRATEEOY"
+          },
+          {
+            "event_ticker": "KXSOCIALSECURITYDEPLETE-33",
+            "title": "Will Social Security\u2019s retirement trust fund be depleted?",
+            "series_ticker": "KXSOCIALSECURITYDEPLETE"
+          },
+          {
+            "event_ticker": "KXFEDFUNDSYEAR-33JAN01",
+            "title": "Fed funds rate at end of 2032",
+            "series_ticker": "KXFEDFUNDSYEAR"
+          },
+          {
+            "event_ticker": "KXNEXTTRILLIONAIRE-33",
+            "title": "Who will be the world's second trillionaire?",
+            "series_ticker": "KXNEXTTRILLIONAIRE"
+          },
+          {
+            "event_ticker": "KXFDATYPE1DIABETES-33",
+            "title": "Will the FDA approve a cure for Type 1 diabetes before 2033?",
+            "series_ticker": "KXFDATYPE1DIABETES"
+          },
+          {
+            "event_ticker": "EUCLIMATE",
+            "title": "EU meets its 2030 climate goals?",
+            "series_ticker": "KXEUCLIMATE"
+          },
+          {
+            "event_ticker": "KXMLBDEBUT-GEMERSON",
+            "title": "Grady Emerson: Debut Date",
+            "series_ticker": "KXMLBDEBUT"
+          },
+          {
+            "event_ticker": "KXGDPYEAR-31",
+            "title": "US real GDP growth in 2031?",
+            "series_ticker": "KXGDPYEAR"
+          },
+          {
+            "event_ticker": "KXTRADEDEFICIT-32FEB02",
+            "title": "US trade deficit for 2031",
+            "series_ticker": "KXTRADEDEFICIT"
+          },
+          {
+            "event_ticker": "KXUSCPIYEAR-32FEB01",
+            "title": "US headline CPI inflation in December 2031",
+            "series_ticker": "KXUSCPIYEAR"
+          },
+          {
+            "event_ticker": "KXNOMGDPGROWTH-32JAN28",
+            "title": "US nominal GDP growth in 2031",
+            "series_ticker": "KXNOMGDPGROWTH"
+          },
+          {
+            "event_ticker": "KXU3EOY-32JAN09",
+            "title": "US unemployment rate at year-end 2031",
+            "series_ticker": "KXU3EOY"
+          },
+          {
+            "event_ticker": "KXLFPRATEEOY-32JAN09",
+            "title": "US labor force participation rate at year-end 2031",
+            "series_ticker": "KXLFPRATEEOY"
+          },
+          {
+            "event_ticker": "KXFEDFUNDSYEAR-32JAN01",
+            "title": "Fed funds rate at end of 2031",
+            "series_ticker": "KXFEDFUNDSYEAR"
+          },
+          {
+            "event_ticker": "KXFINDEXACCOUNT-31DEC31",
+            "title": "Global account ownership in the next Global Findex release",
+            "series_ticker": "KXFINDEXACCOUNT"
+          },
+          {
+            "event_ticker": "KXFDAAPPROVE-MDMA",
+            "title": "Will the FDA approve MDMA for PTSD?",
+            "series_ticker": "KXFDAAPPROVE"
+          },
+          {
+            "event_ticker": "INDIACLIMATE-30",
+            "title": "India meets its 2030 climate goals?",
+            "series_ticker": "KXINDIACLIMATE"
+          },
+          {
+            "event_ticker": "KXMLBDEBUT-VLACKEY",
+            "title": "Vahn Lackey: Debut Date",
+            "series_ticker": "KXMLBDEBUT"
+          },
+          {
+            "event_ticker": "KXMLBDEBUT-RCHOLOWSKY",
+            "title": "Roch Cholowsky: Debut Date",
+            "series_ticker": "KXMLBDEBUT"
+          },
+          {
+            "event_ticker": "KXMLBDEBUT-JFLORA",
+            "title": "Jackson Flora: Debut Date",
+            "series_ticker": "KXMLBDEBUT"
+          },
+          {
+            "event_ticker": "KXNFLRETIRE-MSTAFFORD9",
+            "title": "Matthew Stafford: Retirement",
+            "series_ticker": "KXNFLRETIRE"
+          },
+          {
+            "event_ticker": "KXNFLRETIRE-MEVANS5",
+            "title": "Mike Evans: Retirement",
+            "series_ticker": "KXNFLRETIRE"
+          },
+          {
+            "event_ticker": "KXNFLRETIRE-LJOHNSON65",
+            "title": "Lane Johnson: Retirement",
+            "series_ticker": "KXNFLRETIRE"
+          },
+          {
+            "event_ticker": "KXNFLRETIRE-KCOUSINS8",
+            "title": "Kirk Cousins: Retirement",
+            "series_ticker": "KXNFLRETIRE"
+          },
+          {
+            "event_ticker": "KXNFLRETIRE-JFLACCO16",
+            "title": "When will Joe Flacco retire?",
+            "series_ticker": "KXNFLRETIRE"
+          },
+          {
+            "event_ticker": "KXNFLRETIRE-DHENRY22",
+            "title": "Derrick Henry: Retirement",
+            "series_ticker": "KXNFLRETIRE"
+          },
+          {
+            "event_ticker": "KXNFLRETIRE-DADAMS17",
+            "title": "Davante Adams: Retirement",
+            "series_ticker": "KXNFLRETIRE"
+          },
+          {
+            "event_ticker": "KXGDPYEAR-30",
+            "title": "US real GDP growth in 2030?",
+            "series_ticker": "KXGDPYEAR"
+          },
+          {
+            "event_ticker": "KXTRADEDEFICIT-31FEB03",
+            "title": "US trade deficit for 2030",
+            "series_ticker": "KXTRADEDEFICIT"
+          },
+          {
+            "event_ticker": "KXUSCPIYEAR-31FEB01",
+            "title": "US headline CPI inflation in December 2030",
+            "series_ticker": "KXUSCPIYEAR"
+          },
+          {
+            "event_ticker": "KXNOMGDPGROWTH-31JAN28",
+            "title": "US nominal GDP growth in 2030",
+            "series_ticker": "KXNOMGDPGROWTH"
+          },
+          {
+            "event_ticker": "KXU3EOY-31JAN10",
+            "title": "US unemployment rate at year-end 2030",
+            "series_ticker": "KXU3EOY"
+          },
+          {
+            "event_ticker": "KXLFPRATEEOY-31JAN10",
+            "title": "US labor force participation rate at year-end 2030",
+            "series_ticker": "KXLFPRATEEOY"
+          },
+          {
+            "event_ticker": "KXFEDFUNDSYEAR-31JAN01",
+            "title": "Fed funds rate at end of 2030",
+            "series_ticker": "KXFEDFUNDSYEAR"
+          },
+          {
+            "event_ticker": "KXSBHOST-2031",
+            "title": "Who will host the 2031 Pro Football Championship?",
+            "series_ticker": "KXSBHOST"
+          },
+          {
+            "event_ticker": "KXNEXTSPEAKER-31",
+            "title": "Who will be the next new Speaker of the House?",
+            "series_ticker": "KXNEXTSPEAKER"
+          },
+          {
+            "event_ticker": "KXMOONMAN-31",
+            "title": "Which country will be the next to send humans to the Moon?",
+            "series_ticker": "KXMOONMAN"
+          },
+          {
+            "event_ticker": "KXAGICO-COMP",
+            "title": "When will any company achieve AGI?",
+            "series_ticker": "KXAGICO"
+          },
+          {
+            "event_ticker": "KXWCQUAL-30",
+            "title": "2030 FIFA World Cup Qualifiers",
+            "series_ticker": "KXWCQUAL"
+          },
+          {
+            "event_ticker": "KXWC-30",
+            "title": "2030 FIFA World Cup Champion",
+            "series_ticker": "KXWC"
+          },
+          {
+            "event_ticker": "USCLIMATE",
+            "title": "US meets its climate goals?",
+            "series_ticker": "KXUSCLIMATE"
+          },
+          {
+            "event_ticker": "KXTVSEASONRELEASETHELASTOFUS",
+            "title": "The Last of Us S3: Release date",
+            "series_ticker": "KXTVSEASONRELEASETHELASTOFUS"
+          },
+          {
+            "event_ticker": "KXPRIMEENGCONSUMPTION-30",
+            "title": "What will be the largest source of global primary energy consumption in 2030?",
+            "series_ticker": "KXPRIMEENGCONSUMPTION"
+          },
+          {
+            "event_ticker": "KXNCAAFCOACHLEAVE-26MNOR",
+            "title": "When will Mike Norvell leave Florida St.?",
+            "series_ticker": "KXNCAAFCOACHLEAVE"
+          },
+          {
+            "event_ticker": "KXNCAAFCOACHLEAVE-26KWHI",
+            "title": "When will Kyle Whittingham leave Michigan?",
+            "series_ticker": "KXNCAAFCOACHLEAVE"
+          },
+          {
+            "event_ticker": "KXNCAAFCOACHLEAVE-26DSWI",
+            "title": "When will Dabo Swinney leave Clemson?",
+            "series_ticker": "KXNCAAFCOACHLEAVE"
+          },
+          {
+            "event_ticker": "KXNCAAFCOACHLEAVE-26BBEL",
+            "title": "When will Bill Belichick leave North Carolina?",
+            "series_ticker": "KXNCAAFCOACHLEAVE"
+          },
+          {
+            "event_ticker": "KXACTORTOMCRUZ-30",
+            "title": "Tom Cruise cast in another film with Ana de Armas?",
+            "series_ticker": "KXACTORTOMCRUZ"
+          },
+          {
+            "event_ticker": "KXISRDEFMIN-30",
+            "title": "Who will be Israeli defense minister after the election?",
+            "series_ticker": "KXISRDEFMIN"
+          },
+          {
+            "event_ticker": "KXMLBDEBUT-EHOLLIDAY",
+            "title": "Ethan Holliday: Debut Date",
+            "series_ticker": "KXMLBDEBUT"
+          },
+          {
+            "event_ticker": "KXCANELECTION-29OCT15",
+            "title": "Next Canadian federal election winner?",
+            "series_ticker": "KXCANELECTION"
+          },
+          {
+            "event_ticker": "KXINDIANAPOWELL-30",
+            "title": "Next Indiana Jones film: Will Glenn Powell be cast?",
+            "series_ticker": "KXINDIANAPOWELL"
+          },
+          {
+            "event_ticker": "KXCITYCHAMPS-TEX30JUL01SDRCTRAS",
+            "title": "Texas Sports: Championships before Jul 1, 2030",
+            "series_ticker": "KXCITYCHAMPS"
+          },
+          {
+            "event_ticker": "KXCITYCHAMPS-PHI30JUL017EPF",
+            "title": "Philadelphia Sports: Championships before Jul 1, 2030",
+            "series_ticker": "KXCITYCHAMPS"
+          },
+          {
+            "event_ticker": "KXCITYCHAMPS-OH30JUL01CBBGRB",
+            "title": "Ohio Sports: Championships before Jul 1, 2030",
+            "series_ticker": "KXCITYCHAMPS"
+          },
+          {
+            "event_ticker": "KXCITYCHAMPS-NYC30JUL01KNGJYMRI",
+            "title": "New York Sports: Championships before Jul 1, 2030",
+            "series_ticker": "KXCITYCHAMPS"
+          },
+          {
+            "event_ticker": "KXCITYCHAMPS-MIN30JUL01TVTW",
+            "title": "Minnesota Sports: Championships before Jul 1, 2030",
+            "series_ticker": "KXCITYCHAMPS"
+          },
+          {
+            "event_ticker": "KXCITYCHAMPS-MIA30JUL01HDMP",
+            "title": "Miami Sports: Championships before Jul 1, 2030",
+            "series_ticker": "KXCITYCHAMPS"
+          },
+          {
+            "event_ticker": "KXCITYCHAMPS-LA30JUL01LCRCDAKD",
+            "title": "Los Angeles Sports: Championships before Jul 1, 2030",
+            "series_ticker": "KXCITYCHAMPS"
+          },
+          {
+            "event_ticker": "KXCITYCHAMPS-DEN30JUL01NBRA",
+            "title": "Denver Sports: Championships before Jul 1, 2030",
+            "series_ticker": "KXCITYCHAMPS"
+          },
+          {
+            "event_ticker": "KXCITYCHAMPS-CHI30JUL01BBCWB",
+            "title": "Chicago Sports: Championships before Jul 1, 2030",
+            "series_ticker": "KXCITYCHAMPS"
+          },
+          {
+            "event_ticker": "KXCITYCHAMPS-BOS30JUL01CPRB",
+            "title": "Boston Sports: Championships before Jul 1, 2030",
+            "series_ticker": "KXCITYCHAMPS"
+          },
+          {
+            "event_ticker": "KXCITYCHAMPS-BAY30JUL01W4GS",
+            "title": "Bay Area Sports: Championships before Jul 1, 2030",
+            "series_ticker": "KXCITYCHAMPS"
+          },
+          {
+            "event_ticker": "KXCANADACUP-30",
+            "title": "Canadian Team to Win the Stanley Cup\u00ae Before the 2030-31 Season",
+            "series_ticker": "KXCANADACUP"
+          },
+          {
+            "event_ticker": "KXGOLFMAJOR-30",
+            "title": "Golfers to win a PGA Tour Major before 2030 ",
+            "series_ticker": "KXGOLFMAJOR"
+          },
+          {
+            "event_ticker": "KXPOCHETTINOOUT-30",
+            "title": "Mauricio Pochettino: Out from USMNT",
+            "series_ticker": "KXPOCHETTINOOUT"
+          },
+          {
+            "event_ticker": "KXNBASTADIUM-30MAY01PHI",
+            "title": "Will the new Flyers/Philadelphia Pro Basketball arena be completed before May 1, 2030?",
+            "series_ticker": "KXNBASTADIUM"
+          },
+          {
+            "event_ticker": "KXNCAAWBCONFSTREAK-30BIGEASTCONN",
+            "title": "UConn to win every Big East Conference Tournament through 2030",
+            "series_ticker": "KXNCAAWBCONFSTREAK"
+          },
+          {
+            "event_ticker": "KXINDIANPM-29APR30",
+            "title": "Who will become Prime Minister of India after next general election?",
+            "series_ticker": "KXINDIANPM"
+          },
+          {
+            "event_ticker": "KXF1RETIRE-30VERSTAPPEN",
+            "title": "Max Verstappen: Retirement",
+            "series_ticker": "KXF1RETIRE"
+          },
+          {
+            "event_ticker": "KXGERELECTION-29MAR25",
+            "title": "Next German federal election winner?",
+            "series_ticker": "KXGERELECTION"
+          },
+          {
+            "event_ticker": "KXGDPYEAR-29",
+            "title": "US real GDP growth in 2029?",
+            "series_ticker": "KXGDPYEAR"
+          },
+          {
+            "event_ticker": "KXTRADEDEFICIT-30FEB04",
+            "title": "US trade deficit for 2029",
+            "series_ticker": "KXTRADEDEFICIT"
+          },
+          {
+            "event_ticker": "KXUSCPIYEAR-30FEB01",
+            "title": "US headline CPI inflation in December 2029",
+            "series_ticker": "KXUSCPIYEAR"
+          },
+          {
+            "event_ticker": "KXNOMGDPGROWTH-30JAN28",
+            "title": "US nominal GDP growth in 2029",
+            "series_ticker": "KXNOMGDPGROWTH"
+          },
+          {
+            "event_ticker": "KXTIMEDECADE20S-30",
+            "title": "Time's Person of the Decade",
+            "series_ticker": "KXTIMEDECADE20S"
+          },
+          {
+            "event_ticker": "EVSHARE-30JAN",
+            "title": "EV market share in 2030?",
+            "series_ticker": "KXEVSHARE"
+          },
+          {
+            "event_ticker": "KXU3EOY-30JAN04",
+            "title": "US unemployment rate at year-end 2029",
+            "series_ticker": "KXU3EOY"
+          },
+          {
+            "event_ticker": "KXLFPRATEEOY-30JAN04",
+            "title": "US labor force participation rate at year-end 2029",
+            "series_ticker": "KXLFPRATEEOY"
+          },
+          {
+            "event_ticker": "KXWARSHOUT-26JUL",
+            "title": "Kevin Warsh out as Fed chair?",
+            "series_ticker": "KXWARSHOUT"
+          },
+          {
+            "event_ticker": "KXUKGEYEAR-30JAN01",
+            "title": "In what year will the next UK general election be held?",
+            "series_ticker": "KXUKGEYEAR"
+          },
+          {
+            "event_ticker": "KXNEXTSECARMY-30JAN01",
+            "title": "Who will be the next Secretary of the Army?",
+            "series_ticker": "KXNEXTSECARMY"
+          },
+          {
+            "event_ticker": "KXNEXTATLFED-30JAN01",
+            "title": "Who will be the next President of the Federal Reserve Bank of Atlanta?",
+            "series_ticker": "KXNEXTATLFED"
+          },
+          {
+            "event_ticker": "KXMAMDANIOUT-26AUG",
+            "title": "Will Zohran Mamdani announce his departure as Mayor of New York City?",
+            "series_ticker": "KXMAMDANIOUT"
+          },
+          {
+            "event_ticker": "KXCONGRESSPAYINCREASE-30",
+            "title": "Will Congressional salaries increase?",
+            "series_ticker": "KXCONGRESSPAYINCREASE"
+          },
+          {
+            "event_ticker": "KXFEDFUNDSYEAR-30JAN01",
+            "title": "Fed funds rate at end of 2029",
+            "series_ticker": "KXFEDFUNDSYEAR"
+          },
+          {
+            "event_ticker": "KXU3MAX-30",
+            "title": "How high will unemployment get before 2030?",
+            "series_ticker": "KXU3MAX"
+          },
+          {
+            "event_ticker": "KXPERFORMROLEBRITNEY",
+            "title": "Britney Spears biopic: Actress cast as Britney Spears",
+            "series_ticker": "KXPERFORMROLEBRITNEY"
+          },
+          {
+            "event_ticker": "KXPERFORMROLE007-VILLAIN",
+            "title": "Next James Bond film: Actor cast as the villain",
+            "series_ticker": "KXPERFORMROLE007"
+          },
+          {
+            "event_ticker": "KXPERFORMROLE007-Q",
+            "title": "Next James Bond film: Actor cast as Q",
+            "series_ticker": "KXPERFORMROLE007"
+          },
+          {
+            "event_ticker": "KXPERFORMROLE007-MONEYPENNY",
+            "title": "Next James Bond film: Actress cast as Moneypenny",
+            "series_ticker": "KXPERFORMROLE007"
+          },
+          {
+            "event_ticker": "KXPERFORMROLE007-M",
+            "title": "Next James Bond film: Actor cast as M",
+            "series_ticker": "KXPERFORMROLE007"
+          },
+          {
+            "event_ticker": "KXPERFORMROLE007-FELIX",
+            "title": "Next James Bond film: Actor cast as Felix Leiter",
+            "series_ticker": "KXPERFORMROLE007"
+          },
+          {
+            "event_ticker": "KXPERFORMROLE007",
+            "title": "Next James Bond film: Actress cast as Bond girl",
+            "series_ticker": "KXPERFORMROLE007"
+          },
+          {
+            "event_ticker": "KXYTUBESUBSISHOWSPEED",
+            "title": "When will IShowSpeed reach 100 million Youtube subscribers?",
+            "series_ticker": "KXYTUBESUBSISHOWSPEED"
+          },
+          {
+            "event_ticker": "KXWCTEAMS-2030",
+            "title": "Will the 2030 Men's World Cup Tournament have 64 teams?",
+            "series_ticker": "KXWCTEAMS"
+          },
+          {
+            "event_ticker": "KXVISADEBIT-DOJ30",
+            "title": "Will a court rule Visa violated antitrust law on debit?",
+            "series_ticker": "KXVISADEBIT"
+          },
+          {
+            "event_ticker": "KXUSTAKEOVER-30",
+            "title": "Will the US government take control of any AI company or project before 2030?",
+            "series_ticker": "KXUSTAKEOVER"
+          },
+          {
+            "event_ticker": "KXUKCOALITION-30JAN01",
+            "title": "Next government of the United Kingdom?",
+            "series_ticker": "KXUKCOALITION"
+          },
+          {
+            "event_ticker": "KXTVSEASONRELEASEACOURTOFTHORNSANDROSES",
+            "title": "A Court Of Thorns and Roses: Released before 2030?",
+            "series_ticker": "KXTVSEASONRELEASEACOURTOFTHORNSANDROSES"
+          },
+          {
+            "event_ticker": "KXTAIWANLVL4",
+            "title": "Will the US issue a Level 4 travel advisory for Taiwan?",
+            "series_ticker": "KXTAIWANLVL4"
+          },
+          {
+            "event_ticker": "KXSUPERBALLONDOR-30",
+            "title": "Super Ballon d'Or awarded before 2030",
+            "series_ticker": "KXSUPERBALLONDOR"
+          },
+          {
+            "event_ticker": "KXSPORTSOWNERLBJ-30",
+            "title": "Will LeBron James be a majority owner of a men's Pro Basketball team before 2030?",
+            "series_ticker": "KXSPORTSOWNERLBJ"
+          },
+          {
+            "event_ticker": "KXSPACEXMARS-30",
+            "title": "Will SpaceX land anything successfully on Mars before 2030?",
+            "series_ticker": "KXSPACEXMARS"
+          },
+          {
+            "event_ticker": "KXSONICS-30",
+            "title": "Portland Trailblazers bought and changed to Seattle SuperSonics?",
+            "series_ticker": "KXSONICS"
+          },
+          {
+            "event_ticker": "KXSHOWENDSIMPSONS-30",
+            "title": "Will there be an announcement that The Simpsons is ending?",
+            "series_ticker": "KXSHOWENDSIMPSONS"
+          },
+          {
+            "event_ticker": "KXSHOWENDFAMILYGUY-30",
+            "title": "Will there be an announcement that Family Guy is ending?",
+            "series_ticker": "KXSHOWENDFAMILYGUY"
+          },
+          {
+            "event_ticker": "KXSCOTUSAR15-30JAN",
+            "title": "Will SCOTUS recognize a right to possess AR-15-style rifles?",
+            "series_ticker": "KXSCOTUSAR15"
+          },
+          {
+            "event_ticker": "KXPOLIOELIM-30",
+            "title": "Will there be a year without polio before 2030?",
+            "series_ticker": "KXPOLIOELIM"
+          },
+          {
+            "event_ticker": "KXNETWORTHKAICENAT-30",
+            "title": "Will Kai Cenat become a billionaire before 2030?",
+            "series_ticker": "KXNETWORTHKAICENAT"
+          },
+          {
+            "event_ticker": "KXNCAAFTFUT-30WYO",
+            "title": "Wyoming to Reach the CFP before the 2030 season",
+            "series_ticker": "KXNCAAFTFUT"
+          },
+          {
+            "event_ticker": "KXNCAAFTFUT-30WVU",
+            "title": "West Virginia to Reach the CFP before the 2030 season",
+            "series_ticker": "KXNCAAFTFUT"
+          },
+          {
+            "event_ticker": "KXNCAAFTFUT-30TULN",
+            "title": "Tulane to Reach the CFP before the 2030 season",
+            "series_ticker": "KXNCAAFTFUT"
+          },
+          {
+            "event_ticker": "KXNCAAFTFUT-30NEB",
+            "title": "Nebraska to Reach the CFP before the 2030 season",
+            "series_ticker": "KXNCAAFTFUT"
+          },
+          {
+            "event_ticker": "KXNCAAFTFUT-30NDSU",
+            "title": "North Dakota St. to Reach the CFP before the 2030 season",
+            "series_ticker": "KXNCAAFTFUT"
+          },
+          {
+            "event_ticker": "KXNCAAFTFUT-30KU",
+            "title": "Kansas to Reach the CFP before the 2030 season",
+            "series_ticker": "KXNCAAFTFUT"
+          },
+          {
+            "event_ticker": "KXNCAAFTFUT-30IOWA",
+            "title": "Iowa to Reach the CFP before the 2030 season",
+            "series_ticker": "KXNCAAFTFUT"
+          },
+          {
+            "event_ticker": "KXNCAAFTFUT-30ARK",
+            "title": "Arkansas to Reach the CFP before the 2030 season",
+            "series_ticker": "KXNCAAFTFUT"
+          },
+          {
+            "event_ticker": "KXNBATEAM-30",
+            "title": "Will there be a new Pro Basketball team added before 2030?",
+            "series_ticker": "KXNBATEAM"
+          },
+          {
+            "event_ticker": "KXNBASEATTLE-30",
+            "title": "Will a Seattle Pro Basketball team play a game before 2030?",
+            "series_ticker": "KXNBASEATTLE"
+          },
+          {
+            "event_ticker": "KXMOVIERELEASEDATE-AUS",
+            "title": "Austin Powers 4: Release Date",
+            "series_ticker": "KXMOVIERELEASEDATE"
+          },
+          {
+            "event_ticker": "KXMOVIERELEASEDATE-007",
+            "title": "James Bond \u00b7 Release Date",
+            "series_ticker": "KXMOVIERELEASEDATE"
+          },
+          {
+            "event_ticker": "KXMEDIARELEASEPRISONBREAK-30JAN01",
+            "title": "Prison Break: New season release date",
+            "series_ticker": "KXMEDIARELEASEPRISONBREAK"
+          },
+          {
+            "event_ticker": "KXMARRIAGESTYLESKRAVITZ-HSZK",
+            "title": "Harry Styles and Zoe\u0308 Kravitz: Marriage date",
+            "series_ticker": "KXMARRIAGESTYLESKRAVITZ"
+          },
+          {
+            "event_ticker": "KXJPMCEONEW",
+            "title": "Who will replace Jamie Dimon as JPMorgan CEO?",
+            "series_ticker": "KXJPMCEONEW"
+          },
+          {
+            "event_ticker": "KXIPOBLOOMBERG-DATE",
+            "title": "When will Bloomberg officially announce an IPO?",
+            "series_ticker": "KXIPOBLOOMBERG"
+          },
+          {
+            "event_ticker": "KXIPOAIRTABLE",
+            "title": "When will Airtable officially announce an IPO?",
+            "series_ticker": "KXIPOAIRTABLE"
+          },
+          {
+            "event_ticker": "KXINTLPLAYAGAIN-PORCRIS7",
+            "title": "Will Cristiano Ronaldo play for the Portugal National Team again?",
+            "series_ticker": "KXINTLPLAYAGAIN"
+          },
+          {
+            "event_ticker": "KXINTLPLAYAGAIN-ARGLMESSI10",
+            "title": "Will Messi play for the Argentina National Team again?",
+            "series_ticker": "KXINTLPLAYAGAIN"
+          },
+          {
+            "event_ticker": "KXHUTCHISONPANAMA-30",
+            "title": "Will CK Hutchison win its Panama ports arbitration?",
+            "series_ticker": "KXHUTCHISONPANAMA"
+          },
+          {
+            "event_ticker": "KXGTA6SONGS-30",
+            "title": "Grand Theft Auto VI: Songs on radio at launch",
+            "series_ticker": "KXGTA6SONGS"
+          },
+          {
+            "event_ticker": "KXFYREFESTPRICE-30",
+            "title": "How much will a Fyre Festival 2 General Admission Ticket cost?",
+            "series_ticker": "KXFYREFESTPRICE"
+          },
+          {
+            "event_ticker": "KXEUREF-30",
+            "title": "What countries will hold referenda on leaving the EU?",
+            "series_ticker": "KXEUREF"
+          },
+          {
+            "event_ticker": "KXEUEXITCOUNTRY-30",
+            "title": "Which countries will vote to leave the EU before 2030?",
+            "series_ticker": "KXEUEXITCOUNTRY"
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "status": "open",
+        "limit": 200,
+        "cursor": "CgYI8NbyhgcSEktYRVVFWElUQ09VTlRSWS0zMA"
+      },
+      "response": {
+        "cursor": "CgYI8O6z9wYSF0tYTkVURkxJWFNUVURJTy1QSEFTRTFC",
+        "events": [
+          {
+            "event_ticker": "KXELECTUKRAINE-30JAN01",
+            "title": "When will Ukraine hold a presidential election?",
+            "series_ticker": "KXELECTUKRAINE"
+          },
+          {
+            "event_ticker": "KXECCOMPACT-30",
+            "title": "Will the NPVIC reach 270 electoral votes?",
+            "series_ticker": "KXECCOMPACT"
+          },
+          {
+            "event_ticker": "KXEARTHQUAKEJAPAN-30",
+            "title": "8.0 magnitude earthquake in Japan before 2030?",
+            "series_ticker": "KXEARTHQUAKEJAPAN"
+          },
+          {
+            "event_ticker": "KXDEFAULT-29DEC31",
+            "title": "US defaults before 2030?",
+            "series_ticker": "KXDEFAULT"
+          },
+          {
+            "event_ticker": "KXDATACENTER-30",
+            "title": "Will the US start the process of building a nuclear-powered data center on a military base before 2030?",
+            "series_ticker": "KXDATACENTER"
+          },
+          {
+            "event_ticker": "KXCO2LEVEL-30",
+            "title": "How bad will CO2 atmospheric concentration get before 2030?",
+            "series_ticker": "KXCO2LEVEL"
+          },
+          {
+            "event_ticker": "KXCHINAEUV-30",
+            "title": "Will China obtain an EUV machine?",
+            "series_ticker": "KXCHINAEUV"
+          },
+          {
+            "event_ticker": "KXCASECESSION-30",
+            "title": "Will a ballot initiative on California secession qualify for a vote before 2030?",
+            "series_ticker": "KXCASECESSION"
+          },
+          {
+            "event_ticker": "KXBUSHBY-30",
+            "title": "Will Karl Bushby Finish His World Walk to Hull Before 2030?",
+            "series_ticker": "KXBUSHBY"
+          },
+          {
+            "event_ticker": "KXBOND-30",
+            "title": "Next James Bond film: Actor cast as James Bond",
+            "series_ticker": "KXBOND"
+          },
+          {
+            "event_ticker": "KXBLUESPACEX-30",
+            "title": "Will Blue Origin land on the moon before SpaceX?",
+            "series_ticker": "KXBLUESPACEX"
+          },
+          {
+            "event_ticker": "KXARTISTCOLLABTHUGANDGUNNA-30",
+            "title": "When will Young Thug and Gunna make a song together?",
+            "series_ticker": "KXARTISTCOLLABTHUGANDGUNNA"
+          },
+          {
+            "event_ticker": "KXARTISTCOLLABDRAKEKENDRICK-30",
+            "title": "Will Drake and Kendrick Lamar make a song together before 2030?",
+            "series_ticker": "KXARTISTCOLLABDRAKEKENDRICK"
+          },
+          {
+            "event_ticker": "EUEXPANSION",
+            "title": "EU has a new member before 2030?",
+            "series_ticker": "KXEUEXPANSION"
+          },
+          {
+            "event_ticker": "EUEXIT",
+            "title": "EU loses a member before 2030?",
+            "series_ticker": "KXEUEXIT"
+          },
+          {
+            "event_ticker": "CHINAUSGDP",
+            "title": "China overtakes USA\u2019s economy by 2030?",
+            "series_ticker": "KXCHINAUSGDP"
+          },
+          {
+            "event_ticker": "BEYONCEGENRE-30",
+            "title": "What genre will Beyonce\u2019s next album be?",
+            "series_ticker": "KXBEYONCEGENRE"
+          },
+          {
+            "event_ticker": "AMAZONFTC-29DEC31",
+            "title": "Courts consider Amazon a monopoly?",
+            "series_ticker": "KXAMAZONFTC"
+          },
+          {
+            "event_ticker": "KX48ETAXCREDIT-26MAY",
+            "title": "Will the 48E commercial solar Investment Tax Credit be reinstated before December 31, 2029?",
+            "series_ticker": "KX48ETAXCREDIT"
+          },
+          {
+            "event_ticker": "APPLEUS",
+            "title": "Courts consider Apple a monopoly?",
+            "series_ticker": "KXAPPLEUS"
+          },
+          {
+            "event_ticker": "STARSHIPMARS",
+            "title": "Starship launches humans to Mars before 2030?",
+            "series_ticker": "KXSTARSHIPMARS"
+          },
+          {
+            "event_ticker": "KXNBARETIRE-SCURRY30",
+            "title": "Steph Curry: Retirement",
+            "series_ticker": "KXNBARETIRE"
+          },
+          {
+            "event_ticker": "KXNBARETIRE-LJAMES23",
+            "title": "LeBron James: Retirement",
+            "series_ticker": "KXNBARETIRE"
+          },
+          {
+            "event_ticker": "KXNBARETIRE-KLEONARD2",
+            "title": "Kawhi Leonard: Retirement",
+            "series_ticker": "KXNBARETIRE"
+          },
+          {
+            "event_ticker": "KXNBARETIRE-KIRVING11",
+            "title": "Kyrie Irving: Retirement",
+            "series_ticker": "KXNBARETIRE"
+          },
+          {
+            "event_ticker": "KXNBARETIRE-KDURANT7",
+            "title": "Kevin Durant: Retirement",
+            "series_ticker": "KXNBARETIRE"
+          },
+          {
+            "event_ticker": "KXNBARETIRE-DGREEN23",
+            "title": "Draymond Green: Retirement",
+            "series_ticker": "KXNBARETIRE"
+          },
+          {
+            "event_ticker": "KXNYCMAYORPERSON-29",
+            "title": "New York City mayoral election winner?",
+            "series_ticker": "KXNYCMAYORPERSON"
+          },
+          {
+            "event_ticker": "KXMLBDEBUT-SHERNANDEZ",
+            "title": "Seth Hernandez: Debut Date",
+            "series_ticker": "KXMLBDEBUT"
+          },
+          {
+            "event_ticker": "KXMLBDEBUT-LPENA",
+            "title": "Luis Pe\u00f1a: Debut Date",
+            "series_ticker": "KXMLBDEBUT"
+          },
+          {
+            "event_ticker": "KXMLBDEBUT-EWILLITS",
+            "title": "Eli Willits: Debut Date",
+            "series_ticker": "KXMLBDEBUT"
+          },
+          {
+            "event_ticker": "KXMLBDEBUT-EQUINTERO",
+            "title": "Eduardo Quintero: Debut Date",
+            "series_ticker": "KXMLBDEBUT"
+          },
+          {
+            "event_ticker": "KXALBERTAREFYES-29",
+            "title": "Will Alberta vote to secede from Canada?",
+            "series_ticker": "KXALBERTAREFYES"
+          },
+          {
+            "event_ticker": "KXNEXTGERCHANC-29FEB25",
+            "title": "Who will become Chancellor of Germany following the next federal election?",
+            "series_ticker": "KXNEXTGERCHANC"
+          },
+          {
+            "event_ticker": "KXAUSTPM-28SEP23",
+            "title": "Prime Minister of Australia after the next election? ",
+            "series_ticker": "KXAUSTPM"
+          },
+          {
+            "event_ticker": "KXUKPARTY-29",
+            "title": "Which party will win the next UK general election?",
+            "series_ticker": "KXUKPARTY"
+          },
+          {
+            "event_ticker": "KXGDPSHAREMANU-29",
+            "title": "Will Trump bring back manufacturing?",
+            "series_ticker": "KXGDPSHAREMANU"
+          },
+          {
+            "event_ticker": "KXFULLTERMSKPRES-29",
+            "title": "Will South Korean President Lee Jae-myung serve their full term?",
+            "series_ticker": "KXFULLTERMSKPRES"
+          },
+          {
+            "event_ticker": "KXMAMDANIRUN-29",
+            "title": "Will Mamdani run for re-election?",
+            "series_ticker": "KXMAMDANIRUN"
+          },
+          {
+            "event_ticker": "KXNYCSTAT-GROC29",
+            "title": "How many N.Y.C. Groceries stores will open before 2029?",
+            "series_ticker": "KXNYCSTAT"
+          },
+          {
+            "event_ticker": "KXNCAAFSTADIUM-29APR01ALOHA",
+            "title": "Will University of Hawaii complete the New Aloha Stadium before Apr 1, 2029?",
+            "series_ticker": "KXNCAAFSTADIUM"
+          },
+          {
+            "event_ticker": "KXGOVTCUTS-28",
+            "title": "How much government spending will Trump cut before his term ends?",
+            "series_ticker": "KXGOVTCUTS"
+          },
+          {
+            "event_ticker": "KXDEBTGROWTH-28DEC31",
+            "title": "Peak US National Debt Under Trump Administration",
+            "series_ticker": "KXDEBTGROWTH"
+          },
+          {
+            "event_ticker": "KXGDPYEAR-28",
+            "title": "US real GDP growth in 2028?",
+            "series_ticker": "KXGDPYEAR"
+          },
+          {
+            "event_ticker": "KXTRADEDEFICIT-29FEB05",
+            "title": "US trade deficit for 2028",
+            "series_ticker": "KXTRADEDEFICIT"
+          },
+          {
+            "event_ticker": "KXPRESPRIOROFFICE-29FEB01",
+            "title": "Prior offices of the President inaugurated in 2029?",
+            "series_ticker": "KXPRESPRIOROFFICE"
+          },
+          {
+            "event_ticker": "KXUSCPIYEAR-29FEB01",
+            "title": "US headline CPI inflation in December 2028",
+            "series_ticker": "KXUSCPIYEAR"
+          },
+          {
+            "event_ticker": "KXNOMGDPGROWTH-29JAN28",
+            "title": "US nominal GDP growth in 2028",
+            "series_ticker": "KXNOMGDPGROWTH"
+          },
+          {
+            "event_ticker": "KXEOTRUMPTERM-29JAN20",
+            "title": "How many executive orders will Trump sign in his second term?",
+            "series_ticker": "KXEOTRUMPTERM"
+          },
+          {
+            "event_ticker": "POWER-28",
+            "title": "2028: Who will win the Presidency, House, and Senate?",
+            "series_ticker": "POWER"
+          },
+          {
+            "event_ticker": "KXDSENATESEATS-29",
+            "title": "Democratic Senate Seat Count (2028)",
+            "series_ticker": "KXDSENATESEATS"
+          },
+          {
+            "event_ticker": "CONTROLS-2028",
+            "title": "2028 Senate winner",
+            "series_ticker": "CONTROLS"
+          },
+          {
+            "event_ticker": "CONTROLH-2028",
+            "title": "2028 House winner",
+            "series_ticker": "CONTROLH"
+          },
+          {
+            "event_ticker": "KXUSOPENAIANTH-29JAN29",
+            "title": "Will the U.S. take at least 1% stakes in both OpenAI and Anthropic?",
+            "series_ticker": "KXUSOPENAIANTH"
+          },
+          {
+            "event_ticker": "KXTRUMPRECESSAPPT-29",
+            "title": "Will Trump make a recess appointment?",
+            "series_ticker": "KXTRUMPRECESSAPPT"
+          },
+          {
+            "event_ticker": "KXTREASBUYCRYPTO-26AUG",
+            "title": "Which cryptocurrencies will the Treasury purchase during Trump's term?",
+            "series_ticker": "KXTREASBUYCRYPTO"
+          },
+          {
+            "event_ticker": "KXPARTDGLP1-26AUG",
+            "title": "When will CMS announce the addition of GLP-1 drugs for obesity to Part D?",
+            "series_ticker": "KXPARTDGLP1"
+          },
+          {
+            "event_ticker": "KXGDPUSMAX-28",
+            "title": "Will there be a Trump economic boom?",
+            "series_ticker": "KXGDPUSMAX"
+          },
+          {
+            "event_ticker": "KXGREENLANDPRICE-29JAN21",
+            "title": "How much will the US acquire Greenland for?",
+            "series_ticker": "KXGREENLANDPRICE"
+          },
+          {
+            "event_ticker": "KXAMEND22-29",
+            "title": "Will Trump be allowed to run for a 3rd term?",
+            "series_ticker": "KXAMEND22"
+          },
+          {
+            "event_ticker": "KXUSAEXPANDTERRITORY",
+            "title": "Will the US acquire any new territory?",
+            "series_ticker": "KXUSAEXPANDTERRITORY"
+          },
+          {
+            "event_ticker": "KXTRUMPRESIGN",
+            "title": "Will Trump resign during his term?",
+            "series_ticker": "KXTRUMPRESIGN"
+          },
+          {
+            "event_ticker": "KXTRUMPPARDONS-29JAN21",
+            "title": "Who will Trump pardon?",
+            "series_ticker": "KXTRUMPPARDONS"
+          },
+          {
+            "event_ticker": "KXSCOURT-29",
+            "title": "Who will be the next Supreme Court justice?",
+            "series_ticker": "KXSCOURT"
+          },
+          {
+            "event_ticker": "KXPRESPERSON-28",
+            "title": "2028 U.S. Presidential Election winner?",
+            "series_ticker": "KXPRESPERSON"
+          },
+          {
+            "event_ticker": "KXPRESPARTY-2028",
+            "title": "2028 Presidential Election winner? (Party)",
+            "series_ticker": "KXPRESPARTY"
+          },
+          {
+            "event_ticker": "KXNEXTPRESSEC-29JAN21",
+            "title": "Who will be Trump's next Press Secretary?",
+            "series_ticker": "KXNEXTPRESSEC"
+          },
+          {
+            "event_ticker": "KXMTRUSHMORE-29",
+            "title": "Will Trump add himself to Mt. Rushmore?",
+            "series_ticker": "KXMTRUSHMORE"
+          },
+          {
+            "event_ticker": "KXGREENTERRITORY-29",
+            "title": "Will the US take control of any part of Greenland?",
+            "series_ticker": "KXGREENTERRITORY"
+          },
+          {
+            "event_ticker": "KXCANTERRITORY-29",
+            "title": "Will the US take control of any part of Canada?",
+            "series_ticker": "KXCANTERRITORY"
+          },
+          {
+            "event_ticker": "GOVPARTYDE-28",
+            "title": "Delaware governor winner? (2028)",
+            "series_ticker": "GOVPARTYDE"
+          },
+          {
+            "event_ticker": "KXZELENSKYPUTIN-29",
+            "title": "Will Zelenskyy and Putin speak?",
+            "series_ticker": "KXZELENSKYPUTIN"
+          },
+          {
+            "event_ticker": "KXWITHDRAW-29",
+            "title": "What will the U.S. withdraw from during the Trump Administration?",
+            "series_ticker": "KXWITHDRAW"
+          },
+          {
+            "event_ticker": "KXVETOOVERRIDE-29JAN20",
+            "title": "Will Congress override Trump's veto?",
+            "series_ticker": "KXVETOOVERRIDE"
+          },
+          {
+            "event_ticker": "KXUSAKIM-29",
+            "title": "Will Kim Jong-Un visit the US during Trump's term?",
+            "series_ticker": "KXUSAKIM"
+          },
+          {
+            "event_ticker": "KXTRUMPSNL-29",
+            "title": "Will Trump go on SNL during his second term?",
+            "series_ticker": "KXTRUMPSNL"
+          },
+          {
+            "event_ticker": "KXTRUMPREMOVE",
+            "title": "Will Trump be impeached and removed from office?",
+            "series_ticker": "KXTRUMPREMOVE"
+          },
+          {
+            "event_ticker": "KXTRUMPPARDONFAMILY-29JAN20",
+            "title": "Will the Trump family be pardoned?",
+            "series_ticker": "KXTRUMPPARDONFAMILY"
+          },
+          {
+            "event_ticker": "KXTRUMPAGCOUNT-29",
+            "title": "How many Attorneys General will Trump have?",
+            "series_ticker": "KXTRUMPAGCOUNT"
+          },
+          {
+            "event_ticker": "KXTRILATERAL-29JAN20",
+            "title": "When will Trump, Zelenskyy and Putin meet together?",
+            "series_ticker": "KXTRILATERAL"
+          },
+          {
+            "event_ticker": "KXTERMLIMITS-29",
+            "title": "Will Trump impose term limits on Congress?",
+            "series_ticker": "KXTERMLIMITS"
+          },
+          {
+            "event_ticker": "KXTAFTHARTLEY-29",
+            "title": "Will Trump invoke the Taft-Hartley Act during his presidency?",
+            "series_ticker": "KXTAFTHARTLEY"
+          },
+          {
+            "event_ticker": "KXSTATE51-29",
+            "title": "What will be the 51st state in Trump's term?",
+            "series_ticker": "KXSTATE51"
+          },
+          {
+            "event_ticker": "KXSTATE-29",
+            "title": "Will Trump add a 51st state to the US?",
+            "series_ticker": "KXSTATE"
+          },
+          {
+            "event_ticker": "KXSCOTUSRESIGN-29",
+            "title": "Which Supreme Court justices will resign during Trump's term?",
+            "series_ticker": "KXSCOTUSRESIGN"
+          },
+          {
+            "event_ticker": "KXSCOTUSPOWER-29",
+            "title": "What will the Supreme Court look like at the end of Trump's term?",
+            "series_ticker": "KXSCOTUSPOWER"
+          },
+          {
+            "event_ticker": "KXSCOTUSCHANGE-29",
+            "title": "Will the size of the Supreme Court be changed during Trump's Presidency?",
+            "series_ticker": "KXSCOTUSCHANGE"
+          },
+          {
+            "event_ticker": "KXSCOTUSCERT3RD-29JAN",
+            "title": "Will the Supreme Court hear a 3rd Amendment case before Trump's term ends?",
+            "series_ticker": "KXSCOTUSCERT3RD"
+          },
+          {
+            "event_ticker": "KXRECOGSOMALI-29",
+            "title": "Will Trump recognize Somaliland?",
+            "series_ticker": "KXRECOGSOMALI"
+          },
+          {
+            "event_ticker": "KXRECOGROC-29",
+            "title": "Will Trump recognize Taiwan?",
+            "series_ticker": "KXRECOGROC"
+          },
+          {
+            "event_ticker": "KXNEXTSTATE-29",
+            "title": "Who will be Trump's next Secretary of State?",
+            "series_ticker": "KXNEXTSTATE"
+          },
+          {
+            "event_ticker": "KXNEXTLABORSEC-29",
+            "title": "Who will be Trump's next Secretary of Labor?",
+            "series_ticker": "KXNEXTLABORSEC"
+          },
+          {
+            "event_ticker": "KXNEXTDEF-29",
+            "title": "Who will be Trump's next Secretary of Defense?",
+            "series_ticker": "KXNEXTDEF"
+          },
+          {
+            "event_ticker": "KXNEWSCOTUSCONF-29JAN20",
+            "title": "How many Supreme Court justices will the President confirm?",
+            "series_ticker": "KXNEWSCOTUSCONF"
+          },
+          {
+            "event_ticker": "KXNEWCITY-29",
+            "title": "Will Trump approve a new city on federal land?",
+            "series_ticker": "KXNEWCITY"
+          },
+          {
+            "event_ticker": "KXMARTIAL-29JAN20",
+            "title": "Will Trump impose martial law before his term ends?",
+            "series_ticker": "KXMARTIAL"
+          },
+          {
+            "event_ticker": "KXJAN6CASES",
+            "title": "Will Trump be held liable for January 6th in any court?",
+            "series_ticker": "KXJAN6CASES"
+          },
+          {
+            "event_ticker": "KXINSURRECTION-29",
+            "title": "Will Trump invoke the Insurrection Act?",
+            "series_ticker": "KXINSURRECTION"
+          },
+          {
+            "event_ticker": "KXINDJUDICIARY-29",
+            "title": "Will the independence of the judiciary be weakened during Trump's term?",
+            "series_ticker": "KXINDJUDICIARY"
+          },
+          {
+            "event_ticker": "KXIMPEACHCABINET",
+            "title": "Will a cabinet member be impeached?",
+            "series_ticker": "KXIMPEACHCABINET"
+          },
+          {
+            "event_ticker": "KXIMPEACH-29",
+            "title": "Will President Trump be impeached during his term?",
+            "series_ticker": "KXIMPEACH"
+          },
+          {
+            "event_ticker": "KXHABEAS-29",
+            "title": "Will Trump suspend habeas corpus?",
+            "series_ticker": "KXHABEAS"
+          },
+          {
+            "event_ticker": "KXH1B-29",
+            "title": "Will Trump expand the H-1B program?",
+            "series_ticker": "KXH1B"
+          },
+          {
+            "event_ticker": "KXGREENLAND-29",
+            "title": "Will Trump buy at least part of Greenland?",
+            "series_ticker": "KXGREENLAND"
+          },
+          {
+            "event_ticker": "KXFTAPRC-29",
+            "title": "Will the U.S. enact a free trade agreement with China?",
+            "series_ticker": "KXFTAPRC"
+          },
+          {
+            "event_ticker": "KXFTA-29",
+            "title": "Will the U.S. enact a free trade agreement?",
+            "series_ticker": "KXFTA"
+          },
+          {
+            "event_ticker": "KXFREEIVF-29",
+            "title": "Will Trump make IVF free?",
+            "series_ticker": "KXFREEIVF"
+          },
+          {
+            "event_ticker": "KXFEDEND-29",
+            "title": "Will Trump end the Federal Reserve?",
+            "series_ticker": "KXFEDEND"
+          },
+          {
+            "event_ticker": "KXDOED-29",
+            "title": "Will Trump abolish the Department of Education?",
+            "series_ticker": "KXDOED"
+          },
+          {
+            "event_ticker": "KXCONSTAMEND-29",
+            "title": "Will a new Constitutional Amendment be added during Trump's term?",
+            "series_ticker": "KXCONSTAMEND"
+          },
+          {
+            "event_ticker": "KXCAPCONTROL-29",
+            "title": "Will Trump impose capital controls?",
+            "series_ticker": "KXCAPCONTROL"
+          },
+          {
+            "event_ticker": "KXCANAL-29",
+            "title": "Will Trump take back the Panama Canal?",
+            "series_ticker": "KXCANAL"
+          },
+          {
+            "event_ticker": "KXCABOUT-26MAY22",
+            "title": "Who will leave Trump's Cabinet next?",
+            "series_ticker": "KXCABOUT"
+          },
+          {
+            "event_ticker": "KXAMEND25-29",
+            "title": "Will Section IV of the 25th Amendment be used during Trump's Presidency?",
+            "series_ticker": "KXAMEND25"
+          },
+          {
+            "event_ticker": "KXAGENCYELIM-29",
+            "title": "Which agencies will Trump eliminate?",
+            "series_ticker": "KXAGENCYELIM"
+          },
+          {
+            "event_ticker": "KXACAREPEAL-29",
+            "title": "Will Obamacare be repealed before 2029?",
+            "series_ticker": "KXACAREPEAL"
+          },
+          {
+            "event_ticker": "KXABRAHAMSY-29",
+            "title": "Will Israel and Syria normalize relations during Trump's term?",
+            "series_ticker": "KXABRAHAMSY"
+          },
+          {
+            "event_ticker": "KXABRAHAMSA-29",
+            "title": "Will Israel and Saudi Arabia normalize relations during Trump's term?",
+            "series_ticker": "KXABRAHAMSA"
+          },
+          {
+            "event_ticker": "KXABRAHAMQ-29",
+            "title": "Will Israel and Qatar normalize relations during Trump's term?",
+            "series_ticker": "KXABRAHAMQ"
+          },
+          {
+            "event_ticker": "GOVPARTYWV-28",
+            "title": "West Virginia governor winner? (2028)",
+            "series_ticker": "GOVPARTYWV"
+          },
+          {
+            "event_ticker": "GOVPARTYMO-28",
+            "title": "Missouri governor winner? (2028)",
+            "series_ticker": "GOVPARTYMO"
+          },
+          {
+            "event_ticker": "GOVPARTYIN-28",
+            "title": "Indiana Governor winner? (2028)",
+            "series_ticker": "GOVPARTYIN"
+          },
+          {
+            "event_ticker": "KXU3EOY-29JAN05",
+            "title": "US unemployment rate at year-end 2028",
+            "series_ticker": "KXU3EOY"
+          },
+          {
+            "event_ticker": "KXLFPRATEEOY-29JAN05",
+            "title": "US labor force participation rate at year-end 2028",
+            "series_ticker": "KXLFPRATEEOY"
+          },
+          {
+            "event_ticker": "GOVPARTYNH-28",
+            "title": "New Hampshire Governor winner?",
+            "series_ticker": "GOVPARTYNH"
+          },
+          {
+            "event_ticker": "POPVOTEMOV-28NOV07",
+            "title": "2028 popular vote margin of victory?",
+            "series_ticker": "POPVOTEMOV"
+          },
+          {
+            "event_ticker": "KXJUDGMENT-NPS29",
+            "title": "Will SCOTUS end the White House ballroom injunction?",
+            "series_ticker": "KXJUDGMENT"
+          },
+          {
+            "event_ticker": "KXHOWMANYUKPM-29JAN",
+            "title": "How many people will serve as Prime Minister of the UK before 2029?",
+            "series_ticker": "KXHOWMANYUKPM"
+          },
+          {
+            "event_ticker": "KXAPPLEOPENAICASE-29",
+            "title": "Will Apple win its case against OpenAI?",
+            "series_ticker": "KXAPPLEOPENAICASE"
+          },
+          {
+            "event_ticker": "KXAMAZONADS-29",
+            "title": "Will Amazon win the FTC ad surcharge lawsuit?",
+            "series_ticker": "KXAMAZONADS"
+          },
+          {
+            "event_ticker": "ECMOV-28NOV07",
+            "title": "2028 Electoral College margin of victory?",
+            "series_ticker": "ECMOV"
+          },
+          {
+            "event_ticker": "KXFEDFUNDSYEAR-29JAN01",
+            "title": "Fed funds rate at end of 2028",
+            "series_ticker": "KXFEDFUNDSYEAR"
+          },
+          {
+            "event_ticker": "KXTXURI-28DEC31",
+            "title": "Will the average minimum temperature in Texas (DFW & IAH) fall below 20\u00b0F for at least 2 days within a 4-day span?",
+            "series_ticker": "KXTXURI"
+          },
+          {
+            "event_ticker": "SENATEIN-28",
+            "title": "Indiana Senate winner? (2028)",
+            "series_ticker": "SENATEIN"
+          },
+          {
+            "event_ticker": "GOVPARTYVT-28",
+            "title": "Vermont Governor Winner? (2028)",
+            "series_ticker": "GOVPARTYVT"
+          },
+          {
+            "event_ticker": "SENATEWI-28",
+            "title": "Wisconsin Senate winner? (2028)",
+            "series_ticker": "SENATEWI"
+          },
+          {
+            "event_ticker": "SENATEWA-28",
+            "title": "Washington Senate winner? (2028)",
+            "series_ticker": "SENATEWA"
+          },
+          {
+            "event_ticker": "SENATEVT-28",
+            "title": "Vermont Senate winner? (2028)",
+            "series_ticker": "SENATEVT"
+          },
+          {
+            "event_ticker": "SENATEUT-28",
+            "title": "Utah Senate winner? (2028)",
+            "series_ticker": "SENATEUT"
+          },
+          {
+            "event_ticker": "SENATESD-28",
+            "title": "South Dakota Senate winner? (2028)",
+            "series_ticker": "SENATESD"
+          },
+          {
+            "event_ticker": "SENATESC-28",
+            "title": "South Carolina Senate winner? (2028)",
+            "series_ticker": "SENATESC"
+          },
+          {
+            "event_ticker": "SENATEPA-28",
+            "title": "Pennsylvania Senate winner? (2028)",
+            "series_ticker": "SENATEPA"
+          },
+          {
+            "event_ticker": "SENATEOR-28",
+            "title": "Oregon Senate winner? (2028)",
+            "series_ticker": "SENATEOR"
+          },
+          {
+            "event_ticker": "SENATEOK-28",
+            "title": "Oklahoma Senate winner? (2028)",
+            "series_ticker": "SENATEOK"
+          },
+          {
+            "event_ticker": "SENATEOH-28",
+            "title": "Ohio Senate winner? (2028)",
+            "series_ticker": "SENATEOH"
+          },
+          {
+            "event_ticker": "SENATENY-28",
+            "title": "New York Senate winner? (2028)",
+            "series_ticker": "SENATENY"
+          },
+          {
+            "event_ticker": "SENATENV-28",
+            "title": "Nevada Senate winner? (2028)",
+            "series_ticker": "SENATENV"
+          },
+          {
+            "event_ticker": "SENATENH-28",
+            "title": "New Hampshire Senate winner? (2028)",
+            "series_ticker": "SENATENH"
+          },
+          {
+            "event_ticker": "SENATEND-28",
+            "title": "North Dakota Senate winner? (2028)",
+            "series_ticker": "SENATEND"
+          },
+          {
+            "event_ticker": "SENATENC-28",
+            "title": "North Carolina Senate winner? (2028)",
+            "series_ticker": "SENATENC"
+          },
+          {
+            "event_ticker": "SENATEMO-28",
+            "title": "Missouri Senate winner? (2028)",
+            "series_ticker": "SENATEMO"
+          },
+          {
+            "event_ticker": "SENATEMD-28",
+            "title": "Maryland Senate winner? (2028)",
+            "series_ticker": "SENATEMD"
+          },
+          {
+            "event_ticker": "SENATELA-28",
+            "title": "Louisiana Senate winner? (2028)",
+            "series_ticker": "SENATELA"
+          },
+          {
+            "event_ticker": "SENATEKS-28",
+            "title": "Kansas Senate winner? (2028)",
+            "series_ticker": "SENATEKS"
+          },
+          {
+            "event_ticker": "SENATEIL-28",
+            "title": "Illinois Senate winner? (2028)",
+            "series_ticker": "SENATEIL"
+          },
+          {
+            "event_ticker": "SENATEID-28",
+            "title": "Idaho Senate winner? (2028)",
+            "series_ticker": "SENATEID"
+          },
+          {
+            "event_ticker": "SENATEIA-28",
+            "title": "Iowa Senate winner? (2028)",
+            "series_ticker": "SENATEIA"
+          },
+          {
+            "event_ticker": "SENATEHI-28",
+            "title": "Hawaii Senate winner? (2028)",
+            "series_ticker": "SENATEHI"
+          },
+          {
+            "event_ticker": "SENATEGA-28",
+            "title": "Georgia Senate winner? (2028)",
+            "series_ticker": "SENATEGA"
+          },
+          {
+            "event_ticker": "SENATEFL-28",
+            "title": "Florida Senate winner? (2028)",
+            "series_ticker": "SENATEFL"
+          },
+          {
+            "event_ticker": "SENATECT-28",
+            "title": "Connecticut Senate winner? (2028)",
+            "series_ticker": "SENATECT"
+          },
+          {
+            "event_ticker": "SENATECO-28",
+            "title": "Colorado Senate winner? (2028)",
+            "series_ticker": "SENATECO"
+          },
+          {
+            "event_ticker": "SENATECA-28",
+            "title": "California Senate winner? (2028)",
+            "series_ticker": "SENATECA"
+          },
+          {
+            "event_ticker": "SENATEAZ-28",
+            "title": "Arizona Senate winner? (2028)",
+            "series_ticker": "SENATEAZ"
+          },
+          {
+            "event_ticker": "SENATEAR-28",
+            "title": "Arkansas Senate winner? (2028)",
+            "series_ticker": "SENATEAR"
+          },
+          {
+            "event_ticker": "SENATEAL-28-2",
+            "title": "Alabama Senate winner? (2028)",
+            "series_ticker": "SENATEAL"
+          },
+          {
+            "event_ticker": "SENATEAK-28",
+            "title": "Alaska Senate winner? (2028)",
+            "series_ticker": "SENATEAK"
+          },
+          {
+            "event_ticker": "GOVPARTYUT-28",
+            "title": "Utah governor winner? (2028)",
+            "series_ticker": "GOVPARTYUT"
+          },
+          {
+            "event_ticker": "GOVPARTYMT-28",
+            "title": "Montana governor winner? (2028)",
+            "series_ticker": "GOVPARTYMT"
+          },
+          {
+            "event_ticker": "KXTVSEASONANNOUNCEEUP-JAN",
+            "title": "Euphoria: New season announcement date",
+            "series_ticker": "KXTVSEASONANNOUNCEEUP"
+          },
+          {
+            "event_ticker": "KXSINNERFINISH-29",
+            "title": "Jannik Sinner to Complete Tennis by 2028",
+            "series_ticker": "KXSINNERFINISH"
+          },
+          {
+            "event_ticker": "KXRECNCBILL-26JUL",
+            "title": "When will a reconciliation bill become law?",
+            "series_ticker": "KXRECNCBILL"
+          },
+          {
+            "event_ticker": "KXQUEBEC-29",
+            "title": "Will a date be announced for another Quebec Referendum before 2029?",
+            "series_ticker": "KXQUEBEC"
+          },
+          {
+            "event_ticker": "KXPUTINZELMEET-29JAN01",
+            "title": "When will Putin and Zelenskyy meet?",
+            "series_ticker": "KXPUTINZELMEET"
+          },
+          {
+            "event_ticker": "KXPUTINDJTLOCATION-29",
+            "title": "Where will Trump and Putin next meet?",
+            "series_ticker": "KXPUTINDJTLOCATION"
+          },
+          {
+            "event_ticker": "KXOBERGEFELL-29",
+            "title": "Will the Supreme Court overturn gay marriage?",
+            "series_ticker": "KXOBERGEFELL"
+          },
+          {
+            "event_ticker": "KXNETWORTHROYLEE-29",
+            "title": "Will Roy Lee become a billionaire before 2029?",
+            "series_ticker": "KXNETWORTHROYLEE"
+          },
+          {
+            "event_ticker": "KXNCAAFCOACHLEAVE-26GSCH",
+            "title": "When will Greg Schiano leave Rutgers?",
+            "series_ticker": "KXNCAAFCOACHLEAVE"
+          },
+          {
+            "event_ticker": "KXNBAJOINCONF-29MIN",
+            "title": "Will Minnesota join the Eastern Conference before the 2028-29 regular season?",
+            "series_ticker": "KXNBAJOINCONF"
+          },
+          {
+            "event_ticker": "KXMOVIECAST-XMAN29",
+            "title": "X-Men: Cast",
+            "series_ticker": "KXMOVIECAST"
+          },
+          {
+            "event_ticker": "KXMOVIECAST-PIR29",
+            "title": "Next Pirates of the Caribbean Movie: Cast",
+            "series_ticker": "KXMOVIECAST"
+          },
+          {
+            "event_ticker": "KXMETAANTITRUST-FTC29",
+            "title": "FTC antitrust case against Meta revived on appeal?",
+            "series_ticker": "KXMETAANTITRUST"
+          },
+          {
+            "event_ticker": "KXIPOPERPLEXITY-DATE",
+            "title": "When will Perplexity officially announce an IPO?",
+            "series_ticker": "KXIPOPERPLEXITY"
+          },
+          {
+            "event_ticker": "KXHARVARDFUNDAPPEAL-HHS29",
+            "title": "First Circuit fully affirms Harvard funding ruling?",
+            "series_ticker": "KXHARVARDFUNDAPPEAL"
+          },
+          {
+            "event_ticker": "KXFEDGOVNOM-29",
+            "title": "When will Trump nominate a Federal Reserve governor?",
+            "series_ticker": "KXFEDGOVNOM"
+          },
+          {
+            "event_ticker": "KXDEFAULT-28DEC31",
+            "title": "US defaults before 2029?",
+            "series_ticker": "KXDEFAULT"
+          },
+          {
+            "event_ticker": "KXCLUBWCHOST-2029",
+            "title": "Who will host the 2029 Men's FIFA Club World Cup?",
+            "series_ticker": "KXCLUBWCHOST"
+          },
+          {
+            "event_ticker": "KXCABLEAVE-26MAY22",
+            "title": "When will a member of Trump's Cabinet leave?",
+            "series_ticker": "KXCABLEAVE"
+          },
+          {
+            "event_ticker": "KXBANTRANS-26",
+            "title": "Will US Supreme Court ban transgender girls and women from competing on female sports teams?",
+            "series_ticker": "KXBANTRANS"
+          },
+          {
+            "event_ticker": "KXAVGMEASLESDJT-29",
+            "title": "What will the average number of measles cases be during Trump's term?",
+            "series_ticker": "KXAVGMEASLESDJT"
+          },
+          {
+            "event_ticker": "KXALBUMRELEASEDATE-NEWJON",
+            "title": "When will The Jonas Brothers release new album?",
+            "series_ticker": "KXALBUMRELEASEDATE"
+          },
+          {
+            "event_ticker": "GOVPARTYNC-28",
+            "title": "North Carolina governor winner? (2028)",
+            "series_ticker": "GOVPARTYNC"
+          },
+          {
+            "event_ticker": "KXSERBIAPM-27DEC31",
+            "title": "Prime Minister of Serbia after the next election?",
+            "series_ticker": "KXSERBIAPM"
+          },
+          {
+            "event_ticker": "KXPUTINZELENSKYYLOCATION-28",
+            "title": "Where will Putin and Zelenskyy next meet?",
+            "series_ticker": "KXPUTINZELENSKYYLOCATION"
+          },
+          {
+            "event_ticker": "KXINEQUALITY-28",
+            "title": "Will Trump reduce inequality in the US?",
+            "series_ticker": "KXINEQUALITY"
+          },
+          {
+            "event_ticker": "KXGHANAPRES-28",
+            "title": "Ghana presidential election winner?",
+            "series_ticker": "KXGHANAPRES"
+          },
+          {
+            "event_ticker": "KXEARTHQUAKECALIFORNIA-28",
+            "title": "Will there be an at least 8.0 magnitude earthquake in California before 2028?",
+            "series_ticker": "KXEARTHQUAKECALIFORNIA"
+          },
+          {
+            "event_ticker": "KXDEMOCRACYUS-28",
+            "title": "How much will US democracy weaken under Trump?",
+            "series_ticker": "KXDEMOCRACYUS"
+          },
+          {
+            "event_ticker": "KXITALYPM-27DEC22",
+            "title": "Who will become Prime Minister of Italy following the next general election?",
+            "series_ticker": "KXITALYPM"
+          },
+          {
+            "event_ticker": "KXNETFLIXSTUDIO-PHASE1B",
+            "title": "Will Netflix Studios Fort Monmouth Phase 1B be completed before winter 2028?",
+            "series_ticker": "KXNETFLIXSTUDIO"
+          }
+        ]
+      }
+    }
+  ]
+}
