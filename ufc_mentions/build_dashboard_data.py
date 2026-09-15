@@ -162,6 +162,7 @@ def build_upcoming_events(today: str | None = None) -> list[dict]:
             "entry_deadline": event.get("entry_deadline", ""),
             "entry_deadline_source": event.get("entry_deadline_source", ""),
             "entry_deadline_note": event.get("entry_deadline_note", ""),
+            "presentation": event.get("presentation") or {},
         })
     return sorted(out, key=lambda e: e["date"])
 
@@ -1091,6 +1092,7 @@ def merge_scheduled_cards(cards: list[dict], upcoming: list[dict]) -> list[dict]
                 if card.get("event_date") == event["date"]:
                     for field in ("source_url", "entry_deadline", "entry_deadline_source", "entry_deadline_note"):
                         card[field] = event.get(field, "")
+                    card["presentation"] = event.get("presentation") or {}
             continue
         cards.append({
             "card_id": f"schedule:{event['date']}", "card_title": event["name"],
@@ -1099,6 +1101,7 @@ def merge_scheduled_cards(cards: list[dict], upcoming: list[dict]) -> list[dict]
             "entry_deadline": event.get("entry_deadline", ""),
             "entry_deadline_source": event.get("entry_deadline_source", ""),
             "entry_deadline_note": event.get("entry_deadline_note", ""),
+            "presentation": event.get("presentation") or {},
             "source_note": "Published schedule; Kalshi mention markets not listed yet.",
             "has_kalshi_card_title": False, "fight_count": 0, "tradable_fight_count": 0,
             "phrase_count": 0, "priced_count": 0, "model_ready_count": 0,

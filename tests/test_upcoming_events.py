@@ -36,6 +36,19 @@ DETAIL = """
 <div class="field--name-fight-card-time-early"><time datetime="2026-09-19T17:30:00Z">5:30 PM</time></div></div>
 <a href="/news/updates-cryptocom-ufc-331-van-vs-pantoja-2">Updates To Crypto.com UFC 331</a>
 """
+PRESENTATION = """
+<div class="c-hero__image"><img src="https://ufc.com/images/styles/background_image_sm/s3/2026-08/card.jpg?itok=verified"
+ alt="Joshua Van &amp; Alexandre Pantoja side by side" /></div>
+<div class="c-listing-fight">
+<div class="c-listing-fight__class-text">Flyweight Title Bout</div>
+<div class="c-listing-fight__corner-name--red"><a href="/athlete/joshua-van">
+<span>Joshua</span> <span>Van</span></a></div>
+<div class="c-listing-fight__corner-image--red"><img src="https://ufc.com/images/styles/portrait/s3/van.png" alt="Joshua Van" /></div>
+<div class="c-listing-fight__corner-name--blue"><a href="/athlete/alexandre-pantoja">
+<span>Alexandre</span> <span>Pantoja</span></a></div>
+<div class="c-listing-fight__corner-image--blue"><img src="https://ufc.com/images/styles/portrait/s3/pantoja.png" alt="Alexandre Pantoja" /></div>
+</div>
+"""
 UPDATE = """
 <h1>Updates To Crypto.com UFC 331: Van vs Pantoja 2</h1>
 <article><p>Don't miss a moment of Crypto.com UFC 331: Van vs Pantoja 2,
@@ -67,6 +80,108 @@ def test_detail_uses_earliest_prelim_epoch_never_local_clock_marked_z():
     assert detail["entry_deadline"] == "2026-09-19T21:30:00+00:00"
     assert detail["entry_deadline_source"] == EVENT_URL
     assert detail["update_urls"] == [UPDATE_URL]
+
+
+def test_event_art_and_headliners_come_from_the_matching_official_fight():
+    presentation = parse_event_page(DETAIL + PRESENTATION, EVENT_URL)["presentation"]
+    assert presentation["source_url"] == EVENT_URL
+    assert presentation["artwork"] == {
+        "url": "https://ufc.com/images/styles/background_image_sm/s3/2026-08/card.jpg?itok=verified",
+        "alt": "Joshua Van & Alexandre Pantoja side by side",
+    }
+    assert [fighter["name"] for fighter in presentation["headliners"]] == ["Joshua Van", "Alexandre Pantoja"]
+    assert [fighter["display_name"] for fighter in presentation["headliners"]] == ["Van", "Pantoja"]
+    assert presentation["headliners"][0]["athlete_url"] == "https://www.ufc.com/athlete/joshua-van"
+    assert presentation["headliners"][1]["image_url"] == "https://ufc.com/images/styles/portrait/s3/pantoja.png"
+    assert presentation["bout_label"] == "Flyweight Title Bout"
+    assert presentation["is_title_bout"] is True
+
+
+def test_numbered_card_is_not_itself_evidence_of_a_title_bout():
+    detail = parse_event_page(DETAIL, EVENT_URL)
+    assert detail["presentation"] == {}
+    presentation = parse_event_page(DETAIL + PRESENTATION.replace("Flyweight Title Bout", "Flyweight Bout"), EVENT_URL)["presentation"]
+    assert presentation["is_title_bout"] is False
+    assert presentation["bout_label"] == "Flyweight Bout"
+
+
+def test_unmatched_card_headline_does_not_borrow_other_fighters_or_titles():
+    presentation = parse_event_page(DETAIL.replace("Pantoja 2", "Silva") + PRESENTATION, EVENT_URL)["presentation"]
+    assert "artwork" in presentation
+    assert "headliners" not in presentation
+    assert "is_title_bout" not in presentation
+    assert "bout_label" not in presentation
+
+
+def test_untrusted_or_malformed_art_is_omitted_without_losing_start_time():
+    for replacement in ("https://ufc.com.evil.test/images/", "https://evil.test/images/", "http://ufc.com/images/", "javascript:alert(1)/", "https://ufc.com@evil.test/images/", "https://[broken/images/", "https://ufc.com:999/images/"):
+        detail = parse_event_page(DETAIL + PRESENTATION.replace("https://ufc.com/images/", replacement), EVENT_URL)
+        assert "artwork" not in detail["presentation"]
+        assert all("image_url" not in fighter for fighter in detail["presentation"]["headliners"])
+        assert detail["entry_deadline"] == "2026-09-19T21:30:00+00:00"
+
+
+def test_mixed_official_page_keeps_images_scoped_to_the_hero_and_headliners():
+    unrelated = '<img src="https://ufc.com/images/unrelated.jpg" alt="Other fighter" />'
+    detail = parse_event_page(unrelated + DETAIL + PRESENTATION, EVENT_URL)
+    assert "card.jpg" in detail["presentation"]["artwork"]["url"]
+    assert "unrelated" not in json.dumps(detail["presentation"])
+
+
+def test_artwork_uses_an_actual_desktop_srcset_url_not_a_guessed_variant():
+    sources = """<source width="2000" srcset="https://ufc.com/images/large.jpg?itok=a 1x, https://ufc.com/images/large2.jpg 2x" />
+    <source width="1200" srcset="https://ufc.com/images/desktop.jpg?itok=b 1x, https://ufc.com/images/desktop2.jpg 2x" />
+    <source width="992" srcset="https://ufc.com/images/tablet.jpg 1x" />"""
+    html = PRESENTATION.replace('<div class="c-hero__image">', '<div class="c-hero__image">' + sources)
+    presentation = parse_event_page(DETAIL + html, EVENT_URL)["presentation"]
+    assert presentation["artwork"]["url"] == "https://ufc.com/images/desktop.jpg?itok=b"
+
+
+def test_missing_portraits_do_not_create_placeholder_people():
+    html = PRESENTATION.replace('src="https://ufc.com/images/styles/portrait/s3/van.png"', "")
+    presentation = parse_event_page(DETAIL + html, EVENT_URL)["presentation"]
+    assert presentation["headliners"][0] == {"name": "Joshua Van", "display_name": "Van", "athlete_url": "https://www.ufc.com/athlete/joshua-van"}
+
+
+def test_headliner_display_name_uses_the_ufc_billing_not_assumed_name_order():
+    html = (DETAIL + PRESENTATION).replace("Pantoja 2", "Wang 2").replace(
+        "<span>Alexandre</span> <span>Pantoja</span>", "<span>Wang</span> <span>Cong</span>")
+    presentation = parse_event_page(html, EVENT_URL)["presentation"]
+    assert presentation["headliners"][1]["name"] == "Wang Cong"
+    assert presentation["headliners"][1]["display_name"] == "Wang"
+
+
+def test_headliner_display_name_keeps_suffix_punctuation_and_full_billing():
+    html = (DETAIL + PRESENTATION).replace("Van", "Rosas Jr.").replace("Joshua", "Raul")
+    presentation = parse_event_page(html, EVENT_URL)["presentation"]
+    assert presentation["headliners"][0]["name"] == "Raul Rosas Jr."
+    assert presentation["headliners"][0]["display_name"] == "Rosas Jr."
+
+
+def test_malformed_optional_athlete_link_does_not_break_the_card_deadline():
+    html = PRESENTATION.replace('href="/athlete/joshua-van"', 'href="https://[broken/athlete/joshua-van"')
+    detail = parse_event_page(DETAIL + html, EVENT_URL)
+    assert detail["entry_deadline"] == "2026-09-19T21:30:00+00:00"
+    assert "athlete_url" not in detail["presentation"]["headliners"][0]
+    assert detail["presentation"]["headliners"][0]["name"] == "Joshua Van"
+
+
+def test_headline_matching_is_whole_words_not_part_of_someone_elses_name():
+    presentation = parse_event_page(DETAIL.replace("Pantoja 2", "Pant") + PRESENTATION, EVENT_URL)["presentation"]
+    assert "headliners" not in presentation
+
+
+def test_headliner_matching_allows_published_given_name_and_accents():
+    html = (DETAIL + PRESENTATION).replace("Van", "V\u00e1n").replace("Pantoja 2", "Alexandre")
+    presentation = parse_event_page(html, EVENT_URL)["presentation"]
+    assert [fighter["name"] for fighter in presentation["headliners"]] == ["Joshua V\u00e1n", "Alexandre Pantoja"]
+
+
+def test_schedule_refresh_passes_through_presentation_without_creating_markets():
+    pages = {SOURCE: SCHEDULE, EVENT_URL: DETAIL + PRESENTATION, UPDATE_URL: UPDATE}
+    event, = fetch_schedule(fetch_html=pages.__getitem__, today=date(2026, 9, 15))["events"]
+    assert event["presentation"]["is_title_bout"] is True
+    assert "fights" not in event
 
 
 def test_main_card_time_alone_is_not_an_entry_deadline():

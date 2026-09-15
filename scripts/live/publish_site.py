@@ -95,7 +95,18 @@ def stage_site(site: Path) -> None:
     (site / ".nojekyll").write_text("", encoding="utf-8")
 
 
+def page_source_is_clean() -> bool:
+    files = [f"dashboard/{name}" for name in ["index.html", *SITE_FILES] if name != "data.js"]
+    result = subprocess.run(
+        ["git", "-C", str(ROOT), "status", "--porcelain", "--untracked-files=all", "--", *files],
+        check=True, capture_output=True, text=True,
+    )
+    return not result.stdout.strip()
+
+
 def publish(quiet: bool = False) -> str:
+    if not page_source_is_clean():
+        return "page changes are uncommitted; keeping the published site"
     data_file = DASHBOARD / "data.js"
     if not data_file.exists():
         return "no data.js yet; nothing to publish"

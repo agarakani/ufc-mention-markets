@@ -4,6 +4,7 @@ import shutil
 import tempfile
 import time
 import unittest
+from types import SimpleNamespace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -20,6 +21,27 @@ from scripts.live.publish_site import (
     stage_site,
     static_index,
 )
+
+
+def test_publication_waits_for_committed_page_assets(monkeypatch):
+    from scripts.live import publish_site
+    calls = []
+
+    def changed(cmd, **kwargs):
+        calls.append(cmd)
+        return SimpleNamespace(stdout=" M dashboard/styles.css\n")
+
+    monkeypatch.setattr(publish_site.subprocess, "run", changed)
+    assert publish_site.publish(quiet=True) == "page changes are uncommitted; keeping the published site"
+    assert len(calls) == 1
+    assert "dashboard/styles.css" in calls[0]
+    assert "dashboard/data.js" not in calls[0]
+
+
+def test_generated_snapshot_does_not_block_publication(monkeypatch):
+    from scripts.live import publish_site
+    monkeypatch.setattr(publish_site.subprocess, "run", lambda *args, **kwargs: SimpleNamespace(stdout=""))
+    assert publish_site.page_source_is_clean()
 
 
 class PublishIntervalTests(unittest.TestCase):

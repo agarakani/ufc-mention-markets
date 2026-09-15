@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import re
+import unicodedata
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
@@ -87,11 +88,78 @@ def _timestamp(value: str) -> datetime | None:
 
 
 def _official_url(href: str, base: str, path: str) -> str:
-    url = urljoin(base, href)
-    parsed = urlparse(url)
-    if parsed.scheme != "https" or parsed.hostname not in {"www.ufc.com", "ufc.com"}:
-        return ""
-    return url if parsed.path.startswith(path) else ""
+    try:
+        url = urljoin(base, href)
+        parsed = urlparse(url)
+        if (parsed.scheme == "https" and parsed.hostname in {"www.ufc.com", "ufc.com"}
+                and not parsed.username and not parsed.password and parsed.port in {None, 443}
+                and parsed.path.startswith(path)):
+            return url
+    except ValueError:
+        pass
+    return ""
+
+
+def _name_words(value: str) -> str:
+    value = unicodedata.normalize("NFKD", value.casefold())
+    value = "".join(char for char in value if not unicodedata.combining(char))
+    return " ".join(re.findall(r"[^\W\d_]+", value))
+
+
+def _presentation(root: _Element, source_url: str, matchup: str) -> dict:
+    presentation = {}
+    hero = _first(root, cls="c-hero__image")
+    image = _first(hero, tag="img") if hero else None
+    if image:
+        image_url = _official_url(image.attrs.get("src", ""), source_url, "/images/")
+        # Use a published desktop variant when available, never rewrite CDN URLs.
+        variants = []
+        for source in _nodes(hero, tag="source"):
+            width = source.attrs.get("width", "")
+            if not width.isdigit() or not 1024 <= int(width) <= 2000:
+                continue
+            candidate = source.attrs.get("srcset", "").split(",")[0].split()
+            url = _official_url(candidate[0], source_url, "/images/") if candidate else ""
+            if url:
+                variants.append((int(width), url))
+        if variants:
+            image_url = min(variants)[1]
+        if image_url:
+            presentation["artwork"] = {"url": image_url, "alt": image.attrs.get("alt", "")}
+
+    display_names = [re.sub(r"\s+\d+$", "", name.strip())
+                     for name in re.split(r"\s+vs\.?\s+", matchup, flags=re.I)]
+    sides = [_name_words(name) for name in display_names]
+    if len(sides) == 2 and all(name and name != "tbd" for name in sides):
+        for fight in _nodes(root, cls="c-listing-fight"):
+            headliners = []
+            for side, headline, display_name in zip(("red", "blue"), sides, display_names):
+                corner = _first(fight, cls=f"c-listing-fight__corner-name--{side}")
+                name = _text(corner)
+                if not name or f" {headline} " not in f" {_name_words(name)} ":
+                    break
+                fighter = {"name": name, "display_name": display_name}
+                link = _first(corner, tag="a")
+                athlete_url = _official_url(link.attrs.get("href", ""), source_url, "/athlete/") if link else ""
+                if athlete_url:
+                    fighter["athlete_url"] = athlete_url
+                portrait = _first(fight, cls=f"c-listing-fight__corner-image--{side}")
+                image = _first(portrait, tag="img") if portrait else None
+                image_url = _official_url(image.attrs.get("src", ""), source_url, "/images/") if image else ""
+                if image_url:
+                    fighter.update(image_url=image_url, image_alt=image.attrs.get("alt", ""))
+                headliners.append(fighter)
+            if len(headliners) != 2:
+                continue
+            presentation["headliners"] = headliners
+            label = _text(_first(fight, cls="c-listing-fight__class-text"))
+            if label:
+                presentation["bout_label"] = label
+                presentation["is_title_bout"] = bool(re.search(r"\btitle bout\b", label, re.I))
+            break
+    if presentation:
+        presentation["source_url"] = source_url
+    return presentation
 
 
 def parse_schedule(html: str) -> list[dict]:
@@ -152,6 +220,7 @@ def parse_event_page(html: str, source_url: str) -> dict:
         "entry_deadline": deadline,
         "entry_deadline_source": source_url if deadline else None,
         "update_urls": update_urls,
+        "presentation": _presentation(root, source_url, matchup),
     }
 
 
@@ -230,6 +299,8 @@ def fetch_schedule(
             continue
         if detail["name"]:
             event["name"] = detail["name"]
+        if detail["presentation"]:
+            event["presentation"] = detail["presentation"]
         starts = [(event["entry_deadline"], event["entry_deadline_source"]),
                   (detail["entry_deadline"], detail["entry_deadline_source"])]
         update_failed = False

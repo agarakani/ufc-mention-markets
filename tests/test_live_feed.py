@@ -24,6 +24,40 @@ def test_schedule_does_not_duplicate_card_already_on_kalshi():
     assert merged[0]["fights"] == [{"event_ticker": "E"}]
 
 
+def test_presentation_survives_both_scheduled_and_kalshi_card_paths(monkeypatch):
+    presentation = {"source_url": "https://www.ufc.com/event/example",
+                    "artwork": {"url": "https://ufc.com/images/card.jpg", "alt": "Official art"},
+                    "headliners": [{"name": "Fighter One"}, {"name": "Fighter Two"}],
+                    "bout_label": "Flyweight Title Bout", "is_title_bout": True}
+    monkeypatch.setattr(bd, "read_json", lambda path: {"events": [{"name": "UFC 999", "date": "2099-09-19", "presentation": presentation}]})
+    upcoming = bd.build_upcoming_events(today="2099-09-01")
+    assert upcoming[0]["presentation"] == presentation
+    scheduled = bd.merge_scheduled_cards([], upcoming)
+    assert scheduled[0]["presentation"] == presentation
+    assert scheduled[0]["fights"] == []
+    existing = [{"card_id": "KX:2099-09-19", "event_date": "2099-09-19", "card_title": "UFC 999", "has_kalshi_card_title": True, "fights": [{"event_ticker": "E"}]}]
+    merged = bd.merge_scheduled_cards(existing, upcoming)
+    assert merged[0]["presentation"] == presentation
+    assert merged[0]["fights"] == existing[0]["fights"]
+
+
+def test_cloud_schedule_keeps_official_art_when_no_mentions_are_listed(monkeypatch):
+    from types import SimpleNamespace
+
+    from scripts.live import cloud_refresh
+
+    presentation = {"source_url": "https://www.ufc.com/event/example",
+                    "artwork": {"url": "https://ufc.com/images/card.jpg", "alt": "Official art"}}
+    schedule = {"events": [{"name": "UFC 999", "date": "2099-09-19", "presentation": presentation}]}
+    monkeypatch.setattr(cloud_refresh, "fetch_schedule", lambda: schedule)
+    client = SimpleNamespace(scan_events=lambda **kwargs: [])
+    payload = {"kalshi": [], "fighters": {}, "tapes": [], "trades": []}
+    result = cloud_refresh.refresh_catalog(payload, client, "2099-09-15T00:00:00Z")
+    assert result["upcoming_events"][0]["presentation"] == presentation
+    assert result["kalshi_cards"][0]["presentation"] == presentation
+    assert result["kalshi_cards"][0]["fights"] == []
+
+
 def test_missing_identity_adds_only_recorded_name_never_guessed_stats():
     fighters = {"known": {"name": "Known", "wins": 3}}
     before = copy.deepcopy(fighters)
