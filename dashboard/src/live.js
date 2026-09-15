@@ -13,6 +13,31 @@ MM.live = (function () {
   const shortDate = value => /^\d{4}-\d{2}-\d{2}$/.test(value || '') ? new Date(value + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }) : 'Date TBD';
   const url = value => { try { const u = new URL(value); return u.protocol === 'https:' ? u.href : ''; } catch (_) { return ''; } };
   const list = value => Array.isArray(value) ? value : [];
+  function officialUrl(value, media = false) {
+    try {
+      const parsed = new URL(value);
+      return parsed.protocol === 'https:' && ['ufc.com', 'www.ufc.com'].includes(parsed.hostname) && !parsed.username && !parsed.password && !parsed.port && parsed.pathname.startsWith(media ? '/images/' : '/event/') ? parsed.href : '';
+    } catch (_) { return ''; }
+  }
+
+  function poster(card, failedImages) {
+    const title = String(card.card_title || 'UFC card');
+    const number = title.match(/\bUFC\s+(\d{2,4})\b/i)?.[1] || '';
+    const kind = number ? 'numbered' : /\bUFC\s+Fight\s+Night\b/i.test(title) ? 'fight-night' : 'event';
+    const p = officialUrl(card.presentation?.source_url) ? card.presentation : {};
+    const headliners = list(p.headliners).length === 2 && p.headliners.every(fighter => fighter && typeof fighter.name === 'string' && fighter.name.trim()) ? p.headliners : [];
+    const championship = p.is_title_bout === true && typeof p.bout_label === 'string' && /\btitle\b/i.test(p.bout_label) && headliners.length === 2;
+    const palette = ['ice', 'copper', 'crimson', 'ink'];
+    const hash = Array.from(String(card.card_id || card.event_date || title)).reduce((value, char) => (value * 31 + char.charCodeAt(0)) >>> 0, 0);
+    const tone = championship ? 'amber' : palette[hash % palette.length];
+    const portraits = headliners.map(fighter => ({ url: officialUrl(fighter.image_url, true), alt: fighter.image_alt || fighter.name }));
+    const artwork = officialUrl(p.artwork?.url, true);
+    const useArtwork = artwork && !failedImages.has(artwork);
+    const pair = !useArtwork && portraits.length === 2 && portraits.every(image => image.url && !failedImages.has(image.url));
+    const images = useArtwork ? [{ url: artwork, alt: p.artwork.alt || title }] : pair ? portraits : [];
+    const rematch = headliners.length === 2 ? title.match(/\bvs\.?\s+.+?\s+([2-9])$/i)?.[1] || '' : '';
+    return { title, number: number || (kind === 'fight-night' ? 'FN' : 'UFC'), kind, tone, championship, label: number ? `UFC ${number}` : kind === 'fight-night' ? 'UFC Fight Night' : 'UFC', headliners, rematch, bout: championship ? p.bout_label : '', images, pair };
+  }
 
   function currentCards(data, now) {
     const today = new Date(now).toISOString().slice(0, 10);
@@ -24,7 +49,8 @@ MM.live = (function () {
         card.source_url = card.source_url || event.source_url;
         card.entry_deadline = card.entry_deadline || event.entry_deadline;
         card.venue = card.venue || event.venue;
-      } else cards.push({ card_id: `schedule-${event.date}`, card_title: event.name, event_date: event.date, fights: [], source_url: event.source_url, venue: event.venue, entry_deadline: event.entry_deadline });
+        card.presentation = card.presentation || event.presentation;
+      } else cards.push({ card_id: `schedule-${event.date}`, card_title: event.name, event_date: event.date, fights: [], source_url: event.source_url, venue: event.venue, entry_deadline: event.entry_deadline, presentation: event.presentation });
     }
     return cards.filter(card => card.event_date >= today || stamp(card.entry_deadline) + 12 * 3600000 > now)
       .sort((a, b) => String(a.event_date).localeCompare(String(b.event_date)));
@@ -66,6 +92,7 @@ MM.live = (function () {
     const opened = new Map();
     const expandedWords = new Set();
     const scrollOffsets = new Map();
+    const failedImages = new Set();
 
     function withRuntime(snapshot) {
       return runtime ? { ...snapshot, live_status: { ...snapshot.live_status, ...runtime, collector_checked_at: runtime.checked_at } } : snapshot;
@@ -99,9 +126,26 @@ MM.live = (function () {
       const count = list(data.kalshi).filter(row => fights.some(f => f.event_ticker === row.event_ticker)).length;
       const source = url(card.source_url);
       const status = count ? `${fights.length} ${fights.length === 1 ? 'fight' : 'fights'} · ${count} phrases` : 'Mention markets not listed';
-      return `<details class="event-card" data-card="${esc(id)}" ${(opened.has(id) ? opened.get(id) : index === 0) ? 'open' : ''}>
-        <summary><span class="event-card-date">${shortDate(card.event_date)}</span><h2 class="event-card-title">${esc(card.card_title || 'UFC card')}</h2><span class="event-card-meta">${status}</span></summary>
-        <div class="event-fights">${card.venue || source ? `<p class="event-location">${esc(card.venue || '')}${source ? ` <a href="${esc(source)}" target="_blank" rel="noopener noreferrer">Card details ↗</a>` : ''}</p>` : ''}
+      const art = poster(card, failedImages);
+      const isOpen = opened.has(id) ? opened.get(id) : index === 0 && count > 0;
+      const names = art.headliners.map((fighter, side) => {
+        const name = fighter.name.trim();
+        const words = name.split(/\s+/);
+        const surnameAt = Math.max(0, words.length - (/^(?:Jr\.?|Sr\.?|II|III|IV)$/i.test(words.at(-1)) ? 2 : 1));
+        const headline = typeof fighter.display_name === 'string' && fighter.display_name.trim() || words.slice(surnameAt).join(' ');
+        const given = name === headline ? '' : name.endsWith(` ${headline}`) ? name.slice(0, -headline.length).trim() : name;
+        return `<span class="event-fighter">${given ? `<span class="event-fighter-given">${esc(given)} </span>` : ''}${esc(headline)}${side && art.rematch ? ` ${art.rematch}` : ''}</span>`;
+      }).join('<span class="event-versus" aria-label="versus">vs</span>');
+      const fallbackTitle = /\bTBD\b/i.test(art.title) ? 'Main event to be announced' : art.title;
+      return `<details class="event-card" data-card="${esc(id)}" data-kind="${art.kind}" data-tone="${art.tone}" data-featured="${index === 0}" data-art="${art.images.length > 0}" data-championship="${art.championship}" ${isOpen ? 'open' : ''}>
+        <summary class="event-poster" aria-label="${esc(art.title)}, ${shortDate(card.event_date)}. ${status}.">
+          ${art.images.length ? `<span class="event-poster-art ${art.pair ? 'event-portraits' : ''}" aria-hidden="true">${art.images.map((image, side) => `<img ${art.pair ? `class="event-portrait ${side ? 'fighter-right' : 'fighter-left'}"` : ''} src="${esc(image.url)}" alt="${esc(image.alt)}" loading="${index === 0 ? 'eager' : 'lazy'}" decoding="async" ${index === 0 && side === 0 ? 'fetchpriority="high"' : ''}>`).join('')}</span>` : ''}
+          <span class="event-poster-number" aria-hidden="true">${art.number}</span>
+          <div class="event-poster-copy"><div class="event-poster-topline"><span class="event-card-kicker">${art.label}</span><span class="event-card-date"><time datetime="${esc(card.event_date)}">${shortDate(card.event_date)}</time></span></div>
+            ${art.bout ? `<span class="event-title-bout">${esc(art.bout)}</span>` : ''}<h2 class="event-card-title">${names || esc(fallbackTitle)}</h2>${card.venue ? `<span class="event-card-venue">${esc(card.venue)}</span>` : ''}</div>
+          <div class="event-poster-foot"><span class="event-card-meta">${status}</span><span class="event-card-cta"><span class="event-card-cta-label">${isOpen ? 'Close card' : 'Explore card'}</span><span aria-hidden="true">↓</span></span></div>
+        </summary>
+        <div class="event-fights">${card.venue || source ? `<p class="event-location">${esc(card.venue || '')}${source ? ` <a href="${esc(source)}" target="_blank" rel="noopener noreferrer">Card details ↗</a>` : ''}${art.images.length ? '<span class="event-photo-credit">Images from UFC</span>' : ''}</p>` : ''}
         ${fights.length ? `<div class="fight-switch" role="group" aria-label="Choose a fight">${fights.map(fight => `<button type="button" class="fight-tab" data-card="${esc(id)}" data-fight="${esc(fight.event_ticker)}" aria-pressed="${fight === chosen}">${esc(fight.matchup || [fight.fighter_1, fight.fighter_2].filter(Boolean).join(' vs ') || 'Fight details pending')}</button>`).join('')}</div>${rowsHtml(card, chosen)}` : '<div class="live-empty"><h3>Waiting for the words.</h3><p>This card is scheduled, but no mention markets are in the latest Kalshi check. Fights and phrases will appear here when they are listed.</p></div>'}
         </div></details>`;
     }
@@ -134,7 +178,7 @@ MM.live = (function () {
       const checkedText = Number.isFinite(stamp(checked)) ? `Checked ${new Date(checked).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : 'Waiting for first check';
       const state = failed || live.error ? 'error' : recent ? 'ready' : 'stale';
       container.setAttribute('aria-busy', String(busy));
-      container.innerHTML = `<header class="live-head"><div><h1 class="live-title" id="liveTitle">Fight night,<br>word by word.</h1><p class="live-sub">Upcoming UFC cards, Kalshi's mention prices, and our paper trades.</p></div><div class="live-tools"><p class="live-status" data-state="${state}" role="status">${busy ? 'Checking for updates...' : failed ? 'Update failed. Showing the last snapshot.' : live.error ? 'Collector check failed. Showing saved data.' : `${checkedText}${recent ? '' : ' · update overdue'}`}</p><button class="live-refresh" id="liveRefresh" type="button" aria-disabled="${busy}">Check for updates</button></div></header>
+      container.innerHTML = `<header class="live-head"><div><h1 class="live-title" id="liveTitle">Fight night,<br> word by word.</h1><p class="live-sub">Upcoming UFC cards, Kalshi's mention prices, and our paper trades.</p></div><div class="live-tools"><p class="live-status" data-state="${state}" role="status">${busy ? 'Checking for updates...' : failed ? 'Update failed. Showing the last snapshot.' : live.error ? 'Collector check failed. Showing saved data.' : `${checkedText}${recent ? '' : ' · update overdue'}`}</p><button class="live-refresh" id="liveRefresh" type="button" aria-disabled="${busy}">Check for updates</button></div></header>
         <div class="live-cards">${cards.map(cardHtml).join('') || '<div class="live-empty"><h2>Checking the schedule.</h2><p>No upcoming cards are available in this snapshot. The page checks for a fresh one automatically.</p></div>'}</div>${paperHtml(cards)}`;
       if (focus) {
         const target = focus.id ? document.getElementById(focus.id) : focus.summaryCard ? Array.from(container.querySelectorAll('.event-card')).find(el => el.dataset.card === focus.summaryCard)?.querySelector('summary') : focus.word ? Array.from(container.querySelectorAll('.phrase-rule')).find(el => el.dataset.word === focus.word) : focus.link ? Array.from(container.querySelectorAll('.event-location a')).find(el => el.href === focus.link && el.closest('.event-card').dataset.card === focus.linkCard) : Array.from(container.querySelectorAll('[data-fight]')).find(el => el.dataset.fight === focus.fight && el.dataset.card === focus.card);
@@ -222,13 +266,25 @@ MM.live = (function () {
       const button = event.target.closest('[data-fight]');
       if (button) { selected.set(button.dataset.card, button.dataset.fight); render(); }
     }
+    function imageError(event) {
+      if (!event.target.matches?.('.event-poster-art img')) return;
+      failedImages.add(event.target.src);
+      render();
+    }
+    function toggleCard(event) {
+      if (!event.target.matches?.('.event-card')) return;
+      opened.set(event.target.dataset.card, event.target.open);
+      event.target.querySelector('.event-card-cta-label').textContent = event.target.open ? 'Close card' : 'Explore card';
+    }
     container.addEventListener('click', click);
+    container.addEventListener('error', imageError, true);
+    container.addEventListener('toggle', toggleCard, true);
     render();
     if (opts.autoStart) {
       if (local) refresh(false);
       timer = setInterval(() => refresh(false), 30000);
     }
-    return { update, refresh, destroy() { disposed = true; clearInterval(timer); container.removeEventListener('click', click); } };
+    return { update, refresh, destroy() { disposed = true; clearInterval(timer); container.removeEventListener('click', click); container.removeEventListener('error', imageError, true); container.removeEventListener('toggle', toggleCard, true); } };
   }
 
   return { mount, currentCards, marketView };

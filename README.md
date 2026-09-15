@@ -10,6 +10,9 @@ compare the model with Kalshi's YES and NO buy prices. A scheduled card can
 appear before its phrases go on sale. No mention market means no odds or paper
 entry, not a made-up estimate.
 
+Card artwork, headliners, and title-bout labels come from UFC's official event
+pages. Missing images fall back to a text-only card.
+
 The live paper log is separate from the historical test. **Past cards** holds
 saved price histories; **Model** shows prediction tests; **Record** starts with
 the collector's paper entries, followed by the earlier backtest.

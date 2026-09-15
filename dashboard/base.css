@@ -1,7 +1,4 @@
-/* Mention Markets: design tokens.
-   Dark is the product; light sits behind the toggle.
-   Color has four jobs and nothing else: money (up, down), the corners
-   (red, blue fighter identity), two chart series (model, market), and ink. */
+/* Shared theme and chart colors. Event poster palettes live in styles.css. */
 
 :root {
   color-scheme: dark;
