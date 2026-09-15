@@ -234,6 +234,14 @@ test("ledger rows open their exact word using Enter and Space", t => {
   assert.equal(w.MM.pane.current().market.ticker, row.dataset.ticker);
 });
 
+test("the full ledger stays visible without a tall-table intersection threshold", t => {
+  const { d } = browser(t, { hash: "#/record" });
+  const table = d.querySelector("#record .table-wrap");
+  assert.equal(table.hasAttribute("data-reveal"), false);
+  assert.ok(table.querySelectorAll(".ledger-row").length > 0);
+  assert.ok(d.querySelector("#record .section-head[data-reveal]"));
+});
+
 test("the night title is the page heading, including an empty snapshot", t => {
   for (const data of [fixture(), {}]) {
     const { d } = browser(t, { data });

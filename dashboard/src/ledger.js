@@ -40,7 +40,7 @@ MM.ledger = (function () {
         </div>
         <p class="ledger-count" id="ledgerCount" aria-live="polite"></p>
       </div>
-      <div class="table-wrap" data-reveal>
+      <div class="table-wrap">
         <table class="table ledger">
           <thead><tr>${COLUMNS.map((c) => `<th scope="col" class="${c.num ? "num" : ""}"><button type="button" class="th-btn" data-sort="${c.key}">${c.label}<span class="th-arrow" aria-hidden="true"></span></button></th>`).join("")}</tr></thead>
           <tbody id="ledgerBody"></tbody>
