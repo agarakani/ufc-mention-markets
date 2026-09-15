@@ -51,7 +51,7 @@ MM.live = (function () {
     else if (model === null) call = 'No fight estimate';
     else if (!preFight) call = Number.isFinite(deadline) ? 'Entries closed' : 'Start time unverified';
     else if (row.paper_eligible === false) call = 'Entry blocked';
-    else if (!collector) call = 'Paper collector offline';
+    else if (!collector) call = 'Collector not confirmed';
     else if (row.watch === true && best.side && best.edge > 0) call = 'Meets entry rule';
     return { ...best, model, stale, call, entry };
   }
@@ -111,7 +111,7 @@ MM.live = (function () {
       const positions = list(data.tracking_positions).filter(p => p.paper_action === 'trade' && tickers.has(p.event_ticker));
       const live = data.live_status || {};
       const ready = !failed && !live.error && live.paper_enabled === true && live.source !== 'cloud' && fresh(live.collector_checked_at || live.checked_at, opts.now());
-      const label = ready ? 'Paper collector on' : 'Paper collector offline';
+      const label = ready ? 'Paper collector on' : 'Paper collector not confirmed';
       return `<section class="paper-live" aria-labelledby="paperLiveTitle"><div><h2 id="paperLiveTitle">Paper trading</h2><p>${label}. ${ready ? 'Entries are recorded automatically when a fresh quote clears the rule before card start.' : 'New entries are not confirmed while the collector is unavailable or its status is old.'} No real orders are placed.</p></div>
         ${positions.length ? `<div class="live-market-wrap"><table class="live-markets"><caption class="visually-hidden">Paper entries for current cards</caption><thead><tr><th>Fight / phrase</th><th>Side</th><th>Entry</th><th>Contracts</th><th>Result</th><th>Paper P/L</th></tr></thead><tbody>${positions.map(p => `<tr><td>${esc(p.matchup || p.event_title)}<br><strong>${esc(p.phrase)}</strong></td><td>${esc(String(p.paper_side || '').toUpperCase())}</td><td>${cents(p.paper_price)}</td><td>${number(p.paper_contracts) ? p.paper_contracts : 'Not recorded'}</td><td>${['yes', 'no'].includes(p.outcome) ? `Resolved ${esc(p.outcome.toUpperCase())}` : p.resolution_status === 'pending' ? 'Awaiting settlement' : 'Open'}</td><td>${money(p.paper_pnl)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="live-empty">No paper entries for the upcoming cards yet.</p>'}
         <p class="live-note">Paper entries use saved buy quotes. Actual fills are not guaranteed. Historical testing is kept separately below.</p></section>`;

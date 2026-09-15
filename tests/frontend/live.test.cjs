@@ -86,7 +86,7 @@ test('cloud price updates do not claim that the paper collector is running', t =
   const data = fixture();
   data.live_status = { ...data.live_status, source: 'cloud', paper_enabled: false };
   const { d } = setup(t, data);
-  assert.match(d.querySelector('.paper-live').textContent, /Paper collector offline/);
+  assert.match(d.querySelector('.paper-live').textContent, /Paper collector not confirmed/);
   assert.doesNotMatch(d.querySelector('.live-call').textContent, /Meets entry/);
 });
 
@@ -163,7 +163,7 @@ test('local refresh checks the actual runtime and prefers its heartbeat to the s
   const payload = fixture();
   payload.live_status.collector_checked_at = '2026-09-14T21:00:00Z';
   const { d, w, view } = setup(t, payload, 'http://127.0.0.1:8901/');
-  assert.match(d.querySelector('.paper-live').textContent, /Paper collector offline/);
+  assert.match(d.querySelector('.paper-live').textContent, /Paper collector not confirmed/);
   const calls = [];
   w.fetch = async address => {
     calls.push(address);
@@ -189,7 +189,7 @@ test('automatic local checks read status and data without requesting a collector
   await view.refresh(false);
   assert.equal(calls.includes('/api/refresh'), false);
   assert.equal(calls.includes('/api/status'), true);
-  assert.match(d.querySelector('.paper-live').textContent, /Paper collector offline/);
+  assert.match(d.querySelector('.paper-live').textContent, /Paper collector not confirmed/);
 });
 
 test('a failed or malformed local status cannot reuse an old collector-on claim', async t => {
@@ -200,7 +200,7 @@ test('a failed or malformed local status cannot reuse an old collector-on claim'
     const { d, w, view } = setup(t, fixture(), 'http://127.0.0.1:8901/');
     w.fetch = async address => address === '/api/status' ? statusResponse : responseSnapshot(fixture());
     await view.refresh(false);
-    assert.match(d.querySelector('.paper-live').textContent, /Paper collector offline/);
+    assert.match(d.querySelector('.paper-live').textContent, /Paper collector not confirmed/);
     assert.doesNotMatch(d.querySelector('.live-call').textContent, /Meets entry/);
     assert.equal(d.querySelector('.live-status').dataset.state, 'error');
   }
@@ -215,7 +215,7 @@ test('a failed manual collector refresh is not presented as a successful update'
   };
   await view.refresh();
   assert.match(d.querySelector('.live-status').textContent, /Update failed/);
-  assert.match(d.querySelector('.paper-live').textContent, /Paper collector offline/);
+  assert.match(d.querySelector('.paper-live').textContent, /Paper collector not confirmed/);
 });
 
 test('public sites never call local runtime APIs', async t => {
@@ -242,7 +242,7 @@ test('a file preview reloads only its snapshot script, never a runtime API', asy
   assert.equal(d.querySelector('#live').getAttribute('aria-busy'), 'false');
 });
 
-test('a local runtime request times out and leaves the last prices visibly offline', async t => {
+test('a local runtime request times out without claiming the collector is running', async t => {
   const { d, w, view } = setup(t, fixture(), 'http://localhost:8901/');
   let timeout;
   w.setTimeout = (callback, delay) => { assert.equal(delay, 30000); timeout = callback; return 1; };
@@ -255,6 +255,6 @@ test('a local runtime request times out and leaves the last prices visibly offli
   await pending;
   assert.equal(d.querySelector('#live').getAttribute('aria-busy'), 'false');
   assert.match(d.querySelector('.live-status').textContent, /Update failed/);
-  assert.match(d.querySelector('.paper-live').textContent, /Paper collector offline/);
+  assert.match(d.querySelector('.paper-live').textContent, /Paper collector not confirmed/);
   assert.match(d.querySelector('.live-markets tbody tr').textContent, /43¢/);
 });
