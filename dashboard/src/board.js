@@ -21,7 +21,7 @@ MM.board = (function () {
       tradeLine = `<span class="tile-trade ${won ? "up" : "down"}">${esc(trade.side === "yes" ? "Yes" : "No")} at ${MM.fmt.cents(trade.price)} · ${MM.fmt.money(trade.pnl, { sign: true })}</span>`;
     }
     return `
-      <button class="tile" type="button" data-ticker="${esc(m.ticker)}" style="--i:${index}" aria-label="${esc(word)}, ${esc(m.fighter_1)} versus ${esc(m.fighter_2)}">
+      <button class="tile" type="button" data-ticker="${esc(m.ticker)}" style="--i:${index}">
         <span class="tile-fill" aria-hidden="true"></span>
         <span class="tile-model" aria-hidden="true"></span>
         <span class="tile-top">
@@ -42,11 +42,11 @@ MM.board = (function () {
     return `
       <section class="fight" data-event="${esc(f.event_ticker)}" data-reveal style="--i:${index}">
         <header class="fight-head">
-          <h3 class="fight-names">
+          <h2 class="fight-names">
             <span class="corner corner-red" aria-hidden="true"></span><span class="fight-name">${esc(f.fighter_1)}</span>
             <span class="fight-vs">vs</span>
             <span class="corner corner-blue" aria-hidden="true"></span><span class="fight-name">${esc(f.fighter_2)}</span>
-          </h3>
+          </h2>
           <p class="fight-meta">${MM.fmt.plural(f.markets.length, "word")} · ${f.said} said${f.trades ? ` · ${MM.fmt.plural(f.trades, "trade")}` : ""}${pnl}</p>
         </header>
         <div class="fight-tiles">${f.markets.map((m, i) => tileHtml(m, i)).join("")}</div>
@@ -82,8 +82,8 @@ MM.board = (function () {
       const p = isNum(ask) ? Math.max(0.02, Math.min(1, ask)) : 0;
       t.el.style.setProperty("--p", p.toFixed(3));
       t.el.style.setProperty("--m", isNum(model) ? Math.max(0, Math.min(1, model)).toFixed(3) : "0");
-      t.price.textContent = isNum(ask) ? MM.fmt.cents(ask) : "";
-      t.us.textContent = isNum(model) ? "us " + MM.fmt.prob(model) : "";
+      t.price.textContent = isNum(ask) ? MM.fmt.cents(ask) : "No quote";
+      t.us.textContent = isNum(model) ? "Our " + MM.fmt.prob(model) : "No estimate";
       const gap = isNum(ask) && isNum(model) ? model - ask : 0;
       t.el.classList.toggle("is-divergent", Math.abs(gap) >= 0.15);
       t.el.classList.toggle("is-over", gap >= 0.15);
@@ -91,12 +91,17 @@ MM.board = (function () {
       const result = settled ? t.m.result : null;
       t.el.classList.toggle("is-said", result === "yes");
       t.el.classList.toggle("is-unsaid", result === "no");
-      t.state.textContent = result === "yes" ? "Said" : result === "no" ? "Not said" : "";
-      // The label carries what sighted readers get from the fill and colour.
-      t.el.setAttribute("aria-label", [
-        `${splitPhrase(t.m.phrase).word}, ${t.m.fighter_1} versus ${t.m.fighter_2}`,
-        t.state.textContent, t.price.textContent, t.us.textContent, t.trade && t.trade.textContent,
-      ].filter(Boolean).join(", "));
+      t.el.classList.toggle("is-pending", settled && !result);
+      t.state.textContent = result === "yes" ? "Said" : result === "no" ? "Not said" : settled ? "Pending" : "";
+      // Keep the visible label intact for voice control; describe the units
+      // and matchup separately for screen-reader users.
+      t.el.setAttribute("aria-label", t.el.textContent.trim().replace(/\s+/g, " "));
+      t.el.setAttribute("aria-description", [
+        `${t.m.phrase}. ${t.m.fighter_1} versus ${t.m.fighter_2}`,
+        settled && !result ? "Result pending" : settled ? t.state.textContent : "Recorded quote",
+        isNum(ask) ? `Yes price ${Math.round(ask * 100)} cents` : "Yes price unavailable",
+        isNum(model) ? `Our number ${MM.fmt.prob(model)}` : "Our number unavailable",
+      ].join(". "));
     }
 
     function paintAll() {

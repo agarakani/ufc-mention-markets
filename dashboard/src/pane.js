@@ -32,6 +32,7 @@ MM.pane = (function () {
     const settled = m.result === "yes" || m.result === "no";
     const gap = isNum(s.model) && isNum(s.open) ? s.model - s.open : null;
     const trade = m.trade;
+    const tradeSettled = trade && settled && isNum(trade.pnl) && typeof trade.won === "boolean";
     const tradeFrame = trade ? frameOf(night, trade.entered_at) : -1;
     const idx = fight.markets.indexOf(m);
     const prev = idx > 0 ? fight.markets[idx - 1] : null;
@@ -45,7 +46,7 @@ MM.pane = (function () {
             <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2l10 10M12 2 2 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
           </button>
         </header>
-        <h2 class="pane-word">${esc(word)}</h2>
+        <h2 class="pane-word" id="paneTitle">${esc(word)}</h2>
         ${alts.length ? `<p class="pane-alts">also counts: ${esc(alts.join(", "))}</p>` : ""}
         <div class="pane-verdict ${m.result === "yes" ? "is-said" : m.result === "no" ? "is-unsaid" : ""}">
           <p class="pane-price">${MM.fmt.cents(s.last)}</p>
@@ -57,15 +58,15 @@ MM.pane = (function () {
           <div><dt>High</dt><dd>${MM.fmt.cents(s.high)}</dd></div>
           <div><dt>Low</dt><dd>${MM.fmt.cents(s.low)}</dd></div>
           <div><dt>Settled</dt><dd>${settled ? (m.result === "yes" ? "Yes" : "No") : "Open"}</dd></div>
-          <div><dt>Frames</dt><dd>${night.frames}</dd></div>
+          <div><dt>Snapshots</dt><dd>${night.frames}</dd></div>
           <div><dt>Ticker</dt><dd class="mono">${esc(m.ticker.split("-").slice(1).join("-"))}</dd></div>
         </dl>
         ${trade ? `
-        <div class="pane-trade ${trade.won ? "is-won" : "is-lost"}">
+        <div class="pane-trade ${tradeSettled ? (trade.won ? "is-won" : "is-lost") : ""}">
           <p class="pane-trade-head">Paper trade</p>
           <p class="pane-trade-line">Bought <b>${trade.side === "yes" ? "Yes" : "No"}</b> at <b>${MM.fmt.cents(trade.price)}</b> on ${MM.fmt.stamp(trade.entered_at)}${isNum(trade.edge) ? `, ${MM.fmt.points(trade.edge)} of edge` : ""}.</p>
-          <p class="pane-trade-result ${trade.won ? "up" : "down"}">${trade.won ? "Won" : "Lost"} ${MM.fmt.money(trade.pnl, { sign: true })}</p>
-        </div>` : `<p class="pane-notrade">No paper trade. The live rule never signalled this market.</p>`}
+          <p class="pane-trade-result ${tradeSettled ? (trade.won ? "up" : "down") : ""}">${tradeSettled ? `${trade.won ? "Won" : "Lost"} ${MM.fmt.money(trade.pnl, { sign: true })}` : "Pending settlement"}</p>
+        </div>` : `<p class="pane-notrade">No paper trade is recorded for this market.</p>`}
         <nav class="pane-nav" aria-label="Other words in this fight">
           <button type="button" class="pane-nav-btn" id="panePrev" ${prev ? `data-ticker="${esc(prev.ticker)}"` : "disabled"}>← ${prev ? esc(MM.board.splitPhrase(prev.phrase).word) : ""}</button>
           <span class="pane-nav-pos">${idx + 1} of ${fight.markets.length}</span>
@@ -74,7 +75,7 @@ MM.pane = (function () {
       </div>`;
 
     const markers = [];
-    if (trade && tradeFrame >= 0 && isNum(m.ask[tradeFrame])) markers.push({ i: tradeFrame, y: trade.side === "yes" ? trade.price : 1 - (trade.price ?? 0), label: `Bought ${trade.side} ${MM.fmt.cents(trade.price)}`, color: trade.won ? "var(--up)" : "var(--down)", kind: "trade" });
+    if (trade && tradeFrame >= 0 && isNum(m.ask[tradeFrame])) markers.push({ i: tradeFrame, y: trade.side === "yes" ? trade.price : 1 - (trade.price ?? 0), label: `Bought ${trade.side} ${MM.fmt.cents(trade.price)}`, color: tradeSettled ? (trade.won ? "var(--up)" : "var(--down)") : "var(--ink)", kind: "trade" });
     if (settled) markers.push({ i: night.frames - 1, y: m.result === "yes" ? 1 : 0, label: m.result === "yes" ? "Said" : "Not said", color: m.result === "yes" ? "var(--up)" : "var(--down)", kind: "settle" });
 
     if (chart) chart.destroy();
@@ -109,7 +110,7 @@ MM.pane = (function () {
     render(hit);
     backdrop.hidden = false;
     document.body.classList.add("has-pane");
-    MM.motion.afterPaint(() => { el.classList.add("is-open"); backdrop.classList.add("is-open"); });
+    MM.motion.afterPaint(() => { if (current) { el.classList.add("is-open"); backdrop.classList.add("is-open"); } });
     if (!wasOpen || (options && options.focus)) {
       const closeBtn = el.querySelector("#paneClose");
       if (closeBtn) closeBtn.focus({ preventScroll: true });
@@ -139,6 +140,7 @@ MM.pane = (function () {
 
   function mount(options) {
     el = document.getElementById("pane");
+    el.setAttribute("aria-labelledby", "paneTitle");
     backdrop = document.getElementById("paneBackdrop");
     onNav = (options && options.onNavigate) || onNav;
     onClosed = (options && options.onClosed) || onClosed;

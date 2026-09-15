@@ -38,15 +38,22 @@ MM.palette = (function () {
   }
 
   function paint() {
-    if (!results.length) { list.innerHTML = `<p class="palette-empty">Nothing matches.</p>`; return; }
+    if (!results.length) {
+      input.removeAttribute("aria-activedescendant");
+      list.innerHTML = `<p class="palette-empty" role="status">Nothing matches your search.</p>`;
+      return;
+    }
     let lastGroup = "";
     list.innerHTML = results.map((r, i) => {
       const head = r.group !== lastGroup ? `<p class="palette-group">${esc(r.group)}</p>` : "";
       lastGroup = r.group;
-      return `${head}<button type="button" class="palette-item ${i === active ? "is-active" : ""}" data-i="${i}" role="option" aria-selected="${i === active}" tabindex="-1"><span class="palette-title">${esc(r.title)}</span><span class="palette-sub">${esc(r.sub)}</span></button>`;
+      return `${head}<button type="button" id="paletteOption${i}" class="palette-item ${i === active ? "is-active" : ""}" data-i="${i}" role="option" aria-selected="${i === active}" tabindex="-1"><span class="palette-title">${esc(r.title)}</span><span class="palette-sub">${esc(r.sub)}</span></button>`;
     }).join("");
     const act = list.querySelector(".palette-item.is-active");
-    if (act) act.scrollIntoView({ block: "nearest" });
+    if (act) {
+      input.setAttribute("aria-activedescendant", act.id);
+      act.scrollIntoView({ block: "nearest" });
+    }
   }
 
   function pick(i) {
@@ -63,8 +70,16 @@ MM.palette = (function () {
     el.hidden = false; backdrop.hidden = false;
     document.body.classList.add("has-palette");
     input.value = "";
+    const themeAction = items.find(item => item.action.type === "theme");
+    if (themeAction) {
+      themeAction.title = document.documentElement.getAttribute("data-theme") === "light" ? "Switch to dark" : "Switch to light";
+      themeAction.text = themeAction.title;
+    }
     search("");
-    MM.motion.afterPaint(() => { el.classList.add("is-open"); backdrop.classList.add("is-open"); input.focus(); });
+    MM.motion.afterPaint(() => {
+      if (!opened) return;
+      el.classList.add("is-open"); backdrop.classList.add("is-open"); input.focus();
+    });
   }
 
   function close() {
@@ -74,7 +89,7 @@ MM.palette = (function () {
     document.body.classList.remove("has-palette");
     const done = () => { if (!opened) { el.hidden = true; backdrop.hidden = true; } };
     if (MM.motion.reduced()) done(); else setTimeout(done, 200);
-    if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+    if (lastFocus && lastFocus.isConnected && lastFocus.focus) lastFocus.focus({ preventScroll: true });
   }
 
   function mount(options) {
@@ -83,8 +98,8 @@ MM.palette = (function () {
     backdrop = document.getElementById("paletteBackdrop");
     el.innerHTML = `
       <div class="palette-box">
-        <input class="palette-input" id="paletteInput" type="text" placeholder="Search words, fights, nights" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="true" aria-controls="paletteList" aria-autocomplete="list">
-        <div class="palette-list" id="paletteList" role="listbox"></div>
+        <input class="palette-input" id="paletteInput" type="text" placeholder="Search words, fights, nights" aria-label="Search words, fights, and nights" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="true" aria-controls="paletteList" aria-autocomplete="list">
+        <div class="palette-list" id="paletteList" role="listbox" aria-label="Search results"></div>
         <p class="palette-foot"><kbd>↑↓</kbd> move <kbd>↵</kbd> open <kbd>esc</kbd> close</p>
       </div>`;
     input = el.querySelector("#paletteInput");
@@ -95,7 +110,7 @@ MM.palette = (function () {
     // focus sits inside it. Escape stops here: the word pane behind must not
     // see the same keypress. Tab is swallowed; the input is the only stop.
     el.addEventListener("keydown", (ev) => {
-      if (ev.key === "ArrowDown") { ev.preventDefault(); active = Math.min(results.length - 1, active + 1); paint(); }
+      if (ev.key === "ArrowDown") { ev.preventDefault(); active = Math.max(0, Math.min(results.length - 1, active + 1)); paint(); }
       else if (ev.key === "ArrowUp") { ev.preventDefault(); active = Math.max(0, active - 1); paint(); }
       else if (ev.key === "Enter") { ev.preventDefault(); pick(active); }
       else if (ev.key === "Escape") { ev.preventDefault(); ev.stopPropagation(); close(); }
