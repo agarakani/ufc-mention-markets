@@ -1,13 +1,8 @@
 #!/usr/bin/env python3
 """Find the Kalshi series that carries UFC announcer-mention markets.
 
-The recorder used to hardcode a single series, KXFIGHTMENTION. Kalshi
-restructures series (its old KXFIGHTMENTION events vanished after Jul 2026,
-and a March Madness version, KXMMMENTION, runs under a different ticker). If
-Kalshi relists UFC mention markets under a new name, a hardcoded ticker goes
-blind forever. So discovery works two ways: poll a known set of series every
-cycle, and periodically scan every open event for the mention pattern to catch
-a relaunch under any name, remembering what it finds.
+Poll known series each cycle and scan open events for new UFC mention series.
+Other sports also have announcer markets, so a matchup alone is not UFC evidence.
 
 The matcher and the merge are pure functions so they can be tested without a
 network. Persistence lives in data/processed/fight_series.json.
@@ -26,26 +21,16 @@ SERIES_STORE = ROOT / "data" / "processed" / "fight_series.json"
 SEED_SERIES = ("KXFIGHTMENTION",)
 
 _MENTION = re.compile(r"announcer|mention|\bsay\b|\bsaid\b", re.I)
-_UFC = re.compile(r"\bufc\b|fight night|\bmma\b|octagon", re.I)
-# a title like "Ankalaev vs. Guskov" without the UFC word still reads as a bout
-_VS = re.compile(r"\bvs\.?\b|\bv\.\b", re.I)
+_UFC = re.compile(r"\bufc\b", re.I)
 
 
 def is_fight_mention_event(event: dict) -> bool:
-    """True when an event looks like a UFC announcer-mention market.
-
-    Deliberately strict on the mention half (must mention announcers/saying)
-    and lenient on the sport half (UFC keyword OR a versus-style matchup) so a
-    renamed series is still caught, while TV-season and IPO 'announcement'
-    markets are not."""
-    blob = " ".join(str(event.get(key, "")) for key in ("title", "sub_title", "event_ticker"))
+    """Require mention wording plus the verified legacy series or explicit UFC label."""
+    blob = " ".join(str(event.get(key, "")) for key in ("title", "sub_title", "event_ticker", "series_ticker"))
     if not _MENTION.search(blob):
         return False
-    if _UFC.search(blob):
-        return True
-    # Guard the versus fallback: an "announcement" market about two companies
-    # should not qualify, so require the mention word to be about speech.
-    return bool(_VS.search(blob) and re.search(r"announcer|\bsay\b|\bsaid\b", blob, re.I))
+    series = series_of(event).upper()
+    return bool(series in SEED_SERIES or series.startswith("KXUFC") or _UFC.search(blob))
 
 
 def series_of(event: dict) -> str:

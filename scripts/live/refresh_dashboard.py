@@ -17,11 +17,11 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from ufc_mentions.build_dashboard_data import build_payload, write_data, OUT_DEFAULT as DASHBOARD_DATA
-from ufc_mentions.kalshi_client import KalshiClient
+from ufc_mentions.build_dashboard_data import build_payload, build_upcoming_events, write_data, OUT_DEFAULT as DASHBOARD_DATA
+from ufc_mentions.kalshi_client import KalshiClient, TopOfBook
 from ufc_mentions.fight_series import (
     load_known_series, save_known_series, merge_series,
-    discover_series_from_events,
+    discover_series_from_events, is_fight_mention_event,
 )
 from ufc_mentions.kalshi_context_model import KalshiFightContextModel
 from ufc_mentions.kalshi_mentions import (
@@ -39,7 +39,7 @@ from scripts.model.backtest_pl import (
     run_backtest,
 )
 from scripts.tracking.live_paper import OUT_ROOT_DEFAULT as PAPER_ROOT_DEFAULT
-from scripts.tracking.live_paper import record_live_entries
+from scripts.tracking.live_paper import entry_block_reason, parse_timestamp, record_live_entries
 
 
 DATA_DEFAULT = ROOT / "ufc_cleaned_export"
@@ -291,16 +291,23 @@ def maybe_fetch_upcoming(*, now: float | None = None) -> str:
         if age < UPCOMING_FETCH_INTERVAL_SECONDS:
             return "waiting"
     try:
+        from scripts.data.fetch_upcoming_events import OUT_DEFAULT as UPCOMING_OUT, refresh as refresh_upcoming
+        result = refresh_upcoming(UPCOMING_OUT)
         UPCOMING_FETCH_MARKER.parent.mkdir(parents=True, exist_ok=True)
         UPCOMING_FETCH_MARKER.touch()
-        from scripts.data.fetch_upcoming_events import OUT_DEFAULT as UPCOMING_OUT, refresh as refresh_upcoming
-        return refresh_upcoming(UPCOMING_OUT)
+        return result
     except Exception as exc:
-        return f"upcoming fetch skipped ({exc})"
+        raise RuntimeError(f"Upcoming schedule fetch failed: {exc}") from exc
+
+
+def schedule_is_current(event: dict, now: datetime) -> bool:
+    fetched = parse_timestamp(event.get("fetched_at"))
+    return fetched is not None and 0 <= (now - fetched).total_seconds() <= UPCOMING_FETCH_INTERVAL_SECONDS
 
 
 FIELDS = [
-    "snapshot_timestamp", "series_ticker", "event_ticker", "event_date",
+    "snapshot_timestamp", "quote_timestamp", "entry_deadline", "entry_deadline_source",
+    "paper_eligible", "paper_block_reason", "series_ticker", "event_ticker", "event_date",
     "event_title", "fighter_1", "fighter_2", "ticker", "phrase", "forms",
     "rules_primary", "market_status", "market_result", "market_expiration_value",
     "market_close_time", "model_probability", "history_probability", "probability_source",
@@ -433,8 +440,11 @@ def event_snapshot(
     rows = []
     for market in markets:
         phrase = str((market.get("custom_strike") or {}).get("Word") or market.get("yes_sub_title") or "")
-        book = client.get_orderbook(market["ticker"])
+        book = TopOfBook(None, None, None, None)
+        quote_timestamp = ""
         try:
+            book = client.get_orderbook(market["ticker"])
+            quote_timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
             priced = price_market(
                 market,
                 book,
@@ -453,6 +463,7 @@ def event_snapshot(
         except Exception as exc:
             rows.append({
                 "snapshot_timestamp": snapshot_timestamp,
+                "quote_timestamp": quote_timestamp,
                 "series_ticker": event.get("series_ticker", "KXFIGHTMENTION"),
                 "event_ticker": event_ticker,
                 "event_date": event_date,
@@ -487,6 +498,7 @@ def event_snapshot(
         estimate = priced.estimate
         rows.append({
             "snapshot_timestamp": snapshot_timestamp,
+            "quote_timestamp": quote_timestamp,
             "series_ticker": event.get("series_ticker", "KXFIGHTMENTION"),
             "event_ticker": event_ticker,
             "event_date": event_date,
@@ -583,9 +595,9 @@ def discover_open_fight_events(client: KalshiClient, *, configured_series: str, 
         due = (now - SERIES_SCAN_MARKER.stat().st_mtime) >= SERIES_SCAN_INTERVAL_SECONDS
     if due:
         try:
+            discovered = discover_series_from_events(client.scan_events(status="open", require_complete=True))
             SERIES_SCAN_MARKER.parent.mkdir(parents=True, exist_ok=True)
             SERIES_SCAN_MARKER.touch()
-            discovered = discover_series_from_events(client.scan_events(status="open"))
             fresh = [s for s in discovered if s not in known]
             if fresh:
                 known = merge_series(known, discovered)
@@ -593,8 +605,7 @@ def discover_open_fight_events(client: KalshiClient, *, configured_series: str, 
                 if verbose:
                     print(f"  discovered new fight series: {', '.join(fresh)}", flush=True)
         except Exception as exc:
-            if verbose:
-                print(f"  series rediscovery skipped: {exc}", flush=True)
+            raise RuntimeError(f"Kalshi discovery failed: {exc}") from exc
 
     events: list[dict] = []
     seen: set[str] = set()
@@ -602,14 +613,12 @@ def discover_open_fight_events(client: KalshiClient, *, configured_series: str, 
         try:
             found = client.get_events(series_ticker=series, status="open")
         except Exception as exc:
-            if verbose:
-                print(f"  series {series} poll failed: {exc}", flush=True)
-            continue
+            raise RuntimeError(f"Kalshi series {series} poll failed: {exc}") from exc
         for event in found:
             ticker = str(event.get("event_ticker") or "")
-            if ticker and ticker not in seen:
+            event.setdefault("series_ticker", series)
+            if ticker and ticker not in seen and is_fight_mention_event(event):
                 seen.add(ticker)
-                event.setdefault("series_ticker", series)
                 events.append(event)
     return events
 
@@ -637,6 +646,17 @@ def refresh_once(
     paper_settle_only: bool = False,
 ) -> list[dict]:
     snapshot_timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    errors = []
+    schedule_failed = False
+    try:
+        upcoming_note = maybe_fetch_upcoming()
+    except Exception as exc:
+        upcoming_note = str(exc)
+        errors.append(upcoming_note)
+        schedule_failed = True
+    if verbose and "saved" in upcoming_note:
+        print(f"  upcoming events: {upcoming_note}", flush=True)
+    schedule = {event["date"]: event for event in build_upcoming_events()}
     if event_ticker:
         events = [{
             "event_ticker": event_ticker,
@@ -656,7 +676,6 @@ def refresh_once(
         print(f"Found {len(events)} open Kalshi fight event(s). Pricing phrases now...", flush=True)
 
     rows = []
-    errors = []
     event_rows_for_meta = []
     phrase_trust_map = load_phrase_trust()
     for index, event in enumerate(events, start=1):
@@ -677,6 +696,8 @@ def refresh_once(
                 phrase_trust_map=phrase_trust_map,
             )
             rows.extend(event_rows)
+            errors.extend(f"{row.get('ticker', '')}: {row.get('error') or 'market refresh failed'}"
+                          for row in event_rows if row.get("status") == "error")
             event_rows_for_meta.append(event_metadata(event, event_rows))
         except Exception as exc:
             errors.append(f"{event.get('event_ticker', '')}: {exc}")
@@ -684,6 +705,16 @@ def refresh_once(
             if verbose:
                 print(f"    skipped: {exc}", flush=True)
 
+    checked_at = datetime.now(timezone.utc)
+    for row in rows:
+        scheduled = schedule.get(row.get("event_date"), {})
+        if schedule_failed or not schedule_is_current(scheduled, checked_at):
+            scheduled = {}
+        row["entry_deadline"] = scheduled.get("entry_deadline", "")
+        row["entry_deadline_source"] = scheduled.get("entry_deadline_source", "")
+        blocker = entry_block_reason(row, checked_at)
+        row["paper_eligible"] = bool_text(not errors and not blocker and row.get("watch") == "yes")
+        row["paper_block_reason"] = blocker or ("refresh_error" if errors else "" if row.get("watch") == "yes" else "no_model_edge")
     rows.sort(key=lambda row: (
         row.get("watch") != "yes",
         -(float(row.get("edge") or -999)),
@@ -713,7 +744,7 @@ def refresh_once(
                 out_root=paper_out_root,
                 contracts=paper_contracts,
                 client=client,
-                allow_entries=not paper_settle_only,
+                allow_entries=not paper_settle_only and not errors,
             ))
         paper_tracking = combine_paper_results(paper_card, results)
         # Finished cards leave the live feed; keep checking their results
@@ -748,20 +779,15 @@ def refresh_once(
         "paper_tracking": paper_tracking,
         "errors": errors,
         "kept_previous_board": kept_previous,
+        "refresh_ok": not errors,
+        "source": "local",
+        "paper_enabled": bool(paper_card and not paper_settle_only and not errors),
+        "completed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
     meta_path.parent.mkdir(parents=True, exist_ok=True)
     meta_path.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
 
-    # Fold any newly finished cards into the money backtest. Throttled and
-    # read-only; runs here so the always-on server settles by itself too.
-    try:
-        settle_note = maybe_settle_money_backtest()
-        if verbose and settle_note != "nothing new to settle":
-            print(f"  money backtest: {settle_note}", flush=True)
-    except Exception as exc:
-        if verbose:
-            print(f"  money backtest settle skipped: {exc}", flush=True)
-
+    # Live paper settlement stays separate from historical P/L and model training.
     try:
         coverage_note = maybe_check_coverage()
         if verbose and ("GAP" in coverage_note or "clean" in coverage_note):
@@ -769,18 +795,6 @@ def refresh_once(
     except Exception as exc:
         if verbose:
             print(f"  coverage skipped: {exc}", flush=True)
-
-    try:
-        retrain_note = maybe_retrain_walkforward()
-        if verbose and "started" in retrain_note:
-            print(f"  model gate: {retrain_note}", flush=True)
-    except Exception as exc:
-        if verbose:
-            print(f"  model gate skipped: {exc}", flush=True)
-
-    upcoming_note = maybe_fetch_upcoming()
-    if verbose and "saved" in upcoming_note:
-        print(f"  upcoming events: {upcoming_note}", flush=True)
 
     payload = build_payload()
     write_data(DASHBOARD_DATA, payload)

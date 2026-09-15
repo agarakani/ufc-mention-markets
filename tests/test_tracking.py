@@ -56,6 +56,10 @@ class TrackingTests(unittest.TestCase):
                 "hurdle": "0.17",
                 "data_risk": "yes",
                 "model_probability": "0.25",
+                "status": "ok", "market_status": "active", "event_date": "2026-06-21",
+                "quote_timestamp": "2026-06-20T23:00:00+00:00",
+                "entry_deadline": "2026-06-21T21:00:00Z",
+                "entry_deadline_source": "https://example.test/official-start",
             }]
 
             first = record_live_entries(
@@ -102,6 +106,12 @@ class TrackingTests(unittest.TestCase):
                 "market_result": "no",
             }]
 
+            prefight = dict(rows[0], status="ok", market_status="active", market_result="",
+                            entry_deadline="2026-06-20T21:00:00Z", entry_deadline_source="https://example.test/official-start",
+                            quote_timestamp="2026-06-19T23:00:00+00:00")
+            record_live_entries([prefight], card="UFC Test Card", out_root=Path(tmp),
+                                entered_at="2026-06-19T23:00:00+00:00")
+
             result = record_live_entries(
                 rows,
                 card="UFC Test Card",
@@ -139,6 +149,11 @@ class TrackingTests(unittest.TestCase):
                 "market_status": "active",
                 "market_result": "",
             }]
+
+            prefight = dict(rows[0], status="ok", quote_timestamp="2026-06-19T23:00:00+00:00",
+                            entry_deadline="2026-06-20T21:00:00Z", entry_deadline_source="https://example.test/official-start")
+            record_live_entries([prefight], card="UFC Test Card", out_root=Path(tmp),
+                                entered_at="2026-06-19T23:00:00+00:00")
 
             result = record_live_entries(
                 rows,

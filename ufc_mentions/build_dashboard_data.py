@@ -9,6 +9,7 @@ import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -156,6 +157,11 @@ def build_upcoming_events(today: str | None = None) -> list[dict]:
             "location": str(event.get("location", "")),
             "fighter_1": matchup.group(1).strip() if matchup else "",
             "fighter_2": matchup.group(2).strip() if matchup else "",
+            "source_url": event.get("source_url") or payload.get("source_url") or "",
+            "fetched_at": payload.get("fetched_at", ""),
+            "entry_deadline": event.get("entry_deadline", ""),
+            "entry_deadline_source": event.get("entry_deadline_source", ""),
+            "entry_deadline_note": event.get("entry_deadline_note", ""),
         })
     return sorted(out, key=lambda e: e["date"])
 
@@ -220,6 +226,10 @@ def build_kalshi_rows(rows: list[dict]) -> list[dict]:
     for row in rows:
         item = trim(row, [
             "snapshot_timestamp",
+            "quote_timestamp",
+            "entry_deadline",
+            "entry_deadline_source",
+            "paper_block_reason",
             "series_ticker",
             "event_ticker",
             "event_date",
@@ -292,6 +302,7 @@ def build_kalshi_rows(rows: list[dict]) -> list[dict]:
         item["trust_ok"] = str(row.get("trust_ok", "")).strip() == "" or as_bool(row.get("trust_ok"))
         item["side"] = str(row.get("side", "")).strip().lower()
         item["watch"] = as_bool(row.get("watch")) or legacy_watch(row, item)
+        item["paper_eligible"] = as_bool(row.get("paper_eligible"))
         if item["watch"] and not item.get("validation_status"):
             item["validation_status"] = "unvalidated"
         out.append(item)
@@ -399,6 +410,7 @@ def build_tracking_positions() -> list[dict]:
         return []
     positions = []
     for card_dir in sorted(path for path in TRACKING_ROOT.iterdir() if path.is_dir() and not hidden_tracking_card(path)):
+        settled_by_ticker = {row.get("ticker"): row for row in read_csv(card_dir / "settled_predictions.csv")}
         outcomes_by_ticker = {
             row.get("ticker", ""): row
             for row in read_csv(card_dir / "outcomes.csv")
@@ -413,6 +425,7 @@ def build_tracking_positions() -> list[dict]:
                 "paper_reason",
                 "event_title",
                 "event_ticker",
+                "event_date",
                 "fighter_1",
                 "fighter_2",
                 "ticker",
@@ -424,6 +437,7 @@ def build_tracking_positions() -> list[dict]:
                 item["event_ticker"] = "-".join(str(row.get("ticker", "")).split("-")[:2])
             for field in [
                 "paper_price",
+                "paper_contracts",
                 "model_probability",
                 "yes_ask",
                 "no_ask",
@@ -445,6 +459,7 @@ def build_tracking_positions() -> list[dict]:
             item["resolved_at"] = outcome_row.get("resolved_at", "")
             item["market_status"] = outcome_row.get("market_status", "")
             item["notes"] = outcome_row.get("notes", "")
+            item["paper_pnl"] = number((settled_by_ticker.get(row.get("ticker")) or {}).get("paper_pnl"))
             item["matchup"] = (
                 f"{row.get('fighter_1')} vs {row.get('fighter_2')}"
                 if row.get("fighter_1") and row.get("fighter_2")
@@ -568,7 +583,23 @@ def build_trades(trade_rows: list[dict], label_rows: list[dict] | None = None) -
     return trades
 
 
-def trim_fighters(fighters: dict, tapes: list[dict], trades: list[dict]) -> dict:
+def complete_fighter_identities(
+    fighters: dict, tapes: list[dict], trades: list[dict], live_rows: list[dict],
+) -> dict:
+    """Keep source names navigable without borrowing another fighter's statistics."""
+    identities = dict(fighters)
+    rows = [market for tape in tapes for market in tape.get("markets", [])] + trades + live_rows
+    for row in rows:
+        for field in ("fighter_1", "fighter_2"):
+            name = str(row.get(field) or "").strip()
+            if name and name.lower() not in identities:
+                identities[name.lower()] = {
+                    "name": name, "identity_status": "name_only", "source": "market_record",
+                }
+    return identities
+
+
+def trim_fighters(fighters: dict, tapes: list[dict], trades: list[dict], live_rows: list[dict] | None = None) -> dict:
     """Keep only fighters who appear on a recorded night.
 
     The identity table covers every fighter in the corpus, thousands of
@@ -581,7 +612,7 @@ def trim_fighters(fighters: dict, tapes: list[dict], trades: list[dict]) -> dict
                 name = str(market.get(key) or "").strip().lower()
                 if name:
                     names.add(name)
-    for trade in trades or []:
+    for trade in [*(trades or []), *(live_rows or [])]:
         for key in ("fighter_1", "fighter_2"):
             name = str(trade.get(key) or "").strip().lower()
             if name:
@@ -1049,6 +1080,33 @@ def name_cards_from_schedule(cards: list[dict], upcoming: list[dict]) -> None:
         card["source_note"] = "Card name from the published UFC schedule; markets from Kalshi."
 
 
+def merge_scheduled_cards(cards: list[dict], upcoming: list[dict]) -> list[dict]:
+    """Include scheduled cards even before Kalshi lists any phrase markets."""
+    cards = [dict(card) for card in cards]
+    name_cards_from_schedule(cards, upcoming)
+    known = {card.get("event_date") for card in cards}
+    for event in upcoming:
+        if event["date"] in known:
+            for card in cards:
+                if card.get("event_date") == event["date"]:
+                    for field in ("source_url", "entry_deadline", "entry_deadline_source", "entry_deadline_note"):
+                        card[field] = event.get(field, "")
+            continue
+        cards.append({
+            "card_id": f"schedule:{event['date']}", "card_title": event["name"],
+            "event_date": event["date"], "card_venue": event.get("venue", ""),
+            "card_location": event.get("location", ""), "source_url": event.get("source_url", ""),
+            "entry_deadline": event.get("entry_deadline", ""),
+            "entry_deadline_source": event.get("entry_deadline_source", ""),
+            "entry_deadline_note": event.get("entry_deadline_note", ""),
+            "source_note": "Published schedule; Kalshi mention markets not listed yet.",
+            "has_kalshi_card_title": False, "fight_count": 0, "tradable_fight_count": 0,
+            "phrase_count": 0, "priced_count": 0, "model_ready_count": 0,
+            "watch_count": 0, "best_edge": None, "fights": [], "odds_status": "awaiting_markets",
+        })
+    return sorted(cards, key=lambda card: (card["event_date"], card["card_id"]))
+
+
 def build_stamp() -> dict:
     """The exact code version this payload was built from, shown in the
     footer so a cached page is identifiable at a glance."""
@@ -1082,7 +1140,8 @@ def build_payload() -> dict:
     kalshi_rows = build_kalshi_rows(kalshi_source_rows)
     kalshi_cards = build_kalshi_cards(kalshi_meta, kalshi_rows, hidden_events)
     price_tracks = build_price_tracks({str(r.get("ticker", "")) for r in kalshi_rows if r.get("ticker")})
-    name_cards_from_schedule(kalshi_cards, build_upcoming_events())
+    upcoming = build_upcoming_events()
+    kalshi_cards = merge_scheduled_cards(kalshi_cards, upcoming)
     fighters = build_fighter_identities()
     for card in kalshi_cards:
         for fight in card.get("fights", []):
@@ -1095,8 +1154,20 @@ def build_payload() -> dict:
 
     tapes = (read_json(TAPES_JSON) or {}).get("cards", [])
     trades = build_trades(read_csv(PL_BACKTEST_TRADES), read_csv(RESULTS_LABELS))
+    fighters = complete_fighter_identities(fighters, tapes, trades, kalshi_rows)
     return {
         "build": build_stamp(),
+        "live_status": {
+            "state": "error" if kalshi_meta.get("errors") else "ready" if kalshi_meta.get("completed_at") else "unavailable",
+            "source": kalshi_meta.get("source", "local"),
+            "checked_at": kalshi_meta.get("completed_at") or kalshi_meta.get("snapshot_timestamp", ""),
+            "quotes_at": max((row.get("quote_timestamp") or row.get("snapshot_timestamp") or "" for row in kalshi_rows), default=""),
+            "refresh_seconds": number(kalshi_meta.get("poll_seconds")) or 30,
+            "market_count": len(kalshi_rows), "error": "; ".join(kalshi_meta.get("errors") or []),
+            "paper_enabled": bool(kalshi_meta.get("paper_enabled")), "paper_mode": "paper",
+            "collector_checked_at": kalshi_meta.get("completed_at", ""),
+            "entry_policy": "One paper contract per market, before the verified card start. No verified start means no new paper entries.",
+        },
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "sources": {
             "kalshi_live": str(KALSHI_LIVE.relative_to(ROOT)),
@@ -1116,8 +1187,8 @@ def build_payload() -> dict:
             tracking_positions,
         ),
         "kalshi": kalshi_rows,
-        "fighters": trim_fighters(fighters, tapes, trades),
-        "upcoming_events": build_upcoming_events(),
+        "fighters": trim_fighters(fighters, tapes, trades, kalshi_rows),
+        "upcoming_events": upcoming,
         "performance": build_performance(read_csv(PL_BACKTEST_TRADES)),
         "kalshi_cards": kalshi_cards,
         "price_tracks": price_tracks,
@@ -1139,7 +1210,16 @@ def write_data(path: Path, payload: dict) -> None:
     # Compact on purpose: pretty-printing put every tape number on its own
     # line and tripled the file the browser has to pull.
     encoded = json.dumps(payload, separators=(",", ":"), sort_keys=True)
-    path.write_text(f"window.UFC_MENTION_DASHBOARD_DATA = {encoded};\n", encoding="utf-8")
+    temporary = None
+    try:
+        with NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                prefix=".data-", suffix=".tmp", delete=False) as handle:
+            temporary = Path(handle.name)
+            handle.write(f"window.UFC_MENTION_DASHBOARD_DATA = {encoded};\n")
+        temporary.replace(path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def main() -> None:

@@ -5,7 +5,10 @@ from __future__ import annotations
 
 import argparse
 import csv
+import fcntl
+import math
 import sys
+import threading
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -20,6 +23,8 @@ from ufc_mentions.kalshi_client import KalshiClient, MARKETS_PATH
 
 LIVE_DEFAULT = ROOT / "market_data" / "kalshi_live_edges.csv"
 OUT_ROOT_DEFAULT = ROOT / "data" / "tracking"
+ENTRY_LOCK = threading.Lock()
+MAX_QUOTE_AGE_SECONDS = 90
 
 TRACKING_FIELDS = [
     "card",
@@ -100,14 +105,53 @@ def existing_trade_tickers(rows: list[dict]) -> set[str]:
     }
 
 
+def parse_timestamp(value: object) -> datetime | None:
+    try:
+        stamp = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        return stamp.astimezone(timezone.utc) if stamp.tzinfo else None
+    except ValueError:
+        return None
+
+
+def entry_block_reason(row: dict, now: datetime, max_age_seconds: int = MAX_QUOTE_AGE_SECONDS) -> str:
+    """A model watch can enter only against a fresh buy quote before the card starts."""
+    if row.get("status") != "ok":
+        return "model_unavailable"
+    if str(row.get("market_result") or "").strip():
+        return "market_resolved"
+    if str(row.get("market_status", "")).lower() not in {"active", "open"}:
+        return "market_not_open"
+    quote = parse_timestamp(row.get("quote_timestamp") or row.get("snapshot_timestamp"))
+    if quote is None or not 0 <= (now - quote).total_seconds() <= max_age_seconds:
+        return "stale_quote"
+    deadline = parse_timestamp(row.get("entry_deadline")) if row.get("entry_deadline_source") else None
+    if deadline is not None:
+        if now >= deadline:
+            return "card_started"
+    else:
+        return "start_time_unverified"
+    close = parse_timestamp(row.get("market_close_time"))
+    if close is not None and now >= close:
+        return "market_not_open"
+    side = str(row.get("side", "")).lower()
+    price = number(row.get(f"{side}_ask")) if side in {"yes", "no"} else None
+    if price is None or not math.isfinite(price) or not 0 < price < 1:
+        return "no_buy_price"
+    selected = number(row.get("side_price"))
+    if selected is not None and not math.isclose(price, selected, rel_tol=0, abs_tol=1e-8):
+        return "price_changed"
+    return ""
+
+
 def build_entry(row: dict, *, card: str, entered_at: str, contracts: float) -> dict | None:
+    now = parse_timestamp(entered_at)
+    if now is None or entry_block_reason(row, now) or not math.isfinite(contracts) or contracts <= 0:
+        return None
     side = str(row.get("side", "")).strip().lower()
     if side not in {"yes", "no"}:
         return None
 
-    price = number(row.get("side_price"))
-    if price is None:
-        price = number(row.get("yes_ask") if side == "yes" else row.get("no_ask"))
+    price = number(row.get("yes_ask") if side == "yes" else row.get("no_ask"))
     if price is None:
         return None
 
@@ -166,7 +210,7 @@ def resolution_from_market(row: dict, market: dict | None, checked_at: str) -> d
         or market_field(row, market, "market_expiration_value")
     )
     outcome = normalize_outcome(result) or normalize_outcome(expiration_value)
-    market_status = market_field(row, market, "status") or market_field(row, market, "market_status")
+    market_status = str((market or {}).get("status") or row.get("market_status") or "")
 
     if outcome:
         return {
@@ -299,7 +343,7 @@ def update_readme(card_dir: Path, *, card: str, entries: int) -> None:
     )
 
 
-def record_live_entries(
+def _record_live_entries(
     rows: list[dict],
     *,
     card: str,
@@ -377,6 +421,26 @@ def record_live_entries(
         "pending": outcome_counts.get("pending", 0),
         "open": outcome_counts.get("open", 0),
     }
+
+
+def record_live_entries(
+    rows: list[dict], *, card: str, out_root: Path = OUT_ROOT_DEFAULT,
+    contracts: float = 1.0, entered_at: str | None = None, client=None,
+    allow_entries: bool = True,
+) -> dict:
+    # Browser refresh and the polling thread share this one append/settle operation.
+    with ENTRY_LOCK:
+        out_root = Path(out_root)
+        out_root.mkdir(parents=True, exist_ok=True)
+        with (out_root / ".paper.lock").open("a") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            try:
+                return _record_live_entries(
+                    rows, card=card, out_root=out_root, contracts=contracts,
+                    entered_at=entered_at, client=client, allow_entries=allow_entries,
+                )
+            finally:
+                fcntl.flock(lock, fcntl.LOCK_UN)
 
 
 def main() -> None:

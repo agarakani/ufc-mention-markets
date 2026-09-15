@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from ufc_mentions.kalshi_client import EVENTS_PATH, KalshiClient
+from ufc_mentions.kalshi_client import EVENTS_PATH, KalshiClient, KalshiError
 
 
 @pytest.fixture
@@ -59,3 +59,22 @@ def test_zero_page_limit_makes_no_request(monkeypatch, recorded_pages):
     client, calls = replay_client(monkeypatch, recorded_pages)
     assert client.scan_events(max_pages=0) == []
     assert calls == []
+
+
+def test_complete_discovery_does_not_silently_stop_at_page_limit(monkeypatch, recorded_pages):
+    client, calls = replay_client(monkeypatch, recorded_pages)
+    with pytest.raises(KalshiError, match="incomplete"):
+        client.scan_events(max_pages=1, require_complete=True)
+    assert len(calls) == 1
+
+
+def test_default_scan_includes_page_65(monkeypatch):
+    client = object.__new__(KalshiClient)
+    calls = []
+
+    def get(path, params):
+        calls.append(params)
+        return {"events": [{"event_ticker": f"EVENT-{len(calls)}"}], "cursor": str(len(calls)) if len(calls) < 65 else ""}
+
+    monkeypatch.setattr(client, "get", get)
+    assert len(client.scan_events(require_complete=True)) == 65
