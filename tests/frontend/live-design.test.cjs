@@ -37,6 +37,12 @@ test("live quote tables retain a contained horizontal scroll area on small scree
   assert.match(css, /\.live-refresh[^}]*min-height:\s*44px/s);
 });
 
+test("expanded phrase explanations use the quote viewport width, including card padding", () => {
+  const css = fs.readFileSync(path.join(dashboard, "styles.css"), "utf8");
+  assert.match(css, /\.live-market-wrap\s*\{[^}]*container-type:\s*inline-size/s);
+  assert.match(css, /\.live-audit\s*\{[^}]*width:\s*min\(74ch,\s*100cqi\)/s);
+});
+
 test("poster cards expand to the full grid width without widening their quote tables", () => {
   const css = fs.readFileSync(path.join(dashboard, "styles.css"), "utf8");
   assert.match(css, /\.live-cards\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/s);

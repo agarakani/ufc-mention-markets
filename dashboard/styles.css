@@ -216,7 +216,7 @@
 .fight-tab { min-height: 48px; max-width: 100%; padding: 10px 18px 12px 0; margin-right: 20px; color: var(--ink-2); font-size: 14px; text-align: left; border-bottom: 2px solid transparent; overflow-wrap: anywhere; }
 .fight-tab:hover { color: var(--ink); }
 .fight-tab[aria-pressed="true"], .fight-tab[aria-selected="true"], .fight-tab.is-active { color: var(--ink); border-bottom-color: var(--ink); }
-.live-market-wrap { max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; border-radius: 8px; background: var(--surface); scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+.live-market-wrap { max-width: 100%; overflow-x: auto; container-type: inline-size; overscroll-behavior-x: contain; border-radius: 8px; background: var(--surface); scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
 .live-markets { width: 100%; min-width: 900px; table-layout: fixed; border-collapse: collapse; font-size: 14px; }
 .live-markets caption { text-align: left; padding: 16px 18px; color: var(--ink-2); font-size: 13px; }
 .live-markets th { padding: 15px 18px; border-bottom: 1px solid var(--line-2); color: var(--ink-2); font-size: 12px; font-weight: 500; text-align: right; line-height: 1.5; }
@@ -246,7 +246,7 @@
 .phrase-rule::after { content: "+"; position: absolute; right: 0; top: 50%; transform: translateY(-50%); color: var(--ink-2); font-weight: 400; }
 .phrase-rule[aria-expanded="true"]::after { content: "−"; }
 .live-markets .live-audit-row td { position: static; width: auto; min-width: 0; max-width: none; padding: 0; text-align: left; font-weight: 400; letter-spacing: 0; }
-.live-audit { position: sticky; left: 0; width: min(74ch, calc(100vw - var(--gutter) - var(--gutter))); max-width: 100%; padding: 18px; color: var(--ink-2); font-size: 13px; line-height: 1.65; }
+.live-audit { position: sticky; left: 0; width: min(74ch, 100cqi); max-width: 100%; padding: 18px; color: var(--ink-2); font-size: 13px; line-height: 1.65; }
 .live-audit p + p { margin-top: 8px; }
 .paper-live { margin-top: 32px; padding-top: 22px; border-top: 1px solid var(--line); }
 .paper-live h2, .paper-live h3 { font-size: 20px; font-weight: 550; letter-spacing: -0.025em; margin-bottom: 8px; }

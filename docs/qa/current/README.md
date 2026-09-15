@@ -17,7 +17,7 @@ published payload. The screenshots here use the actual schedule, not fixtures.
 
 ## Checks
 
-285 Python tests and 83 front-end tests passed. All 13 dashboard JavaScript
+285 Python tests and 84 front-end tests passed. All 13 dashboard JavaScript
 files passed syntax checks. Ruff and the whitespace check passed.
 
 Chrome was checked at 375, 768, and 1440 pixels in both themes. The poster page
