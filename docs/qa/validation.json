@@ -1,0 +1,28 @@
+{
+  "file": "dashboard/data.js",
+  "sha256": "2de6c9b95e75357fb12ee7fff9d918435495451330d801866f67485305655efa",
+  "missingFighters": [
+    "Abubakar Vagaev",
+    "Alberto Montes",
+    "Andre (Bra) Lima",
+    "Beatriz Mesquita",
+    "Benoit Saint-Denis",
+    "Christian Duncan",
+    "Damian Rzepecki",
+    "Elisha Ellison",
+    "Gable Steveson",
+    "Kai Kamaka III",
+    "Loneer Kavanagh",
+    "Luke Riley",
+    "Magomed Zaynukov",
+    "Murtazali Magomedov",
+    "Ramazonbek Temirov",
+    "Rizvan Kuniev",
+    "Saygid Izagakhmaev",
+    "Tommy McMillen",
+    "Tyrell Fortune",
+    "Vinicius De Oliveira Prestes De Matos"
+  ],
+  "missingCount": 20,
+  "publishable": false
+}
