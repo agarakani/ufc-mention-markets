@@ -116,7 +116,7 @@ test('cards without markets start closed and their control follows the open stat
   const { d, w, view } = setup(t);
   const card = d.querySelector('.event-card');
   assert.equal(card.open, false);
-  assert.equal(card.querySelector('.event-card-cta-label').textContent, 'Explore card');
+  assert.equal(card.querySelector('.event-card-cta-label').textContent, 'Card details');
   card.open = true;
   card.dispatchEvent(new w.Event('toggle'));
   assert.equal(card.querySelector('.event-card-cta-label').textContent, 'Close card');
@@ -125,9 +125,29 @@ test('cards without markets start closed and their control follows the open stat
   assert.equal(d.querySelector('.event-card-cta-label').textContent, 'Close card');
 });
 
-test('the page headline retains a space when its line break is hidden', t => {
+test('the head names the section and says when the next card is', t => {
   const { d } = setup(t);
-  assert.equal(d.querySelector('.live-title').textContent, 'Fight night, word by word.');
+  assert.equal(d.querySelector('.live-title').textContent, 'Upcoming cards');
+  assert.match(d.querySelector('.live-sub').textContent, /^The next card is Saturday, in \d days\.$/);
+});
+
+test('a card with listed fights invites exploring; an empty one opens to its facts', t => {
+  const data = fixture();
+  data.upcoming_events[0].location = 'Test City, TS United States';
+  data.upcoming_events[0].entry_deadline = '2026-09-19T21:00:00+00:00';
+  const { d } = setup(t, data);
+  const empty = d.querySelector('.event-card');
+  assert.equal(empty.dataset.fights, '0');
+  assert.match(empty.querySelector('.event-facts').textContent, /Saturday, September 19.*WhereTest arena, Test City, TS.*Entries close/s);
+  assert.doesNotMatch(empty.querySelector('.event-facts').textContent, /United States/);
+  assert.match(empty.querySelector('.event-card-date').textContent, /^Sat, Sep 19$/);
+  assert.match(empty.querySelector('.paper-live, .live-cards ~ .paper-live') ? '' : d.querySelector('.paper-live').textContent, /Paper entries start when Kalshi lists/);
+  data.kalshi_cards = [{ card_id: 'T', card_title: data.upcoming_events[0].name, event_date: '2026-09-19', fights: [{ event_ticker: 'E1', matchup: 'First Fighter vs Second Fighter' }] }];
+  const listed = setup(t, data);
+  const card = listed.d.querySelector('.event-card');
+  assert.equal(card.dataset.fights, '1');
+  assert.equal(card.querySelector('.event-card-cta-label').textContent, 'Explore card');
+  assert.equal(card.querySelector('.event-facts'), null);
 });
 
 test('headline emphasis follows the official matchup name, not a guessed family name', t => {

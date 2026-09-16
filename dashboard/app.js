@@ -58,11 +58,21 @@
   function paintNightSwitch() {
     const nav = $("#nightSwitch");
     const focusedCard = nav.contains(document.activeElement) ? document.activeElement.getAttribute("data-card") : null;
-    nav.innerHTML = MM.select.nights().map((n) => `<a class="night-btn ${n.card === state.card ? "is-active" : ""}" href="#/n/${esc(n.card)}" data-card="${esc(n.card)}" aria-current="${n.card === state.card ? "page" : "false"}"><span class="night-btn-date">${esc(n.label)}</span><span class="night-btn-title">${esc(n.title)}</span></a>`).join("");
+    nav.innerHTML = MM.select.nights().map((n) => `<a class="night-btn ${n.card === state.card ? "is-active" : ""}" href="#/n/${esc(n.card)}" data-card="${esc(n.card)}" aria-current="${n.card === state.card ? "page" : "false"}"><span class="night-btn-date">${esc(n.label)}</span><span class="night-btn-title">${esc(n.title)}</span><span class="night-btn-stats"><span><b>${n.markets.length}</b> words</span><span><b>${n.said}</b> said</span><span class="${n.pnl > 0 ? "up" : n.pnl < 0 ? "down" : ""}">${esc(MM.fmt.money(n.pnl, { sign: true }))}</span></span></a>`).join("");
     if (focusedCard) {
       const replacement = Array.from(nav.querySelectorAll(".night-btn")).find(a => a.getAttribute("data-card") === focusedCard);
       if (replacement) replacement.focus({ preventScroll: true });
     }
+  }
+
+  function paintArchiveStats() {
+    const el = $("#archiveStats");
+    const nights = MM.select.nights();
+    if (!el || !nights.length) return;
+    const words = nights.reduce((s, n) => s + n.markets.length, 0);
+    const trades = nights.reduce((s, n) => s + n.trades, 0);
+    const pnl = nights.reduce((s, n) => s + (MM.fmt.isNum(n.pnl) ? n.pnl : 0), 0);
+    el.textContent = `${MM.fmt.plural(nights.length, "night")} · ${words} words priced · ${MM.fmt.plural(trades, "paper trade")} · ${MM.fmt.money(pnl, { sign: true })}`;
   }
 
   function nightHeadHtml(night) {
@@ -245,7 +255,7 @@
   function init() {
     paintTheme();
     $("#themeBtn").addEventListener("click", toggleTheme);
-    const received = () => { MM.select.invalidate(); MM.ledger.renderPaper($("#paperRecord"), MM.select.data()); paintFooter(); };
+    const received = () => { MM.select.invalidate(); MM.ledger.renderPaper($("#paperRecord"), MM.select.data()); paintArchiveStats(); paintFooter(); };
     mounted.live = MM.live.mount($("#live"), { onData: received });
     MM.ledger.renderPaper($("#paperRecord"), MM.select.data());
     const nights = MM.select.nights();
@@ -272,6 +282,7 @@
         $("#" + id).innerHTML = `<header class="section-head"><${tag} class="section-title" id="${id}Title">The ${id}</${tag}></header>`;
       });
     } else paintEmpty();
+    paintArchiveStats();
     paintFooter();
     applyRoute(true);
     MM.motion.reveal(document);

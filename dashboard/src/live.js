@@ -10,7 +10,19 @@ MM.live = (function () {
   const money = value => number(value) ? `${value < 0 ? '-' : value > 0 ? '+' : ''}$${Math.abs(value).toFixed(2)}` : 'Pending';
   const stamp = value => Date.parse(value || '');
   const fresh = (value, now) => Number.isFinite(stamp(value)) && now - stamp(value) >= -60000 && now - stamp(value) <= 120000;
-  const shortDate = value => /^\d{4}-\d{2}-\d{2}$/.test(value || '') ? new Date(value + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }) : 'Date TBD';
+  const isoDay = value => /^\d{4}-\d{2}-\d{2}$/.test(value || '');
+  const shortDate = value => isoDay(value) ? new Date(value + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }) : 'Date TBD';
+  const dayDate = value => isoDay(value) ? new Date(value + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }) : 'Date TBD';
+  const longDate = value => isoDay(value) ? new Date(value + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC' }) : 'Date TBD';
+  const weekday = value => isoDay(value) ? new Date(value + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' }) : '';
+  // Calendar days from the viewer's local date to the card date.
+  const daysUntil = (value, now) => {
+    if (!isoDay(value)) return null;
+    const today = new Date(now);
+    const from = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+    return Math.round((Date.parse(value + 'T00:00:00Z') - from) / 86400000);
+  };
+  const localStamp = value => Number.isFinite(stamp(value)) ? new Date(value).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
   const url = value => { try { const u = new URL(value); return u.protocol === 'https:' ? u.href : ''; } catch (_) { return ''; } };
   const list = value => Array.isArray(value) ? value : [];
   function officialUrl(value, media = false) {
@@ -49,8 +61,9 @@ MM.live = (function () {
         card.source_url = card.source_url || event.source_url;
         card.entry_deadline = card.entry_deadline || event.entry_deadline;
         card.venue = card.venue || event.venue;
+        card.location = card.location || event.location;
         card.presentation = card.presentation || event.presentation;
-      } else cards.push({ card_id: `schedule-${event.date}`, card_title: event.name, event_date: event.date, fights: [], source_url: event.source_url, venue: event.venue, entry_deadline: event.entry_deadline, presentation: event.presentation });
+      } else cards.push({ card_id: `schedule-${event.date}`, card_title: event.name, event_date: event.date, fights: [], source_url: event.source_url, venue: event.venue, location: event.location, entry_deadline: event.entry_deadline, presentation: event.presentation });
     }
     return cards.filter(card => card.event_date >= today || stamp(card.entry_deadline) + 12 * 3600000 > now)
       .sort((a, b) => String(a.event_date).localeCompare(String(b.event_date)));
@@ -118,6 +131,31 @@ MM.live = (function () {
         }).join('')}</tbody></table></div><p class="live-note">YES and NO are the buy prices in cents. A price gap is a model estimate, not proof of a profitable trade. Click a phrase for the calculation and rules.</p>`;
     }
 
+    function scheduleLine(cards) {
+      if (!cards.length) return 'No cards are on the schedule in this snapshot.';
+      const first = cards[0];
+      const last = cards[cards.length - 1];
+      const days = daysUntil(first.event_date, opts.now());
+      const when = days === null ? 'not dated yet' : days < 0 ? 'under way' : days === 0 ? 'tonight' : days === 1 ? 'tomorrow' : `${weekday(first.event_date)}, in ${days} days`;
+      const span = cards.length > 1 ? ` ${cards.length} cards are scheduled through ${shortDate(last.event_date)}.` : '';
+      return `The next card is ${when}.${span}`;
+    }
+
+    function factsHtml(card) {
+      // UFC lists "Los Angeles, CA United States"; the country adds nothing for a US venue.
+      const place = [card.venue, String(card.location || '').replace(/,?\s*United States$/i, '').trim()].filter(Boolean).join(', ');
+      const facts = [
+        ['Date', longDate(card.event_date)],
+        ['Where', place],
+        ['Entries close', localStamp(card.entry_deadline)],
+      ].filter(([, value]) => value && value !== 'Date TBD');
+      return `<div class="event-detail">${facts.length ? `<dl class="event-facts">${facts.map(([term, value]) => `<div><dt>${esc(term)}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl>` : ''}<p class="live-empty">No mention markets are in the latest Kalshi check. Fights and phrases will appear here when they are listed.</p></div>`;
+    }
+
+    function ctaLabel(open, fightCount) {
+      return open ? 'Close card' : fightCount > 0 ? 'Explore card' : 'Card details';
+    }
+
     function cardHtml(card, index) {
       const id = String(card.card_id || card.event_date);
       const fights = list(card.fights).filter(f => f.event_ticker);
@@ -137,16 +175,16 @@ MM.live = (function () {
         return `<span class="event-fighter">${given ? `<span class="event-fighter-given">${esc(given)} </span>` : ''}${esc(headline)}${side && art.rematch ? ` ${art.rematch}` : ''}</span>`;
       }).join('<span class="event-versus" aria-label="versus">vs</span>');
       const fallbackTitle = /\bTBD\b/i.test(art.title) ? 'Main event to be announced' : art.title;
-      return `<details class="event-card" data-card="${esc(id)}" data-kind="${art.kind}" data-tone="${art.tone}" data-featured="${index === 0}" data-art="${art.images.length > 0}" data-championship="${art.championship}" ${isOpen ? 'open' : ''}>
+      return `<details class="event-card" data-card="${esc(id)}" data-kind="${art.kind}" data-tone="${art.tone}" data-featured="${index === 0}" data-art="${art.images.length > 0}" data-championship="${art.championship}" data-fights="${fights.length}" ${isOpen ? 'open' : ''}>
         <summary class="event-poster" aria-label="${esc(art.title)}, ${shortDate(card.event_date)}. ${status}.">
           ${art.images.length ? `<span class="event-poster-art ${art.pair ? 'event-portraits' : ''}" aria-hidden="true">${art.images.map((image, side) => `<img ${art.pair ? `class="event-portrait ${side ? 'fighter-right' : 'fighter-left'}"` : ''} src="${esc(image.url)}" alt="${esc(image.alt)}" loading="${index === 0 ? 'eager' : 'lazy'}" decoding="async" ${index === 0 && side === 0 ? 'fetchpriority="high"' : ''}>`).join('')}</span>` : ''}
           <span class="event-poster-number" aria-hidden="true">${art.number}</span>
-          <div class="event-poster-copy"><div class="event-poster-topline"><span class="event-card-kicker">${art.label}</span><span class="event-card-date"><time datetime="${esc(card.event_date)}">${shortDate(card.event_date)}</time></span></div>
+          <div class="event-poster-copy"><div class="event-poster-topline"><span class="event-card-kicker">${art.label}</span><span class="event-card-date"><time datetime="${esc(card.event_date)}">${dayDate(card.event_date)}</time></span></div>
             ${art.bout ? `<span class="event-title-bout">${esc(art.bout)}</span>` : ''}<h2 class="event-card-title">${names || esc(fallbackTitle)}</h2>${card.venue ? `<span class="event-card-venue">${esc(card.venue)}</span>` : ''}</div>
-          <div class="event-poster-foot"><span class="event-card-meta">${status}</span><span class="event-card-cta"><span class="event-card-cta-label">${isOpen ? 'Close card' : 'Explore card'}</span><span aria-hidden="true">↓</span></span></div>
+          <div class="event-poster-foot"><span class="event-card-meta">${status}</span><span class="event-card-cta"><span class="event-card-cta-label">${ctaLabel(isOpen, fights.length)}</span><span aria-hidden="true">↓</span></span></div>
         </summary>
-        <div class="event-fights">${card.venue || source ? `<p class="event-location">${esc(card.venue || '')}${source ? ` <a href="${esc(source)}" target="_blank" rel="noopener noreferrer">Card details ↗</a>` : ''}${art.images.length ? '<span class="event-photo-credit">Images from UFC</span>' : ''}</p>` : ''}
-        ${fights.length ? `<div class="fight-switch" role="group" aria-label="Choose a fight">${fights.map(fight => `<button type="button" class="fight-tab" data-card="${esc(id)}" data-fight="${esc(fight.event_ticker)}" aria-pressed="${fight === chosen}">${esc(fight.matchup || [fight.fighter_1, fight.fighter_2].filter(Boolean).join(' vs ') || 'Fight details pending')}</button>`).join('')}</div>${rowsHtml(card, chosen)}` : '<div class="live-empty"><h3>Waiting for the words.</h3><p>This card is scheduled, but no mention markets are in the latest Kalshi check. Fights and phrases will appear here when they are listed.</p></div>'}
+        <div class="event-fights">${(fights.length && card.venue) || source ? `<p class="event-location">${esc(fights.length ? (card.venue || '') : '')}${source ? ` <a href="${esc(source)}" target="_blank" rel="noopener noreferrer">Official card page ↗</a>` : ''}${art.images.length ? '<span class="event-photo-credit">Images from UFC</span>' : ''}</p>` : ''}
+        ${fights.length ? `<div class="fight-switch" role="group" aria-label="Choose a fight">${fights.map(fight => `<button type="button" class="fight-tab" data-card="${esc(id)}" data-fight="${esc(fight.event_ticker)}" aria-pressed="${fight === chosen}">${esc(fight.matchup || [fight.fighter_1, fight.fighter_2].filter(Boolean).join(' vs ') || 'Fight details pending')}</button>`).join('')}</div>${rowsHtml(card, chosen)}` : factsHtml(card)}
         </div></details>`;
     }
 
@@ -156,6 +194,10 @@ MM.live = (function () {
       const live = data.live_status || {};
       const ready = !failed && !live.error && live.paper_enabled === true && live.source !== 'cloud' && fresh(live.collector_checked_at || live.checked_at, opts.now());
       const label = ready ? 'Paper collector on' : 'Paper collector not confirmed';
+      const tradeable = cards.some(card => list(card.fights).some(f => f.event_ticker));
+      if (!positions.length && !tradeable) {
+        return `<section class="paper-live is-quiet" aria-labelledby="paperLiveTitle"><h2 id="paperLiveTitle" class="visually-hidden">Paper trading</h2><p>${label}. Paper entries start when Kalshi lists a mention market. No real orders are placed.</p></section>`;
+      }
       return `<section class="paper-live" aria-labelledby="paperLiveTitle"><div><h2 id="paperLiveTitle">Paper trading</h2><p>${label}. ${ready ? 'Entries are recorded automatically when a fresh quote clears the rule before card start.' : 'New entries are not confirmed while the collector is unavailable or its status is old.'} No real orders are placed.</p></div>
         ${positions.length ? `<div class="live-market-wrap"><table class="live-markets"><caption class="visually-hidden">Paper entries for current cards</caption><thead><tr><th>Fight / phrase</th><th>Side</th><th>Entry</th><th>Contracts</th><th>Result</th><th>Paper P/L</th></tr></thead><tbody>${positions.map(p => `<tr><td>${esc(p.matchup || p.event_title)}<br><strong>${esc(p.phrase)}</strong></td><td>${esc(String(p.paper_side || '').toUpperCase())}</td><td>${cents(p.paper_price)}</td><td>${number(p.paper_contracts) ? p.paper_contracts : 'Not recorded'}</td><td>${['yes', 'no'].includes(p.outcome) ? `Resolved ${esc(p.outcome.toUpperCase())}` : p.resolution_status === 'pending' ? 'Awaiting settlement' : 'Open'}</td><td>${money(p.paper_pnl)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="live-empty">No paper entries for the upcoming cards yet.</p>'}
         <p class="live-note">Paper entries use saved buy quotes. Actual fills are not guaranteed. Historical testing is kept separately below.</p></section>`;
@@ -178,7 +220,7 @@ MM.live = (function () {
       const checkedText = Number.isFinite(stamp(checked)) ? `Checked ${new Date(checked).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : 'Waiting for first check';
       const state = failed || live.error ? 'error' : recent ? 'ready' : 'stale';
       container.setAttribute('aria-busy', String(busy));
-      container.innerHTML = `<header class="live-head"><div><h1 class="live-title" id="liveTitle">Fight night,<br> word by word.</h1><p class="live-sub">Upcoming UFC cards, Kalshi's mention prices, and our paper trades.</p></div><div class="live-tools"><p class="live-status" data-state="${state}" role="status">${busy ? 'Checking for updates...' : failed ? 'Update failed. Showing the last snapshot.' : live.error ? 'Collector check failed. Showing saved data.' : `${checkedText}${recent ? '' : ' · update overdue'}`}</p><button class="live-refresh" id="liveRefresh" type="button" aria-disabled="${busy}">Check for updates</button></div></header>
+      container.innerHTML = `<header class="live-head"><div class="live-head-copy"><h1 class="live-title" id="liveTitle">Upcoming cards</h1><p class="live-sub">${esc(scheduleLine(cards))}</p></div><div class="live-tools"><p class="live-status" data-state="${state}" role="status">${busy ? 'Checking for updates...' : failed ? 'Update failed. Showing the last snapshot.' : live.error ? 'Collector check failed. Showing saved data.' : `${checkedText}${recent ? '' : ' · update overdue'}`}</p><button class="live-refresh" id="liveRefresh" type="button" aria-disabled="${busy}">Check for updates</button></div></header>
         <div class="live-cards">${cards.map(cardHtml).join('') || '<div class="live-empty"><h2>Checking the schedule.</h2><p>No upcoming cards are available in this snapshot. The page checks for a fresh one automatically.</p></div>'}</div>${paperHtml(cards)}`;
       if (focus) {
         const target = focus.id ? document.getElementById(focus.id) : focus.summaryCard ? Array.from(container.querySelectorAll('.event-card')).find(el => el.dataset.card === focus.summaryCard)?.querySelector('summary') : focus.word ? Array.from(container.querySelectorAll('.phrase-rule')).find(el => el.dataset.word === focus.word) : focus.link ? Array.from(container.querySelectorAll('.event-location a')).find(el => el.href === focus.link && el.closest('.event-card').dataset.card === focus.linkCard) : Array.from(container.querySelectorAll('[data-fight]')).find(el => el.dataset.fight === focus.fight && el.dataset.card === focus.card);
@@ -274,7 +316,7 @@ MM.live = (function () {
     function toggleCard(event) {
       if (!event.target.matches?.('.event-card')) return;
       opened.set(event.target.dataset.card, event.target.open);
-      event.target.querySelector('.event-card-cta-label').textContent = event.target.open ? 'Close card' : 'Explore card';
+      event.target.querySelector('.event-card-cta-label').textContent = ctaLabel(event.target.open, Number(event.target.dataset.fights) || 0);
     }
     container.addEventListener('click', click);
     container.addEventListener('error', imageError, true);
