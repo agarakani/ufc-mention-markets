@@ -40,3 +40,7 @@ venv/
 # Local scratch copies of backtest outputs
 Backtest items/
 dashboard/preview/
+
+# local tooling
+node_modules/
+.claude/
